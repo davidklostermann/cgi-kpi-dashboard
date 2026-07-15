@@ -52,10 +52,11 @@ def main() -> None:
     lines.append("END;")
     lines.append("")
 
-    lines.append("UPDATE projects SET last_data_update = CASE id")
+    lines.append("UPDATE projects SET last_data_update = CAST(CASE id")
     for hex_id, _, ldu, _, *_ in PROJECTS:
-        lines.append(f"    WHEN '{pid(hex_id)}' THEN '{ldu}'")
-    lines.append("END;")
+        ts = ldu.replace("T", " ")
+        lines.append(f"    WHEN '{pid(hex_id)}' THEN '{ts}'")
+    lines.append("END AS TIMESTAMP WITH TIME ZONE);")
     lines.append("")
 
     lines.append("UPDATE projects SET predicted_end_date = CASE id")
