@@ -59,8 +59,8 @@ Gemini-Ausgaben sind als **KI-Prognose** oder **KI-Einschätzung** gekennzeichne
 
 | Nutzer | Sicht |
 |--------|-------|
-| **Führungskraft (primär)** | Portfolio-Überblick: Status, Risiken, Prognosen, Vergleichbarkeit |
-| **Projektleiter (sekundär)** | Einzelprojekt-Detail: Abweichungen, Risiken, Budget/Aufwand Plan-Ist |
+| **Führungskraft (primär)** | Portfolio-Überblick und **Einzelprojekt-Analyse**: kritische Projekte erkennen, Ursachen nachvollziehen, Vergleichbarkeit |
+| **Projektleiter (sekundär)** | Einzelprojekt-Detail: Abweichungen, Risiken/Probleme, Budget/Aufwand, Insights, KI-Q&A |
 
 ### Erster Einsatz
 
@@ -103,7 +103,7 @@ Der Pilot prüft die Produkthypothese — nicht vollständige Produktreife. Konk
 
 ### MVP — enthalten
 
-Projektübersicht, Status (Grün/Gelb/Rot), Fortschritt, Phase, Budget/Aufwand Plan-Ist, Terminabweichung, Risiken, kritische Probleme, Gemini-Prognosen, Management-Zusammenfassung, Filter (Kunde, Projekt, Zeitraum, Status), KPI-Karten, Projekttabelle, Diagramme, Risiko-/Prognosebereich.
+Projektübersicht (Management-Tabelle mit erweiterten Spalten), Status (Grün/Gelb/Rot), Fortschritt, Phase, Budget/Aufwand Plan-Ist-Prognose, Terminabweichung, prognostiziertes Enddatum, Risiken und Probleme (getrennt), deterministische Management Insights, Berichtsstandsvergleich, Gemini-Prognosen, Management-Zusammenfassung, Filter (Kunde/Geschäftsbereich, Projektleitung, Phase, aktiv/abgeschlossen, Zeitraum, Ampelstatus, Risikostufe), KPI-Karten, Diagramme.
 
 ### MVP — ausgeschlossen
 

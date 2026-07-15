@@ -19,11 +19,11 @@ stack: Angular 20 + CGI EDS 19.0.0 + Spring Boot 3.5.16
 
 Epics und User Stories für den MVP-Pilot. Stack: **Angular 20 + CGI EDS 19.0.0** (Frontend), **Spring Boot + PostgreSQL** (Backend). Detaillierte Stories: [`stories/stories-mvp.md`](stories/stories-mvp.md).
 
-## Requirements Inventory (aktualisiert 2026-07-14)
+## Requirements Inventory (aktualisiert 2026-07-15)
 
 ### Functional Requirements
 
-FR-1 … FR-19 unverändert aus PRD (siehe vorherige Extraktion). Bindung an Epics in Coverage Map.
+FR-1 … FR-21 aus PRD (aktualisiert 2026-07-15). FR-1..FR-19 unverändert nummeriert; **FR-20** Management Insights, **FR-21** Berichtsstandsvergleich neu. Bindung an Epics in Coverage Map.
 
 ### NonFunctional Requirements
 
@@ -44,6 +44,8 @@ NFR-1: Aha-Moment ~30s · NFR-2: Gemini-Key serverseitig · NFR-3: Mock-only · 
 UX-DR1: Layout Haupt 8–9/12 · KI 3–4/12 (Desktop); KI unter Hauptinhalt (Tablet/Mobil)  
 UX-DR2: CGI EDS Farben und Shell (Top/Side Nav, Breadcrumbs)  
 UX-DR3–UX-DR11: kpi-card, status-badge, ki-panel, trend-chart, gantt-timeline, project-table, filter-bar, quick-reply, chat  
+UX-DR16: insight-list (Management Insights, FR-20)  
+UX-DR17: report-comparison (Berichtsstandsvergleich, FR-21)
 UX-DR12: Unabhängiges Laden Fakten/KI  
 UX-DR13: WCAG 2.1 AA, sr-only für Visualisierungen  
 UX-DR14: Keine Donut/Tacho-Charts  
@@ -57,11 +59,11 @@ UX-DR15: Caption-Kontrast `{colors.caption}` (#333333)
 | FR-2 | Epic 5 | 5.3 |
 | FR-3 | Epic 5 | 5.2, 5.4 |
 | FR-4 | Epic 8 | 8.2, 8.3, 8.4 |
-| FR-5 | Epic 6 | 6.1, 6.3 |
-| FR-6 | Epic 7 | 7.1, 7.2 |
+| FR-5 | Epic 6 | 6.1, 6.2, 6.3, 6.4 |
+| FR-6 | Epic 7 | 7.1, 7.2, 7.4 |
 | FR-7 | Epic 2, 5, 6 | 2.2, 5.5, 6.5 |
 | FR-8 | Epic 4 | 4.4 |
-| FR-9 | Epic 3, 4, 6 | 3.4, 4.1, 6.1 |
+| FR-9 | Epic 3, 4, 6 | 3.4, 4.1, 6.1, 6.6 |
 | FR-10 | Epic 2, 8, 9 | 2.4, 8.3, 9.4 |
 | FR-11 | Epic 9 | 9.2, 9.4 |
 | FR-12 | Epic 9 | 9.2, 9.4 |
@@ -71,7 +73,9 @@ UX-DR15: Caption-Kontrast `{colors.caption}` (#333333)
 | FR-16 | Epic 9 | 9.3, 9.4 |
 | FR-17 | Epic 9 | 9.5 |
 | FR-18 | Epic 9 | 9.3 |
-| FR-19 | Epic 3 | 3.2, 3.3 |
+| FR-19 | Epic 3 | 3.2, 3.3, 3.7 |
+| FR-20 | Epic 6 | 6.6 |
+| FR-21 | Epic 6 | 6.7 |
 
 ## Epic List
 
@@ -79,11 +83,11 @@ UX-DR15: Caption-Kontrast `{colors.caption}` (#333333)
 |---|---|---|---|
 | 1 | Technische Projektgrundlage | Monorepo, Backend-/Frontend-Grundgerüst, Dev-Setup | 1.1–1.4 |
 | 2 | CGI-konforme Anwendungshülle | Shell, Routing, Layout-Raster | 2.1–2.4 |
-| 3 | Mock-Daten und Backend-Grundlage | Domain, Flyway, Seed, KPI-Modul, Basis-API | 3.1–3.5 |
+| 3 | Mock-Daten und Backend-Grundlage | Domain, Flyway, Seed, KPI-Modul, Domain-Erweiterung, Basis-API | 3.1–3.7 |
 | 4 | Portfolio-KPI-Übersicht | KPI-Berechnung, Karten, Filter | 4.1–4.4 |
-| 5 | Portfolio-Zeitleiste und Projekttabelle | Gantt, Tabelle, Trend, Navigation | 5.1–5.5 |
-| 6 | Projekt-Detailseite | Kernkennzahlen, Zeitleiste, Budget | 6.1–6.5 |
-| 7 | Risiken, Termine und Maßnahmen | Risiko-API und -UI, Status-Badges | 7.1–7.3 |
+| 5 | Portfolio-Zeitleiste und Projekttabelle | Gantt, Management-Tabelle, Trend, Navigation | 5.1–5.5 |
+| 6 | Projekt-Detailseite | Stammdaten, KPIs, Insights, Trends, Phasen, Budget | 6.1–6.7 |
+| 7 | Risiken, Probleme und Maßnahmen | Risiko/Problem-API und -UI, Status-Badges | 7.1–7.4 |
 | 8 | KI-Portfolioanalyse | Trendanalyse Backend + Panel | 8.1–8.4 |
 | 9 | KI-Projektanalyse und Q&A | Summary, Prognose, Q&A, Chips | 9.1–9.5 |
 | 10 | Fehlerbehandlung, Barrierefreiheit, Qualität | AD-7, FR-15, WCAG | 10.1–10.4 |
@@ -91,10 +95,10 @@ UX-DR15: Caption-Kontrast `{colors.caption}` (#333333)
 ## Implementierungsreihenfolge
 
 1. **1.1 → 1.4** — Technische Grundstruktur  
-2. **3.1 → 3.5** — Backend + Mock-Daten (parallel ab 1.2: **2.1 → 2.4** Shell)  
+2. **3.1 → 3.7** — Backend + Mock-Daten inkl. Domain-Erweiterung (parallel ab 1.2: **2.1 → 2.4** Shell)  
 3. **4.1 → 4.4** — Portfolio-KPIs  
-4. **5.1 → 5.5** — Zeitleiste + Tabelle  
-5. **6.1 → 6.5** + **7.1 → 7.3** — Projekt-Detail + Risiken  
+4. **5.1 → 5.5** — Zeitleiste + Management-Tabelle  
+5. **6.1 → 6.7** + **7.1 → 7.4** — Projekt-Detail, Insights, Trends, Risiken/Probleme  
 6. **8.1 → 8.4** — KI Portfolio (nach KPI-Readern)  
 7. **9.1 → 9.5** — KI Projekt (nach ApprovedProjectDataReader)  
 8. **10.1 → 10.4** — Querschnitt A11y/Fehler (forlaufend, Abschluss-Review)
@@ -107,8 +111,11 @@ jpackage · Windows-EXE · produktives Deployment · CGI-Infrastruktur · echte 
 
 | Thema | Status |
 |---|---|
-| Sortierbare Tabellenspalten (welche?) | `[OFFEN]` — MVP: Name, Status, Fortschritt |
+| Sortierbare Tabellenspalten | FR-2: Status, Fortschritt, Terminabweichung, Budgetabweichung, kritische Risiken, letzte Aktualisierung |
 | Zeitraum-Filter-Definition | `[OFFEN]` — MVP: Berichtsmonat |
+| Risikostufe-Filter | `[OFFEN]` |
+| Management-Insight-Regeln | `[OFFEN]` — Engine in `kpi.insights` |
+| Berichtsstand-Snapshots | `[ASSUMPTION]` 2 je Projekt im MVP |
 | Top-3-Logik (KI vs. deterministisch) | `[OFFEN]` — MVP: KI aus Reader-DTOs |
 | Leerzustands-Microcopy Portfolio | `[OFFEN]` |
 | CGI EDS Paket-Installation (npm registry vs. lokal) | Implementierungsphase |

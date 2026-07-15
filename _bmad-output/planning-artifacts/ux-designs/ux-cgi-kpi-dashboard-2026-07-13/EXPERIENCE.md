@@ -3,7 +3,7 @@ name: KPI-Board
 description: Experience Spine für cgi-kpi-dashboard — Informationsarchitektur, Verhalten, Zustände, Interaktion, Barrierefreiheit und Kern-Flows. Visuelle Identität: DESIGN.md (CGI EDS).
 status: final
 created: 2026-07-13
-updated: 2026-07-14
+updated: 2026-07-15
 sources:
   - ../../prds/prd-cgi-kpi-dashboard-2026-07-13/prd.md
   - ../../prds/prd-cgi-kpi-dashboard-2026-07-13/addendum.md
@@ -24,8 +24,8 @@ Tragendes Prinzip: **links/Hauptbereich berechnete Fakten, rechts (Desktop) KI-E
 
 | Oberfläche | Erreichbar über | Zweck |
 |---|---|---|
-| Portfolio-Übersicht | App-Start / Side Nav „Portfolio" | KPI-Karten, Gantt-Zeitleiste, Handlungsbedarf, Projekttabelle + KI-Trendanalyse (UJ-1) |
-| Projekt-Detailansicht | Tabellenzeile / Side Nav „Projekte" | Kernkennzahlen, Meilenstein-Zeitleiste, Budget/Aufwand, Risiken + KI-Summary, Prognose, Q&A (UJ-2) |
+| Portfolio-Übersicht | App-Start / Side Nav „Portfolio" | KPI-Karten, Gantt-Zeitleiste, **Management-Projekttabelle** (FR-2), Filter + KI-Trendanalyse (UJ-1) |
+| Projekt-Detailansicht | Tabellenzeile / Side Nav „Projekte" | Stammdaten, Management-KPIs, **Management Insights**, Phasen/Meilensteine, Budget/Aufwand, Risiken/Probleme getrennt, Berichtsstandsvergleich + KI (UJ-2) |
 
 **Anwendungshülle:** CGI Top Navigation · CGI Side Navigation · CGI Navigation Content · CGI Breadcrumbs (Projekt-Detail).
 
@@ -41,21 +41,21 @@ Navigation Portfolio ↔ Projekt (FR-7); Zurück erhält Filterzustand `[ASSUMPT
 4. KPI-Karten (FR-1)
 5. Gantt-artige Portfolio-Zeitleiste (FR-3, FR-5 analog)
 6. Projekte mit Handlungsbedarf (Fakten-Top-3; KI-Trend ergänzt in rechter Spalte, FR-4)
-7. Projekttabelle (FR-2)
+7. **Management-Projekttabelle** (FR-2) — sortierbar, klick → Detail
 8. **KI-Spalte rechts:** Portfolio-Trendanalyse (FR-4)
 
-### Projekt-Detailseite
+**NFR Detail-Erfassbarkeit:** Die wichtigsten Fakten (Ampel, Fortschritt, Top-Insights, kritische Risiken) müssen auf Desktop **ohne Scrollen** oder innerhalb weniger Sekunden erfassbar sein `[ASSUMPTION: Above-the-fold auf ≥1200px]`.
 
-1. Breadcrumb
-2. Projekttitel und Metadaten
-3. Ausgeschriebener Projektstatus
-4. KPI-Karten (FR-5)
-5. Projektzeitleiste mit Meilensteinen
-6. Budget und Aufwand
-7. Risiken und Maßnahmen (FR-6)
-8. **KI-Spalte:** Zusammenfassung (FR-11)
-9. **KI-Spalte:** Prognose (FR-12)
-10. **KI-Spalte:** projektbezogenes Q&A (FR-16, FR-17)
+### Projekt-Detailseite (Informationshierarchie — FR-5, FR-6, FR-20, FR-21)
+
+1. **Projektkopf und Gesamtstatus** — Name, ID, Kunde/Geschäftsbereich, Projektleitung, Phase, Ampel, letzte Aktualisierung
+2. **Zentrale KPI-Karten** — Plan/Ist/Prognose klar getrennt (FR-5)
+3. **Management Insights** — deterministische Auffälligkeiten mit Begründung (FR-20)
+4. **Berichtsstandsvergleich** — Delta zu vorherigem Stand, sofern vorhanden (FR-21)
+5. **Phasen und Meilensteine** — beschriftete Gantt/Timeline (FR-5)
+6. **Budget und Aufwand** — Plan, Ist, Rest, Hochrechnung (FR-5)
+7. **Risiken und Probleme** — getrennte Bereiche (FR-6)
+8. **KI-Spalte (abgegrenzt):** Zusammenfassung (FR-11), Prognose (FR-12), Q&A (FR-16, FR-17)
 
 ## Voice and Tone
 
@@ -69,11 +69,13 @@ Navigation Portfolio ↔ Projekt (FR-7); Zurück erhält Filterzustand `[ASSUMPT
 |---|---|---|
 | `kpi-card` | Beide | Read-only Backend-Werte. Delta optional Vorperiode. Nicht klickbar als Filter. |
 | `status-badge` | Tabelle, Header, Risiken | Punkt + Wort; redundant (Farbe + Text) für A11y. |
-| `project-table` | Portfolio | Zeilenklick → Detail (FR-7). Sortierbar `[OFFEN: Spalten]`. Horizontal scroll auf schmalen Viewports. |
+| `project-table` | Portfolio | Management-Tabelle (FR-2). Zeilenklick → Detail (FR-7). Sortierbar: Status, Fortschritt, Terminabweichung, Budgetabweichung, kritische Risiken, letzte Aktualisierung. Horizontal scroll auf schmalen Viewports. |
+| `insight-list` | Projekt-Detail | Deterministische Management Insights (FR-20). Fakt-Badge, Aussage + Kennzahlen + Begründung. |
+| `report-comparison` | Projekt-Detail | Berichtsstandsvergleich (FR-21). Delta oder Hinweis bei fehlendem Vorstand. |
 | `trend-chart` | Portfolio, Detail | Beschriftete Achsen/Legende. Segment 3M/6M/12M nur Visualisierung. **Kein Donut.** Statusverteilung als Zahlen/Balken mit Labels. |
-| `gantt-timeline` | Portfolio, Detail | Zeile pro Projekt/Phase; heute-Marker; Plan-Ist-Abweichung; Legende; sr-only-Zusammenfassung; Tastatur + horizontales Scrollen. |
+| `gantt-timeline` | Portfolio, Detail | Phasen/Meilensteine; heute-Marker; Plan/Ist/Prognose; Überfällig; Legende; sr-only; Tastatur. |
 | `ki-panel` | Rechte Spalte / unter Hauptinhalt | Nur KI; Badge + Disclaimer; **eigenständiges Laden** via separater API-Subscription. |
-| `filter-bar` | Portfolio | Kunde, Projekt, Zeitraum, Ampelstatus (FR-8). Aktualisiert Fakten **und** KI-Trend konsistent. |
+| `filter-bar` | Portfolio | Kunde/Geschäftsbereich, Projektleitung, Ampelstatus, Phase, aktiv/abgeschlossen, Zeitraum, Risikostufe (FR-8). Aktualisiert Fakten **und** KI-Trend konsistent. |
 | `quick-reply-chip` | Detail-Q&A | Gleiche Gemini-Pipeline wie Freitext (FR-17). |
 | `chat` | Detail-Q&A | Nur aktuelles Projekt (FR-16). Enter sendet. |
 | `button-primary` | Q&A Senden, Retry | Disabled während Request; `{colors.primary}`. |
@@ -145,12 +147,15 @@ Kein natives Mobile-App-Ziel.
 
 ### Flow 2 — UJ-2: Projekt vertiefen + Q&A
 
-1. Detail: Status, KPIs, Zeitleiste, Budget, Risiken.
-2. KI-Summary und Prognose lesen.
-3. Quick-Reply oder Freitext → Gemini via Backend.
-4. Antwort bezieht sich auf freigegebene Daten (FR-14).
+1. Detail: Kopf, KPIs, **Insights**, ggf. Berichtsvergleich.
+2. Phasen/Meilensteine, Budget/Aufwand, Risiken/Probleme.
+3. KI-Summary, Prognose, Q&A — referenzieren sichtbare Fakten/Insights (FR-14).
 
-## Amendment 2026-07-14
+## Amendment 2026-07-15
+
+- Fokus: **nachvollziehbare Einzelprojekt-Analyse** für Führungskräfte (FR-5/6/20/21 erweitert).
+- Projekt-Detail-Hierarchie: Insights vor Phasen/Budget; Risiken/Probleme getrennt.
+- Neue Komponenten: `insight-list`, `report-comparison`; erweiterte `project-table`, `filter-bar`.
 
 - Stack: React/Vite/Recharts → **Angular 20 + CGI EDS**.
 - Donut-Charts **entfernt**; Statusverteilung als beschriftete Alternativen.
