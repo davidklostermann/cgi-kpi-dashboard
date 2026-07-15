@@ -44,6 +44,15 @@ public class Project extends UuidEntity {
     @Column(name = "created_at", nullable = false)
     private Instant createdAt = Instant.now();
 
+    @Column(name = "project_lead", length = 200)
+    private String projectLead;
+
+    @Column(name = "last_data_update")
+    private Instant lastDataUpdate;
+
+    @Column(name = "predicted_end_date")
+    private LocalDate predictedEndDate;
+
     @OneToMany(mappedBy = "project", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     private List<ProjectPhase> phases = new ArrayList<>();
 
@@ -52,6 +61,12 @@ public class Project extends UuidEntity {
 
     @OneToMany(mappedBy = "project", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     private List<Risk> risks = new ArrayList<>();
+
+    @OneToMany(mappedBy = "project", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    private List<Problem> problems = new ArrayList<>();
+
+    @OneToMany(mappedBy = "project", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    private List<ProjectReportSnapshot> reportSnapshots = new ArrayList<>();
 
     @OneToOne(mappedBy = "project", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     private ProjectBudget budget;
@@ -128,6 +143,30 @@ public class Project extends UuidEntity {
         this.createdAt = createdAt;
     }
 
+    public String getProjectLead() {
+        return projectLead;
+    }
+
+    public void setProjectLead(String projectLead) {
+        this.projectLead = projectLead;
+    }
+
+    public Instant getLastDataUpdate() {
+        return lastDataUpdate;
+    }
+
+    public void setLastDataUpdate(Instant lastDataUpdate) {
+        this.lastDataUpdate = lastDataUpdate;
+    }
+
+    public LocalDate getPredictedEndDate() {
+        return predictedEndDate;
+    }
+
+    public void setPredictedEndDate(LocalDate predictedEndDate) {
+        this.predictedEndDate = predictedEndDate;
+    }
+
     public List<ProjectPhase> getPhases() {
         return phases;
     }
@@ -138,6 +177,14 @@ public class Project extends UuidEntity {
 
     public List<Risk> getRisks() {
         return risks;
+    }
+
+    public List<Problem> getProblems() {
+        return problems;
+    }
+
+    public List<ProjectReportSnapshot> getReportSnapshots() {
+        return reportSnapshots;
     }
 
     public ProjectBudget getBudget() {
@@ -164,5 +211,15 @@ public class Project extends UuidEntity {
     public void addRisk(Risk risk) {
         risks.add(risk);
         risk.setProject(this);
+    }
+
+    public void addProblem(Problem problem) {
+        problems.add(problem);
+        problem.setProject(this);
+    }
+
+    public void addReportSnapshot(ProjectReportSnapshot snapshot) {
+        reportSnapshots.add(snapshot);
+        snapshot.setProject(this);
     }
 }
