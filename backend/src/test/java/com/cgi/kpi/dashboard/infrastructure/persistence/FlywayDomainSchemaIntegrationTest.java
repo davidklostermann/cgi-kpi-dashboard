@@ -24,7 +24,9 @@ class FlywayDomainSchemaIntegrationTest {
             "PROJECT_PHASES",
             "MILESTONES",
             "RISKS",
-            "PROJECT_BUDGETS");
+            "PROJECT_BUDGETS",
+            "PROBLEMS",
+            "PROJECT_REPORT_SNAPSHOTS");
 
     @Autowired
     private DataSource dataSource;

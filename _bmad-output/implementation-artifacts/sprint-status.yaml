@@ -5,7 +5,7 @@
 #   review: Implementierung abgeschlossen, wartet auf Review
 #   done: Abgeschlossen und gemerged
 
-last_updated: 2026-07-14
+last_updated: 2026-07-15
 development_status:
   epic-1: done
   1-1-backend-grundgeruest-spring-boot: done
@@ -21,3 +21,7 @@ development_status:
   3-1-domain-modell-und-jpa: done
   3-2-flyway-migrationen: done
   3-3-mock-seed-20-projekte: done
+  3-4-kpi-modul-grundstruktur: done
+  3-5-basis-rest-projekte-und-portfolio: done
+  3-6-domain-erweiterung-stammdaten-probleme-snapshots: done
+  3-7-mock-seed-erweiterung: review

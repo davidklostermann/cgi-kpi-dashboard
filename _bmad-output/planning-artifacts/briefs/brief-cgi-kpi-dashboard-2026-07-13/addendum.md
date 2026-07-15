@@ -2,7 +2,7 @@
 title: "Addendum: KPI-Inventar — cgi-kpi-dashboard"
 status: draft
 created: 2026-07-13
-updated: 2026-07-13
+updated: 2026-07-15
 parent: brief.md
 ---
 
@@ -49,6 +49,12 @@ Projektbezogene Status- und Fortschrittskennzahlen (Einzelprojekt und aggregiert
 | Anzahl offener Aufgaben | Noch nicht abgeschlossene Aufgaben | `[OFFEN]` | — | `[OFFEN]` |
 | Anzahl überfälliger Aufgaben | Aufgaben über Fälligkeitsdatum | `[OFFEN]` | — | `[OFFEN]` |
 
+**Hinweis MVP-Scope:** Aufgaben-Metriken sind **nicht** Teil des Dashboards (kein Aufgabenplanungs-System). Spalten bleiben im Inventar zu späterer Abstimmung `[NON-GOAL im MVP]`.
+
+| Prognostiziertes Enddatum | Voraussichtliches Projektende (deterministisch) | `[OFFEN]` | — | `[OFFEN]` |
+| Zeitverbrauch / vergangene Projektdauer | Anteil verstrichene Projektlaufzeit | `[OFFEN]` | — | `[OFFEN]` |
+| Letzte Datenaktualisierung | Zeitpunkt des Berichtsstands | Anzeige aus Datenfeld | Stale-Daten-Schwelle: `[OFFEN]` | `[OFFEN]` |
+
 ---
 
 ## 3. Budget und Aufwand
@@ -65,6 +71,9 @@ Plan-Ist-Vergleich für Budget und Personentage.
 | Verbrauchte Personentage | Tatsächlich gebuchter Aufwand | `[OFFEN]` | — | `[OFFEN]` |
 | Verbleibende Personentage | Noch verfügbarer Aufwand | `[OFFEN]` | — | `[OFFEN]` |
 | Plan-Ist-Abweichung (Budget/Aufwand) | Abweichung Plan vs. Ist | `[OFFEN]` | — | `[OFFEN]` |
+| Deterministische End-Hochrechnung Budget | Prognostizierter Budget-Endwert | `[OFFEN]` | — | `[OFFEN]` |
+| Deterministische End-Hochrechnung Aufwand | Prognostizierter Aufwand-Endwert | `[OFFEN]` | — | `[OFFEN]` |
+| Restbudget / Restaufwand | Verbleibende Werte | `[OFFEN]` | — | `[OFFEN]` |
 
 ---
 
@@ -76,12 +85,42 @@ Risiko- und Problemkennzahlen je Projekt (und aggregiert im Portfolio).
 |--------------|--------------|---------------------|----------------|-------------|
 | Anzahl offener Risiken | Noch nicht geschlossene Risiken | `[OFFEN]` | — | `[OFFEN]` |
 | Anzahl kritischer Probleme | Probleme mit höchster Schwere | `[OFFEN]` | Definition „kritisch": `[OFFEN]` | `[OFFEN]` |
-| Offene Risiken (Darstellung) | Liste/Detail offener Risiken im MVP | Inhalt und Struktur: `[OFFEN]` | — | `[OFFEN]` |
-| Kritische Probleme (Darstellung) | Liste/Detail kritischer Probleme im MVP | Inhalt und Struktur: `[OFFEN]` | — | `[OFFEN]` |
+| Offene Risiken (Darstellung) | Liste/Detail offener Risiken im MVP | Mindestfelder laut PRD FR-6 | — | `[OFFEN]` |
+| Kritische Probleme (Darstellung) | Liste/Detail kritischer Probleme im MVP | Mindestfelder laut PRD FR-6; getrennt von Risiken | — | `[OFFEN]` |
+| Anzahl kritischer Risiken | Risiken oberhalb Schwelle | `[OFFEN]` | Definition: `[OFFEN]` | `[OFFEN]` |
 
 ---
 
-## 5. Gemini-Prognosen und Management-Zusammenfassungen
+## 5. Management Insights (deterministisch)
+
+Backend-erkannte Auffälligkeiten — **keine KI-Ausgaben**. Regeln und Schwellenwerte: `[OFFEN]`.
+
+| Insight-Typ (Kandidat) | Beschreibung | Regel / Berechnung | Schwellenwert |
+|---|---|---|---|
+| Budgetverbrauch > Fortschritt | Budget läuft schneller als Fortschritt | `[OFFEN]` | `[OFFEN]` |
+| Fortschritt hinter Zeitverbrauch | Zeit verstrichen disproportioniert | `[OFFEN]` | `[OFFEN]` |
+| Prognose Endtermin verschoben | Prognostiziertes Enddatum später als Plan | `[OFFEN]` | `[OFFEN]` |
+| Meilenstein überfällig | Kritischer Meilenstein über Fälligkeit | `[OFFEN]` | `[OFFEN]` |
+| Risiko-Cluster | Mehrere Risiken gleicher Themengruppe | `[OFFEN]` | `[OFFEN]` |
+| Status verschlechtert | Ampel vs. vorheriger Berichtsstand | `[OFFEN]` | `[OFFEN]` |
+| Stale Data | Keine Aktualisierung seit X Tagen | `[OFFEN]` | `[OFFEN]` |
+| Widersprüchliche Signale | Ampel vs. Termin/Budget/Risiken | `[OFFEN]` | `[OFFEN]` |
+
+---
+
+## 6. Berichtsstandsvergleich
+
+| KPI-Kandidat | Beschreibung | Formel / Berechnung | MVP-Datenmodell |
+|---|---|---|---|
+| Delta Fortschritt | Änderung seit vorherigem Berichtsstand | `[OFFEN]` | `[ASSUMPTION]` Snapshot-Tabelle |
+| Delta Budgetverbrauch | Änderung Budget % seit Vorperiode | `[OFFEN]` | `[ASSUMPTION]` Snapshot-Tabelle |
+| Delta Terminprognose | Verschiebung prognostiziertes Ende | `[OFFEN]` | `[ASSUMPTION]` Snapshot-Tabelle |
+| Delta Ampelstatus | Statuswechsel seit Vorperiode | `[OFFEN]` | `[ASSUMPTION]` Snapshot-Tabelle |
+| Delta Risiken | Anzahl/Schwere offener Risiken | `[OFFEN]` | `[ASSUMPTION]` Snapshot-Tabelle |
+
+---
+
+## 7. Gemini-Prognosen und Management-Zusammenfassungen
 
 **Keine deterministischen KPIs.** Gemini analysiert ausgewählte, bereits berechnete und freigegebene Projektdaten. Alle Ausgaben sind als **KI-Prognose** oder **KI-Einschätzung** gekennzeichnet. Keine automatischen Projektentscheidungen. Keine erfundenen Daten.
 

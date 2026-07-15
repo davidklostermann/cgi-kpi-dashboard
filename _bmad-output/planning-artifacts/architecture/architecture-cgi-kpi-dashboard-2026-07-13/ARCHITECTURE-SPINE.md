@@ -7,8 +7,8 @@ paradigm: layered-modular-monolith
 scope: MVP-Pilot — internes KI-KPI-Dashboard (Portfolio + Projekt-Detail, Backend-KPIs, Gemini-Analyseschicht, Mock-Daten)
 status: final
 created: 2026-07-13
-updated: 2026-07-14T12:00
-binds: [FR-1..FR-19]
+updated: 2026-07-15T10:00
+binds: [FR-1..FR-21]
 sources:
   - ../prds/prd-cgi-kpi-dashboard-2026-07-13/prd.md
   - ../prds/prd-cgi-kpi-dashboard-2026-07-13/addendum.md
@@ -34,7 +34,7 @@ amendments:
 
 Querschnittliche Module (Packages, nicht Deployables):
 
-- **`kpi.*`** — deterministische KPI-Berechnung, KPI-DTOs und **Reader-/Service-Interfaces** (einzige Datenquelle für `ai.*`)
+- **`kpi.*`** — deterministische KPI-Berechnung, **Management Insights**, KPI-DTOs und **Reader-/Service-Interfaces** (einzige Datenquelle für `ai.*`)
 - **`ai.*`** — Gemini-Adapter und AI-Use-Cases; liest KPI-/Projektdaten **ausschließlich** über `kpi.*`-Reader, nie über JPA/Domain
 
 Frontend: **Angular 20 SPA** (TypeScript, SCSS), spricht ausschließlich REST mit dem Backend über **Angular HttpClient**. UI auf Basis **CGI Experience Design System 19.0.0**, **Angular Material** und **Angular CDK**. Referenzpaket (Planung): `frontend/vendor/cgi-sentry-angular-components-lib-19.0.0.tgz` — Integration erst in Implementierungsphase.
@@ -71,6 +71,7 @@ Frontend: **Angular 20 SPA** (TypeScript, SCSS), spricht ausschließlich REST mi
 - **Prevents:** Vermischte KPI/KI-Responses, Portfolio-Q&A (Non-Goal)
 - **Rule:**
   - **Fakten (KPI):** `/api/portfolio/*`, `/api/projects/*` — keine KI-Texte in KPI-Responses.
+  - **Projekt-Fakten (Detail):** `/api/projects/{id}/master-data`, `/kpis`, `/insights`, `/trends`, `/phases`, `/risks`, `/problems` — alles deterministisch aus `kpi.*`.
   - **Portfolio-KI:** `GET /api/portfolio/ai/trend-analysis` (FR-4).
   - **Projekt-KI (nested):** `/api/projects/{id}/ai/summary`, `/api/projects/{id}/ai/forecast`, `POST /api/projects/{id}/ai/qa` (FR-11, FR-12, FR-16).
   - Kein portfolio-weites Freitext-Q&A (FR-18). Nested AI-Pfade unter `/api/portfolio/ai/` und `/api/projects/{id}/ai/` sind erlaubt; kein generischer `/api/ai/chat`.
@@ -219,8 +220,9 @@ cgi-kpi-dashboard/
       api/                    # REST controllers (portfolio, projects, ai nested)
       application/            # use cases
       domain/                 # entities, repository interfaces
-      kpi/                    # KPI calculation, DTOs
+      kpi/                    # KPI calculation, insights, DTOs
       kpi/reader/             # Reader interfaces — einzige AI-Datenquelle
+      kpi/insights/           # Deterministic insight rules (FR-20) `[PLANNED]`
       ai/                     # Gemini use cases; ruft nur kpi.reader auf
       infrastructure/         # JPA repos, Gemini client, config
     src/main/resources/
@@ -273,7 +275,8 @@ cgi-kpi-dashboard/
 |---|---|---|
 | Portfolio-KPI-Karten, Tabelle, Diagramme (FR-1..FR-3) | `api` Portfolio + `kpi.*` + `features/portfolio` | AD-3, AD-5 |
 | Portfolio-Trendanalyse (FR-4) | `api` `/portfolio/ai/trend-analysis` + `ai.*` + `features/ai` | AD-2, AD-4, AD-5 |
-| Projekt-Kernkennzahlen, Risiken (FR-5, FR-6) | `api` Projects + `kpi.*` + `features/project` | AD-3 |
+| Projekt-Kernkennzahlen, Stammdaten, Insights, Trends (FR-5, FR-20, FR-21) | `api` Projects + `kpi.*` + `features/project` | AD-3 |
+| Risiken und Probleme getrennt (FR-6) | `domain` + `api` + `features/project` | AD-3 |
 | Navigation, Filter (FR-7, FR-8) | `core/navigation` + `features/portfolio` | AD-5, AD-7, AD-10 |
 | Backend-KPI-Berechnung (FR-9) | `kpi.*` | AD-2, AD-3 |
 | KPI/KI-Trennung UI (FR-10) | Layout + getrennte RxJS-Streams | AD-5, AD-7, AD-11 |
@@ -284,14 +287,44 @@ cgi-kpi-dashboard/
 | Projekt-Q&A, Chips (FR-16, FR-17) | `POST …/ai/qa` + `features/ai` | AD-4, AD-5 |
 | Kein Portfolio-Q&A (FR-18) | API design | AD-5 |
 | Mock-Portfolio (FR-19) | Flyway seed + `domain` | AD-3 |
+| Berichtsstand-Snapshots (FR-21) | `domain` + `kpi.*` | AD-3 |
 | CGI Shell (Navigation) | `core/layout`, `core/navigation` | AD-10, AD-11 |
+
+## Domain Model Extension (Plan 2026-07-15)
+
+Bestehend implementiert (3.1–3.3): `projects`, `project_phases`, `milestones`, `risks`, `project_budgets`.
+
+**Additive Erweiterung (Flyway V3+):**
+
+```text
+projects (+ project_lead, business_unit, last_data_update, predicted_end_date)
+problems (new — FR-6)
+project_report_snapshots (new — FR-21 MVP)
+risks (+ probability, impact, responsible, due_date) `[OFFEN]` Pflicht
+phases/milestones (+ status, forecast dates, deviation, blocker) `[OFFEN]`
+```
+
+**MVP-Historisierung `[ASSUMPTION]`:** Zwei Snapshots je Projekt im Seed (aktuell + vorherig); keine unbegrenzte Historie. Deltas in `kpi.*`.
+
+**Non-Goals:** Aufgaben, Ressourcen, vollständiges Risiko-Workflow-System.
+
+## Impact on Implemented Stories 3.1–3.4
+
+| Story | Status | Planning impact |
+|---|---|---|
+| 3.1 Domain + JPA | done | Erweiterung via **neue Migration**, kein Rewrite |
+| 3.2 Flyway | done | V3+ für Schema-Erweiterung |
+| 3.3 Mock-Seed | done | V4 Seed-Update für neue Felder/Snapshots |
+| 3.4 kpi.* Grundstruktur | review | Erweitern um Insight-DTOs/Services; Reader implementieren |
 
 ## Deferred
 
 | Topic | Reason |
 |---|---|
 | KPI-Formeln & Schwellenwerte (Ampel, Aggregation) | Fachlich `[OFFEN]` im PRD; Pilot mit Mock-Logik |
-| Konkretes Entitätsmodell (Felder pro Risiko/Problem) | Story-Ebene |
+| Konkretes Entitätsmodell (Felder pro Risiko/Problem/Phase) | Story-Ebene — Plan 2026-07-15 in PRD-Addendum |
+| Management-Insight-Regeln & Schwellenwerte | Fachlich `[OFFEN]`; Engine in `kpi.insights` |
+| Berichtsstand-Snapshots vs. Echtzeit-Historie | MVP: 2 Snapshots `[ASSUMPTION]` |
 | Gemini Prompt-Schema & freigegebene Datenfelder | Prompt-Engineering in Stories |
 | Speicherung von KI-Ausgaben | PRD `[OFFEN]`; MVP default: nicht persistieren |
 | Authentifizierung & Rollen | Nach Pilot; AD-6 bewusst ohne Auth |

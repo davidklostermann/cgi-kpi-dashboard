@@ -3,7 +3,7 @@ name: KPI-Board
 description: Visuelle Identität für cgi-kpi-dashboard — CGI-konformes Enterprise-Dashboard auf Basis CGI Experience Design System 19.0.0. Light-Mode, Desktop-first.
 status: final
 created: 2026-07-13
-updated: 2026-07-14
+updated: 2026-07-15
 sources:
   - ../../prds/prd-cgi-kpi-dashboard-2026-07-13/prd.md
   - ../../prds/prd-cgi-kpi-dashboard-2026-07-13/addendum.md
@@ -130,7 +130,8 @@ components:
   project-table: CGI table pattern
   filter-bar: CGI filter controls
   quick-reply-chip: AI question chip
-  chat: project Q&A thread
+  insight-list: deterministic management insights
+  report-comparison: report snapshot deltas
 ---
 
 # KPI-Board — Design Spine
@@ -189,14 +190,14 @@ CGI EDS Typografie (Details bei Paket-Integration). Ein Schriftsystem, tabellari
 5. Projekte mit Handlungsbedarf (Top-3-Faktenblock + KI ergänzt in rechter Spalte)
 6. Projekttabelle
 
-**Projekt-Detail (Hauptbereich):**
-1. Breadcrumb
-2. Projekttitel und Metadaten
-3. Ausgeschriebener Projektstatus
-4. KPI-Karten
-5. Projektzeitleiste mit Meilensteinen
+**Projekt-Detail (Hauptbereich, top-down — FR-5/6/20/21):**
+1. Breadcrumb + Projektkopf (Stammdaten, Status)
+2. KPI-Karten (Plan/Ist/Prognose)
+3. Management Insights (`insight-list`)
+4. Berichtsstandsvergleich (`report-comparison`) — optional wenn Daten fehlen: Hinweis
+5. Phasen/Meilensteine (Gantt)
 6. Budget und Aufwand
-7. Risiken und Maßnahmen
+7. Risiken und Probleme (getrennte Sektionen)
 
 **Tablet/Mobil:** KI-Bereich **unter** Hauptinhalt; einklappbare Side Navigation.
 
@@ -222,7 +223,9 @@ Visuelle Spezifikationen. Verhalten: `EXPERIENCE.md`.
 | `ki-panel` | `{colors.ki-surface}`, Rahmen `{colors.ki-border}`, Kopf-Badge „KI-Einschätzung", Gemini-Sublabel, Footer-Disclaimer kursiv `{typography.caption}`. |
 | `trend-chart` | Beschriftete Achsen, Legende, Grid `{colors.border-subtle}`. **Kein dekorativer Donut.** Statusverteilung als **Zahlenzeile oder Balken mit Labels**. |
 | `gantt-timeline` | Eine Zeile pro Projekt; Phasensegmente `{phase-*}`; heute-Linie `{colors.primary}`; Verzug schraffiert `{colors.overrun}`. |
-| `project-table` | CGI-Tabellenmuster; Fortschritts-Spur `{colors.primary}`; Status-Badge; Hover `{colors.neutral-50}`. |
+| `insight-list` | Neutrale Fakten-Fläche `{colors.surface}`; Icon/Label „Deterministischer Hinweis"; Kennzahlen `{typography.metric}` tabular-nums; **keine** KI-Violett-Fläche. |
+| `report-comparison` | Kompakte Delta-Zeile oder Mini-Karten; Pfeil up/down neutral/grün/rot; Caption für Berichtsstand-Datum. |
+| `project-table` | CGI-Tabellenmuster; erweiterte Spalten; Fortschritts-Spur `{colors.primary}`; Status-Badge. |
 | `filter-bar` | CGI-Filter-Controls; Chips/Dropdowns für Kunde, Projekt, Zeitraum, Status. |
 | `quick-reply-chip` | `{colors.ki-border}`-Rand, `{colors.ki}`-Text — gehört zur KI-Ebene. |
 | `chat` | Nutzer- und KI-Blasen im KI-Panel; Senden-Button `{colors.primary}`. |

@@ -207,13 +207,43 @@
 **Als** Frontend **möchte ich** Basis-Endpunkte **damit** Listen geladen werden können.
 
 **Akzeptanzkriterien:**
-- Gegeben Mock-Daten, wenn `GET /api/projects`, dann Liste mit UUID, Name, Kunde, Status.
-- Gegeben UUID, wenn `GET /api/projects/{id}`, dann Projektdetails (ohne KPI-Aggregation — kommt in Epic 4/6).
+- Gegeben Mock-Daten, wenn `GET /api/projects`, dann Liste mit erweiterten Tabellenfeldern (FR-2) — mindestens UUID, Name, Kunde, Status.
+- Gegeben UUID, wenn `GET /api/projects/{id}`, dann Projektdetails inkl. Stammdaten-Basis.
 - Gegeben KPI-Responses, dann enthalten sie kein `aiGenerated`.
 
 **Architektur:** AD-5  
 **Abhängigkeiten:** 3.3, 3.4  
 **Tests:** MockMvc Tests
+
+---
+
+### Story 3.6 — Domain-Erweiterung Stammdaten, Probleme, Snapshots
+
+**Als** System **möchte ich** erweiterte Projekt-Stammdaten und getrennte Probleme **damit** Management-Analyse möglich ist (FR-5, FR-6, FR-21).
+
+**Akzeptanzkriterien:**
+- Gegeben Flyway V3, dann existieren Felder/Entitäten: `project_lead`, `last_data_update`, `predicted_end_date` `[OFFEN]`, `problems`, `project_report_snapshots` `[ASSUMPTION]`.
+- Gegeben `problems`, dann getrennt von `risks` mit Mindestfeldern laut FR-6.
+- Gegeben bestehende 3.1-Tabellen, dann bleiben additive Migration — kein Datenverlust.
+
+**Architektur:** FR-5, FR-6, FR-21, PRD-Addendum Domain  
+**Abhängigkeiten:** 3.2  
+**Tests:** Flyway + Repository Integration Tests
+
+---
+
+### Story 3.7 — Mock-Seed Erweiterung
+
+**Als** Demo-Nutzer **möchte ich** erweiterte Mock-Daten **damit** Tabellen, Insights und Berichtsvergleich demonstriert werden können.
+
+**Akzeptanzkriterien:**
+- Gegeben Seed V4, dann haben Projekte Projektleitung, Probleme, erweiterte Risiko-Felder (soweit modelliert).
+- Gegeben Seed, dann existieren je Projekt 2 Berichtsstand-Snapshots (aktuell + vorherig) `[ASSUMPTION]`.
+- Gegeben Seed, dann mindestens je ein Projekt pro Management-Insight-Typ `[OFFEN: Regeln]`.
+
+**Architektur:** FR-19, FR-20, FR-21  
+**Abhängigkeiten:** 3.6  
+**Tests:** Integration Test Insight- + Snapshot-Abdeckung
 
 ---
 
@@ -267,7 +297,7 @@
 **Als** Führungskraft **möchte ich** filtern **damit** ich das Portfolio eingrenze.
 
 **Akzeptanzkriterien:**
-- Gegeben Filter Kunde/Projekt/Zeitraum/Status, wenn gesetzt, dann aktualisieren KPI-API-Aufruf und folgende Views konsistent.
+- Gegeben Filter Kunde/Geschäftsbereich, Projektleitung, Ampelstatus, Phase, aktiv/abgeschlossen, Zeitraum, Risikostufe (FR-8), wenn gesetzt, dann aktualisieren KPI-API-Aufruf und folgende Views konsistent.
 - Gegeben Mehrfachfilter, dann sind sie kombinierbar.
 - Gegeben gefilterte Leermenge, dann Hinweis + „Filter zurücksetzen".
 
@@ -313,16 +343,17 @@
 
 ### Story 5.3 — Portfolio-Projekttabelle (FR-2)
 
-**Als** Führungskraft **möchte ich** alle Projekte tabellarisch **damit** ich Details vergleiche.
+**Als** Führungskraft **möchte ich** alle Projekte in einer Management-Tabelle **damit** ich Projekte vergleiche und Kritisches erkenne.
 
 **Akzeptanzkriterien:**
-- Gegeben Portfolio, wenn Tabelle lädt, dann Spalten: Name, Kunde, Status (Badge), Phase, Fortschritt, Terminabweichung, Budget %.
+- Gegeben Portfolio, wenn Tabelle lädt, dann mindestens Spalten: Name, Kunde/Geschäftsbereich, Projektleitung, Status (Badge), Phase, Fortschritt, geplantes Enddatum, prognostiziertes Enddatum (wenn berechenbar), Terminabweichung, Budget %, Budgetabweichung, Aufwandsabweichung, offene Risiken, kritische Risiken/Probleme, letzte Aktualisierung.
 - Gegeben schmaler Viewport, dann horizontales Scrollen der Tabelle.
-- Gegeben Sortierung MVP, dann mindestens Name und Status sortierbar.
+- Gegeben Sortierung, dann mindestens nach: Ampelstatus, Fortschritt, Terminabweichung, Budgetabweichung, kritische Risiken, letzte Aktualisierung.
+- Gegeben Zeilenklick, dann Navigation zu Projekt-Detail (FR-7).
 
 **UX:** project-table, status-badge  
-**Abhängigkeiten:** 3.5, 2.4  
-**Tests:** Table Component Test
+**Abhängigkeiten:** 3.5, 3.7, 2.4  
+**Tests:** Table Component Test; API Feld-Abdeckung
 
 ---
 
@@ -359,55 +390,57 @@
 
 ### Story 6.1 — Projekt-KPI API (FR-5, FR-9)
 
-**Als** Projektleiter **möchte ich** Kernkennzahlen **damit** ich Projektstatus beurteile.
+**Als** Projektleiter **möchte ich** Management-Kernkennzahlen **damit** ich Projektstatus beurteile.
 
 **Akzeptanzkriterien:**
-- Gegeben Projekt-UUID, wenn `GET /api/projects/{id}/kpis`, dann: Status, Fortschritt, Phase, Terminabweichung, Budget Plan/Ist, Aufwand Plan/Ist.
+- Gegeben Projekt-UUID, wenn `GET /api/projects/{id}/kpis`, dann: Status, Fortschritt, Phase, Zeitverbrauch, Terminabweichung, prognostiziertes Enddatum (wenn berechenbar), Budget Plan/Ist/Verbrauch/Abweichung/Rest/Hochrechnung, Aufwand Plan/Ist/Abweichung/Rest, offene und kritische Risiken/Probleme — Plan/Ist/Prognose getrennt.
 - Gegeben Response, dann ausschließlich `kpi.*`-berechnet.
 
-**Abhängigkeiten:** 3.4  
-**Tests:** API Test
+**Abhängigkeiten:** 3.4, 3.6  
+**Tests:** API Test + KPI Unit Tests
 
 ---
 
-### Story 6.2 — Projekt-Header und Status
+### Story 6.2 — Projekt-Stammdaten und Header (FR-5)
 
-**Als** Nutzer **möchte ich** Titel, Metadaten und ausgeschriebenen Status **damit** ich Kontext habe.
+**Als** Nutzer **möchte ich** Stammdaten und ausgeschriebenen Status **damit** ich Projektkontext habe.
 
 **Akzeptanzkriterien:**
-- Gegeben Detailseite, dann Breadcrumb, Projektname, Kunde, Phase, status-badge mit Wort („Auf Kurs/Beobachten/Kritisch").
+- Gegeben Detailseite, dann Breadcrumb, Projektname, Projekt-ID, Kunde/Geschäftsbereich, Projektleitung, Start-/Plan-/Prognose-Enddatum, Phase, status-badge, letzte Datenaktualisierung.
+- Gegeben `GET /api/projects/{id}/master-data`, dann Stammdaten-Felder.
 
-**UX:** Projekt-Detail Punkte 1–3  
+**UX:** Projekt-Detail Punkt 1  
 **Abhängigkeiten:** 6.1, 2.3  
-**Tests:** Component Test
+**Tests:** Component + API Test
 
 ---
 
-### Story 6.3 — Projekt-KPI-Karten und Budget/Aufwand
+### Story 6.3 — Projekt-KPI-Karten und Budget/Aufwand (FR-5)
 
-**Als** Nutzer **möchte ich** KPI-Karten und Budget/Aufwand-Bereich **damit** ich Finanzen und Fortschritt sehe.
+**Als** Nutzer **möchte ich** KPI-Karten und Budget/Aufwand **damit** ich Plan/Ist/Prognose verstehe.
 
 **Akzeptanzkriterien:**
-- Gegeben KPI-Daten, dann kpi-cards für alle Kernkennzahlen.
-- Gegeben Budget/Aufwand, dann Plan-Ist-Vergleich tabellarisch oder KPI-Karten.
+- Gegeben KPI-Daten, dann kpi-cards für Management-KPIs mit klarer Plan/Ist/Prognose-Kennzeichnung.
+- Gegeben Budget/Aufwand, dann tabellarisch oder KPI-Karten mit Restwerten und Hochrechnung (deterministisch).
 
-**UX:** Punkte 4, 6  
+**UX:** Punkte 2, 6  
 **Abhängigkeiten:** 6.1, 4.2  
 **Tests:** Component Test
 
 ---
 
-### Story 6.4 — Projekt-Meilenstein-Zeitleiste
+### Story 6.4 — Projekt-Phasen und Meilensteine (FR-5)
 
-**Als** Nutzer **möchte ich** Phasen und Meilensteine **damit** ich Terminplan verstehe.
+**Als** Nutzer **möchte ich** Phasen und Meilensteine **damit** ich Terminplan und Verzüge verstehe.
 
 **Akzeptanzkriterien:**
-- Gegeben Projekt, dann gantt-timeline mit Meilensteinen, heute, Plan-Ist-Abweichung.
-- Gegeben sr-only, dann textliche Zusammenfassung.
+- Gegeben Projekt, dann gantt-timeline mit Phasen/Meilensteinen: Bezeichnung, Status, Planbeginn/-ende, Ist/Prognose, Abweichung, Blockaden `[OFFEN]`, Überfällig-Markierung.
+- Gegeben sr-only, dann textliche Zusammenfassung inkl. überfälliger Meilensteine.
+- Gegeben API, dann `GET /api/projects/{id}/phases` liefert strukturierte Daten aus `kpi.*`.
 
 **UX:** Punkt 5  
-**Abhängigkeiten:** 5.2, 6.1  
-**Tests:** Component Test
+**Abhängigkeiten:** 5.2, 6.1, 3.6  
+**Tests:** Component + API Test
 
 ---
 
@@ -424,32 +457,76 @@
 
 ---
 
-## Epic 7 — Risiken, Termine und Maßnahmen
+### Story 6.6 — Management Insights API und UI (FR-20)
+
+**Als** Führungskraft **möchte ich** deterministische Auffälligkeiten **damit** ich verstehe, warum ein Projekt kritisch ist.
+
+**Akzeptanzkriterien:**
+- Gegeben Projekt, wenn `GET /api/projects/{id}/insights`, dann Liste mit: Aussage, Kennzahlen, Vergleichswert `[OFFEN]`, Zeitraum, Begründung, Typ „deterministisch".
+- Gegeben UI, dann `insight-list` im Fakten-Bereich (nicht KI-Spalte).
+- Gegeben Insight-Regeln, dann Implementierung in `kpi.insights` — Schwellenwerte `[OFFEN]`.
+
+**UX:** insight-list  
+**Abhängigkeiten:** 3.6, 3.7, 6.1  
+**Tests:** KPI Rule Tests + API Test
+
+---
+
+### Story 6.7 — Berichtsstandsvergleich (FR-21)
+
+**Als** Führungskraft **möchte ich** Entwicklung seit dem letzten Berichtsstand **damit** ich Veränderungen erkenne.
+
+**Akzeptanzkriterien:**
+- Gegeben Snapshots, wenn `GET /api/projects/{id}/trends`, dann Deltas für Fortschritt, Budgetverbrauch, Terminprognose, Ampelstatus, Risiken.
+- Gegeben fehlender Vorstand, dann definierter UI-Hinweis — kein erfundener Vergleich.
+- Gegeben UI, dann `report-comparison` unter Insights.
+
+**UX:** report-comparison  
+**Abhängigkeiten:** 3.7, 6.6  
+**Tests:** API Test mit 2 Snapshot-Seed
+
+---
+
+## Epic 7 — Risiken, Probleme und Maßnahmen
 
 ### Story 7.1 — Risiken API (FR-6)
 
 **Als** System **möchte ich** Risiken bereitstellen **damit** sie angezeigt werden.
 
 **Akzeptanzkriterien:**
-- Gegeben Projekt, wenn `GET /api/projects/{id}/risks`, dann Liste offener Risiken mit Schwere, Titel, Status.
-- Gegeben Response, dann Anzahl kritischer Risiken aggregierbar.
+- Gegeben Projekt, wenn `GET /api/projects/{id}/risks`, dann Liste mit Mindestfeldern FR-6 (Titel, Beschreibung, Wahrscheinlichkeit, Auswirkung, Schweregrad, Status, Verantwortlichkeit, Gegenmaßnahme, Fälligkeit — soweit modelliert).
+- Gegeben Response, dann Anzahl offener/kritischer Risiken aggregierbar für Tabelle und KPIs.
 
-**Abhängigkeiten:** 3.5  
+**Abhängigkeiten:** 3.6, 3.5  
 **Tests:** API Test
 
 ---
 
-### Story 7.2 — Risiken- und Maßnahmen-UI
+### Story 7.2 — Risiken-UI (FR-6)
 
-**Als** Projektleiter **möchte ich** Risiken und kritische Probleme sehen **damit** ich Maßnahmen planen kann.
+**Als** Projektleiter **möchte ich** Risiken sehen **damit** ich Maßnahmen einordnen kann.
 
 **Akzeptanzkriterien:**
-- Gegeben Detailseite, dann Liste/Karten mit Risiken und kritischen Problemen.
+- Gegeben Detailseite, dann Risiko-Liste/Karten getrennt von Problemen.
 - Gegeben Eintrag, dann status-badge für Schwere.
 
-**UX:** Punkt 7  
+**UX:** Punkt 7 (Risiken)  
 **Abhängigkeiten:** 7.1, 6.2  
 **Tests:** Component Test
+
+---
+
+### Story 7.4 — Probleme API und UI (FR-6)
+
+**Als** Projektleiter **möchte ich** eingetretene Probleme getrennt von Risiken sehen **damit** ich den Ist-Zustand verstehe.
+
+**Akzeptanzkriterien:**
+- Gegeben Projekt, wenn `GET /api/projects/{id}/problems`, dann Liste mit FR-6 Mindestfeldern.
+- Gegeben Detailseite, dann Problem-Bereich getrennt vom Risiko-Bereich.
+- Gegeben UI, dann kein Maßnahmen-Workflow (Anzeige only).
+
+**Abhängigkeiten:** 3.6, 7.2  
+**Tests:** API + Component Test
 
 ---
 
@@ -536,10 +613,10 @@
 
 **Akzeptanzkriterien:**
 - Gegeben `ai.*`, dann nur `ApprovedProjectDataReader` für Projekt-KI.
-- Gegeben Reader, dann DTO mit KPIs, Risiken, Meilensteinen — kein Entity.
+- Gegeben Reader, dann DTO mit KPIs, **Management Insights**, Risiken, **Probleme**, Meilensteine — kein Entity.
 
 **Architektur:** AD-2, AD-4  
-**Abhängigkeiten:** 3.4, 6.1, 7.1  
+**Abhängigkeiten:** 3.4, 6.1, 6.6, 7.1, 7.4  
 **Tests:** Unit Test Reader Contract
 
 ---
@@ -549,8 +626,8 @@
 **Als** Nutzer **möchte ich** KI-Zusammenfassung und Prognose **damit** ich Einschätzungen erhalte.
 
 **Akzeptanzkriterien:**
-- Gegeben Projekt, wenn `GET …/ai/summary` und `GET …/ai/forecast`, dann KI-Text mit Kennzeichnung.
-- Gegeben Prognose, dann ersetzt sie keine KPI-Zahlen in Fakten-Bereich.
+- Gegeben Projekt, wenn `GET …/ai/summary` und `GET …/ai/forecast`, dann KI-Text mit Kennzeichnung; referenziert freigegebene Fakten/Insights (FR-14).
+- Gegeben Prognose, dann ersetzt sie keine KPI-Zahlen; erklärt deterministische Hochrechnungen, erfindet sie nicht.
 
 **Abhängigkeiten:** 9.1  
 **Tests:** MockMvc + Mock Gemini
@@ -579,7 +656,7 @@
 - Gegeben Detailseite, dann drei ki-panels mit unabhängigem Laden.
 - Gegeben ein Panel-Fehler, dann andere Panels und Fakten weiter nutzbar.
 
-**UX:** Projekt-Detail Punkte 8–10  
+**UX:** Projekt-Detail Punkt 7 (KI-Bereich, klar abgegrenzt)  
 **Architektur:** AD-7  
 **Abhängigkeiten:** 9.2, 9.3, 2.4  
 **Tests:** Component Test partial failure
