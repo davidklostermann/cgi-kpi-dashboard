@@ -1,0 +1,21 @@
+<section class="page">
+  <app-breadcrumbs [items]="breadcrumbs()" />
+
+  <header class="page__header">
+    <h1>{{ projectName() }}</h1>
+    <p>Projekt-Detail — Fakten und KI getrennt (Epic 6/8 folgen).</p>
+  </header>
+
+  <app-facts-ai-layout>
+    <section factsMain class="page__facts">
+      <h2 class="visually-hidden">Projektfakten</h2>
+      <p>Kernkennzahlen, Risiken und Zeitleiste folgen in späteren Epics.</p>
+    </section>
+
+    <app-ai-panel-placeholder
+      factsAi
+      title="Projekt-KI"
+      message="Management-Zusammenfassung und Prognose folgen in Epic 8/9."
+    />
+  </app-facts-ai-layout>
+</section>

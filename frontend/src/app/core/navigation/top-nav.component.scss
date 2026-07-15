@@ -1,0 +1,13 @@
+.cgi-top-nav {
+  background: var(--cgi-primary-darkest);
+  color: var(--cgi-neutral-0);
+  min-height: 56px;
+  padding: 0 1.5rem;
+  border-bottom: 1px solid var(--cgi-primary);
+}
+
+.cgi-top-nav__brand {
+  font-size: 1.125rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}

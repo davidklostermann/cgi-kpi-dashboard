@@ -1,0 +1,12 @@
+<div class="facts-ai-layout">
+  <div class="facts-ai-layout__main">
+    <ng-content select="[factsMain]" />
+  </div>
+  <aside class="facts-ai-layout__ai" aria-label="KI-Einschätzungen">
+    <ng-content select="[factsAi]" />
+    <p class="facts-ai-layout__disclaimer">
+      KI-generierte Einschätzungen ersetzen keine Fachentscheidung und basieren ausschließlich auf
+      freigegebenen Backend-Daten.
+    </p>
+  </aside>
+</div>

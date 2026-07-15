@@ -1,0 +1,565 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mockup v2 – cgi-kpi-dashboard</title>
+<style>
+  :root{
+    --primary:#2563eb; --primary-soft:#eff4ff;
+    --ki:#7c3aed; --ki-bg:#f7f5fe; --ki-border:#e6e0fb; --ki-ink:#4b3d7a;
+    --on:#2e9e6a; --on-bg:#e9f6f0;      /* Auf Kurs */
+    --watch:#c9871f; --watch-bg:#fbf3e2; /* Beobachten */
+    --crit:#d1544c; --crit-bg:#fbeceb;   /* Kritisch */
+    --app:#f5f7fb; --card:#ffffff; --ink:#0f172a; --ink2:#475569; --muted:#8a97a8;
+    --border:#e9edf3; --border2:#f1f4f8;
+    --r:14px; --r-sm:10px;
+    --sh:0 1px 2px rgba(16,24,40,.04), 0 6px 20px rgba(16,24,40,.05);
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;background:#e6eaf0;color:var(--ink);
+    font-family:"Inter",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+    -webkit-font-smoothing:antialiased;padding:26px;font-size:14px;}
+  .pagehint{max-width:1440px;margin:0 auto 18px;color:#4a5568;font-size:13px;line-height:1.5;}
+  .pagehint h1{font-size:19px;margin:0 0 4px;color:#1a2230;}
+  .app{max-width:1440px;margin:0 auto 34px;background:var(--app);border-radius:20px;overflow:hidden;
+    box-shadow:0 20px 50px rgba(16,24,40,.12);display:grid;grid-template-columns:220px 1fr;border:1px solid #dbe1ea;}
+  .screentag{grid-column:1/-1;background:#111827;color:#fff;font-size:12px;font-weight:600;padding:9px 20px;letter-spacing:.03em;}
+
+  /* Sidebar */
+  .side{background:#fff;border-right:1px solid var(--border);padding:20px 14px;display:flex;flex-direction:column;gap:26px;}
+  .logo{display:flex;align-items:center;gap:10px;padding:2px 8px;font-weight:800;font-size:16px;letter-spacing:-.01em;}
+  .logo .mark{width:30px;height:30px;border-radius:9px;background:linear-gradient(135deg,#2563eb,#4f46e5);
+    display:flex;align-items:center;justify-content:center;color:#fff;font-size:15px;}
+  .navgrp{display:flex;flex-direction:column;gap:2px;}
+  .navlbl{font-size:10.5px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);padding:0 10px 6px;font-weight:700;}
+  .navitem{display:flex;align-items:center;gap:11px;padding:9px 10px;border-radius:9px;color:var(--ink2);font-size:13.5px;font-weight:500;cursor:pointer;}
+  .navitem .i{width:18px;height:18px;opacity:.8;}
+  .navitem:hover{background:#f6f8fc;}
+  .navitem.active{background:var(--primary-soft);color:var(--primary);font-weight:600;}
+  .navitem.active .i{opacity:1;}
+  .side .foot{margin-top:auto;font-size:11px;color:var(--muted);padding:0 10px;line-height:1.5;}
+
+  /* Main */
+  .main{display:flex;flex-direction:column;min-width:0;}
+  .top{display:flex;align-items:center;justify-content:space-between;padding:18px 26px;background:#fff;border-bottom:1px solid var(--border);}
+  .top h2{margin:0;font-size:18px;font-weight:700;letter-spacing:-.01em;}
+  .top .sub{font-size:12.5px;color:var(--muted);margin-top:2px;}
+  .top-right{display:flex;align-items:center;gap:10px;}
+  .filter{font-size:12.5px;color:var(--ink2);border:1px solid var(--border);border-radius:9px;padding:7px 12px;background:#fff;display:flex;gap:7px;align-items:center;cursor:pointer;}
+  .filter b{font-weight:600;color:var(--ink);}
+  .filter:hover{border-color:#d5dbe4;}
+  .avatar{width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,#cbd5e1,#94a3b8);}
+
+  .canvas{display:grid;grid-template-columns:1fr 336px;gap:20px;padding:22px 26px;}
+  .facts{display:flex;flex-direction:column;gap:20px;min-width:0;}
+  .zonelabel{display:flex;align-items:center;gap:8px;font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);}
+  .zonelabel .ln{height:1px;background:var(--border);flex:1;}
+
+  /* KPI cards */
+  .kpis{display:grid;grid-template-columns:repeat(5,1fr);gap:14px;}
+  .kpi{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:16px;box-shadow:var(--sh);}
+  .kpi .top-row{display:flex;align-items:center;justify-content:space-between;}
+  .tile{width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:17px;}
+  .kpi .l{font-size:11.5px;color:var(--ink2);font-weight:600;margin-top:12px;}
+  .kpi .v{font-size:26px;font-weight:800;letter-spacing:-.02em;margin-top:3px;line-height:1;}
+  .kpi .d{font-size:11.5px;margin-top:7px;font-weight:600;display:flex;align-items:center;gap:4px;color:var(--muted);}
+  .up{color:var(--on);} .down{color:var(--crit);} .warn{color:var(--watch);}
+
+  .card{background:var(--card);border:1px solid var(--border);border-radius:var(--r);box-shadow:var(--sh);}
+  .card-h{display:flex;align-items:center;justify-content:space-between;padding:16px 18px 8px;}
+  .card-h h3{margin:0;font-size:14.5px;font-weight:700;}
+  .card-h .hint{font-size:11.5px;color:var(--muted);}
+  .seg{display:flex;gap:2px;background:#f1f4f8;border-radius:8px;padding:3px;}
+  .seg span{font-size:11px;padding:4px 9px;border-radius:6px;color:var(--ink2);font-weight:600;cursor:pointer;}
+  .seg span.on{background:#fff;color:var(--primary);box-shadow:0 1px 2px rgba(0,0,0,.06);}
+  .card-b{padding:6px 18px 18px;}
+
+  .vizrow{display:grid;grid-template-columns:1.7fr 1fr;gap:20px;}
+  .legend{display:flex;gap:16px;flex-wrap:wrap;font-size:12px;color:var(--ink2);margin-top:6px;}
+  .legend .k{display:inline-flex;align-items:center;gap:6px;}
+  .swatch{width:10px;height:10px;border-radius:3px;}
+
+  /* status badge – subtle */
+  .badge{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:600;padding:3px 9px 3px 7px;border-radius:999px;border:1px solid var(--border);background:#fff;color:var(--ink2);}
+  .badge .d{width:7px;height:7px;border-radius:50%;}
+  .b-on .d{background:var(--on);} .b-watch .d{background:var(--watch);} .b-crit .d{background:var(--crit);}
+  .b-crit{color:#a23a33;border-color:#f2d4d1;background:var(--crit-bg);}
+  .b-watch{color:#8a5e13;border-color:#f0e0bf;background:var(--watch-bg);}
+  .b-on{color:#1f7a51;border-color:#cdeadd;background:var(--on-bg);}
+
+  /* donut */
+  .donut-wrap{display:flex;align-items:center;gap:18px;padding:6px 2px;}
+  .donut-center{font-size:26px;font-weight:800;}
+  .donut-sub{font-size:11px;color:var(--muted);}
+  .dlist{display:flex;flex-direction:column;gap:9px;font-size:12.5px;}
+  .dlist .row{display:flex;align-items:center;gap:8px;color:var(--ink2);}
+  .dlist .row b{color:var(--ink);margin-left:auto;font-weight:700;}
+
+  /* gantt */
+  .gantt{padding:4px 18px 18px;}
+  .gantt-head{display:grid;grid-template-columns:170px 1fr;font-size:10.5px;color:var(--muted);}
+  .months{display:grid;grid-template-columns:repeat(12,1fr);border-bottom:1px solid var(--border);}
+  .months span{padding:4px 0 8px;text-align:center;font-weight:600;}
+  .grow{display:grid;grid-template-columns:170px 1fr;align-items:center;border-bottom:1px solid var(--border2);}
+  .grow:last-child{border-bottom:none;}
+  .gname{display:flex;align-items:center;gap:8px;font-size:12.5px;font-weight:600;padding:10px 10px 10px 0;}
+  .gname .d{width:8px;height:8px;border-radius:50%;flex:none;}
+  .track{position:relative;height:26px;background:
+      repeating-linear-gradient(90deg,transparent,transparent calc(8.333% - 1px),var(--border2) calc(8.333% - 1px),var(--border2) 8.333%);
+    border-radius:6px;}
+  .bar{position:absolute;top:5px;height:16px;border-radius:5px;display:flex;overflow:hidden;box-shadow:inset 0 -1px 0 rgba(0,0,0,.06);}
+  .ph{height:100%;} 
+  .ph1{background:#c7d2fe;} .ph2{background:#a5b4fc;} .ph3{background:#818cf8;} .ph4{background:#6366f1;} .ph5{background:#4f46e5;}
+  .over{background:repeating-linear-gradient(45deg,#e7a6a1,#e7a6a1 4px,#f0c4c0 4px,#f0c4c0 8px);}
+  .today{position:absolute;top:-4px;bottom:-4px;width:2px;background:var(--primary);opacity:.55;}
+  .today::after{content:"heute";position:absolute;top:-14px;left:50%;transform:translateX(-50%);font-size:9px;color:var(--primary);font-weight:700;white-space:nowrap;}
+  .phlegend{display:flex;gap:14px;flex-wrap:wrap;font-size:11px;color:var(--ink2);padding:12px 0 2px;}
+
+  /* table */
+  table{width:100%;border-collapse:collapse;font-size:13px;}
+  thead th{text-align:left;color:var(--muted);font-weight:600;font-size:10.5px;text-transform:uppercase;letter-spacing:.04em;padding:0 12px 10px;}
+  tbody td{padding:12px;border-top:1px solid var(--border2);}
+  tbody tr:hover{background:#f8fafd;cursor:pointer;}
+  .pname{font-weight:600;}
+  .cust{font-size:11.5px;color:var(--muted);}
+  .prog{display:flex;align-items:center;gap:9px;}
+  .track2{height:6px;border-radius:99px;background:#eef1f6;width:92px;overflow:hidden;}
+  .track2 i{display:block;height:100%;background:var(--primary);border-radius:99px;}
+  .num{font-variant-numeric:tabular-nums;}
+
+  /* KI column */
+  .kicol{background:var(--ki-bg);border:1px solid var(--ki-border);border-radius:var(--r);
+    box-shadow:var(--sh);display:flex;flex-direction:column;overflow:hidden;align-self:start;}
+  .ki-head{display:flex;align-items:center;gap:10px;padding:15px 16px;border-bottom:1px solid var(--ki-border);background:linear-gradient(180deg,#faf8ff,#f7f5fe);}
+  .ki-ic{width:30px;height:30px;border-radius:9px;background:linear-gradient(135deg,#7c3aed,#a855f7);display:flex;align-items:center;justify-content:center;color:#fff;font-size:15px;}
+  .ki-head .t{font-size:13.5px;font-weight:700;color:var(--ki-ink);}
+  .ki-head .s{font-size:10.5px;color:#9385bd;}
+  .ki-body{padding:16px;display:flex;flex-direction:column;gap:16px;}
+  .ki-sec .h{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:#8b7cba;margin-bottom:7px;}
+  .ki-sec p{margin:0;font-size:12.5px;line-height:1.55;color:#3f3564;}
+  .top3{display:flex;flex-direction:column;gap:7px;}
+  .t3{display:flex;align-items:center;gap:10px;background:#fff;border:1px solid var(--ki-border);border-radius:10px;padding:9px 11px;}
+  .t3 .rk{width:20px;height:20px;border-radius:6px;background:#f0ebfd;color:var(--ki);font-weight:800;font-size:11px;display:flex;align-items:center;justify-content:center;flex:none;}
+  .t3 .tx{font-size:12px;color:#3f3564;line-height:1.35;}
+  .t3 .tx b{font-weight:700;}
+  .ki-foot{font-size:10.5px;font-style:italic;color:#9385bd;padding:12px 16px;border-top:1px solid var(--ki-border);display:flex;gap:7px;align-items:flex-start;}
+
+  /* project detail specifics */
+  .backbtn{font-size:13px;color:var(--primary);font-weight:600;cursor:pointer;display:flex;align-items:center;gap:5px;}
+  .kpis-3{grid-template-columns:repeat(3,1fr);}
+  .chat{display:flex;flex-direction:column;gap:9px;margin-top:4px;}
+  .chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:4px;}
+  .chip{font-size:11.5px;background:#fff;border:1px solid var(--ki-border);color:var(--ki);border-radius:999px;padding:6px 11px;cursor:pointer;font-weight:600;}
+  .chip:hover{background:#f3eefe;}
+  .bubble{font-size:12px;line-height:1.5;padding:9px 12px;border-radius:12px;max-width:88%;}
+  .bu{background:#e7dffb;color:#3f2f70;align-self:flex-end;border-bottom-right-radius:3px;}
+  .bk{background:#fff;border:1px solid var(--ki-border);color:#3f3564;border-bottom-left-radius:3px;}
+  .inbar{display:flex;gap:7px;margin-top:8px;}
+  .inbar .fld{flex:1;border:1px solid var(--ki-border);border-radius:10px;padding:9px 11px;font-size:12px;color:var(--muted);background:#fff;}
+  .inbar .snd{background:var(--ki);color:#fff;border-radius:10px;padding:9px 13px;font-size:12px;font-weight:600;}
+  .risk{display:flex;align-items:center;justify-content:space-between;padding:11px 0;border-top:1px solid var(--border2);}
+  .risk:first-child{border-top:none;}
+  .risk .rl{font-size:13px;}
+  .risk .rl small{display:block;color:var(--muted);font-size:11px;margin-top:2px;}
+</style>
+</head>
+<body>
+  <div class="pagehint">
+    <h1>Mockup v2 · cgi-kpi-dashboard</h1>
+    Hochwertige Enterprise-Analytics-Anmutung (angelehnt an die goplan-Referenz): großzügiger Weißraum, echte beschriftete Charts inkl. Gantt-Zeitachse, dezente Status-Badges statt plumper Ampel. Signatur bleibt: <b>links berechnete Fakten</b>, <b>rechts KI-Einschätzung</b>.
+  </div>
+
+  <!-- ==================== SCREEN 1 · PORTFOLIO ==================== -->
+  <div class="app">
+    <div class="screentag">SCREEN 1 · Portfolio-Übersicht — UJ-1 (Sabine, Montag vor dem Steering)</div>
+
+    <aside class="side">
+      <div class="logo"><span class="mark">◧</span> KPI-Board</div>
+      <div class="navgrp">
+        <div class="navlbl">Übersicht</div>
+        <div class="navitem active"><svg class="i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/></svg> Portfolio</div>
+        <div class="navitem"><svg class="i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7h18M3 12h18M3 17h18"/></svg> Projekte</div>
+      </div>
+      <div class="foot">Interner Pilot · Mock-Daten<br>~20 Projekte</div>
+    </aside>
+
+    <div class="main">
+      <div class="top">
+        <div>
+          <h2>Portfolio-Übersicht</h2>
+          <div class="sub">20 aktive KI-Implementierungsprojekte · Stand heute</div>
+        </div>
+        <div class="top-right">
+          <span class="filter">Kunde: <b>Alle</b> ▾</span>
+          <span class="filter">Status: <b>Alle</b> ▾</span>
+          <span class="filter">Zeitraum: <b>Aktuell</b> ▾</span>
+          <div class="avatar"></div>
+        </div>
+      </div>
+
+      <div class="canvas">
+        <div class="facts">
+          <div class="zonelabel"><span>Berechnete Kennzahlen</span><span class="ln"></span></div>
+
+          <div class="kpis">
+            <div class="kpi">
+              <div class="top-row"><span class="tile" style="background:#eff4ff;color:#2563eb;">▦</span></div>
+              <div class="l">Aktive Projekte</div><div class="v">20</div>
+              <div class="d">3 kritisch</div>
+            </div>
+            <div class="kpi">
+              <div class="top-row"><span class="tile" style="background:#e9f6f0;color:#2e9e6a;">↗</span></div>
+              <div class="l">Ø Fortschritt</div><div class="v">63%</div>
+              <div class="d up">▲ 4% ggü. Vorwoche</div>
+            </div>
+            <div class="kpi">
+              <div class="top-row"><span class="tile" style="background:#fbf3e2;color:#c9871f;">€</span></div>
+              <div class="l">Budgetabweichung</div><div class="v">+8,2%</div>
+              <div class="d warn">über Plan</div>
+            </div>
+            <div class="kpi">
+              <div class="top-row"><span class="tile" style="background:#eef0ff;color:#4f46e5;">◷</span></div>
+              <div class="l">Termintreue</div><div class="v">78%</div>
+              <div class="d">im Plan geliefert</div>
+            </div>
+            <div class="kpi">
+              <div class="top-row"><span class="tile" style="background:#fbeceb;color:#d1544c;">!</span></div>
+              <div class="l">Kritische Risiken</div><div class="v">7</div>
+              <div class="d down">offen</div>
+            </div>
+          </div>
+
+          <div class="vizrow">
+            <div class="card">
+              <div class="card-h">
+                <h3>Portfolio-Verlauf</h3>
+                <div class="seg"><span>3M</span><span class="on">6M</span><span>12M</span></div>
+              </div>
+              <div class="card-b">
+                <svg viewBox="0 0 560 220" width="100%" height="200" font-family="Inter,sans-serif">
+                  <!-- gridlines + y labels -->
+                  <g stroke="#eef1f6" stroke-width="1">
+                    <line x1="44" y1="20" x2="548" y2="20"/><line x1="44" y1="60" x2="548" y2="60"/>
+                    <line x1="44" y1="100" x2="548" y2="100"/><line x1="44" y1="140" x2="548" y2="140"/>
+                    <line x1="44" y1="180" x2="548" y2="180"/>
+                  </g>
+                  <g fill="#94a3b8" font-size="10" text-anchor="end">
+                    <text x="38" y="23">100%</text><text x="38" y="63">75%</text>
+                    <text x="38" y="103">50%</text><text x="38" y="143">25%</text><text x="38" y="183">0%</text>
+                  </g>
+                  <g fill="#94a3b8" font-size="10" text-anchor="middle">
+                    <text x="44" y="198">Feb</text><text x="127" y="198">Mär</text><text x="209" y="198">Apr</text>
+                    <text x="292" y="198">Mai</text><text x="375" y="198">Jun</text><text x="457" y="198">Jul</text><text x="540" y="198">Aug</text>
+                  </g>
+                  <!-- progress area -->
+                  <path d="M44,116 L127,106 L209,100 L292,92 L375,87 L457,84 L540,79 L540,180 L44,180 Z" fill="url(#g1)" opacity="0.5"/>
+                  <polyline points="44,116 127,106 209,100 292,92 375,87 457,84 540,79" fill="none" stroke="#2563eb" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+                  <!-- budget line -->
+                  <polyline points="44,132 127,119 209,108 292,92 375,71 457,52 540,39" fill="none" stroke="#c9871f" stroke-width="2.5" stroke-dasharray="1 0" stroke-linecap="round" stroke-linejoin="round"/>
+                  <g fill="#2563eb"><circle cx="540" cy="79" r="3.5"/></g>
+                  <g fill="#c9871f"><circle cx="540" cy="39" r="3.5"/></g>
+                  <defs><linearGradient id="g1" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0" stop-color="#2563eb" stop-opacity="0.25"/><stop offset="1" stop-color="#2563eb" stop-opacity="0"/>
+                  </linearGradient></defs>
+                </svg>
+                <div class="legend">
+                  <span class="k"><span class="swatch" style="background:#2563eb"></span>Ø Projektfortschritt</span>
+                  <span class="k"><span class="swatch" style="background:#c9871f"></span>Ø Budgetverbrauch</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="card-h"><h3>Ampelverteilung</h3></div>
+              <div class="card-b">
+                <div class="donut-wrap">
+                  <svg width="128" height="128" viewBox="0 0 128 128">
+                    <circle cx="64" cy="64" r="52" fill="none" stroke="#eef1f6" stroke-width="18"/>
+                    <!-- circumference ~326.7; on 60%=196, watch 25%=81.7, crit 15%=49 -->
+                    <circle cx="64" cy="64" r="52" fill="none" stroke="#2e9e6a" stroke-width="18" stroke-dasharray="196 130.7" stroke-dashoffset="0" transform="rotate(-90 64 64)" stroke-linecap="butt"/>
+                    <circle cx="64" cy="64" r="52" fill="none" stroke="#d99a2b" stroke-width="18" stroke-dasharray="81.7 245" stroke-dashoffset="-196" transform="rotate(-90 64 64)"/>
+                    <circle cx="64" cy="64" r="52" fill="none" stroke="#d1544c" stroke-width="18" stroke-dasharray="49 277.7" stroke-dashoffset="-277.7" transform="rotate(-90 64 64)"/>
+                    <text x="64" y="60" text-anchor="middle" class="donut-center" font-size="26" font-weight="800" fill="#0f172a">20</text>
+                    <text x="64" y="78" text-anchor="middle" font-size="10" fill="#8a97a8">Projekte</text>
+                  </svg>
+                  <div class="dlist">
+                    <div class="row"><span class="swatch" style="background:#2e9e6a"></span>Auf Kurs <b>12</b></div>
+                    <div class="row"><span class="swatch" style="background:#d99a2b"></span>Beobachten <b>5</b></div>
+                    <div class="row"><span class="swatch" style="background:#d1544c"></span>Kritisch <b>3</b></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- GANTT -->
+          <div class="card">
+            <div class="card-h">
+              <h3>Projekt-Zeitachsen &amp; Phasen</h3>
+              <span class="hint">Geschäftsjahr · Plan vs. Verzug</span>
+            </div>
+            <div class="gantt">
+              <div class="gantt-head">
+                <div></div>
+                <div class="months">
+                  <span>Jan</span><span>Feb</span><span>Mär</span><span>Apr</span><span>Mai</span><span>Jun</span>
+                  <span>Jul</span><span>Aug</span><span>Sep</span><span>Okt</span><span>Nov</span><span>Dez</span>
+                </div>
+              </div>
+
+              <div class="grow">
+                <div class="gname"><span class="d" style="background:#d1544c"></span>KI-Rollout A</div>
+                <div class="track">
+                  <div class="today" style="left:54%"></div>
+                  <div class="bar" style="left:8%;width:58%">
+                    <div class="ph ph1" style="width:20%"></div><div class="ph ph2" style="width:22%"></div><div class="ph ph3" style="width:58%"></div>
+                  </div>
+                  <div class="bar over" style="left:66%;width:10%"></div>
+                </div>
+              </div>
+              <div class="grow">
+                <div class="gname"><span class="d" style="background:#d99a2b"></span>Chatbot B</div>
+                <div class="track">
+                  <div class="today" style="left:54%"></div>
+                  <div class="bar" style="left:16%;width:60%">
+                    <div class="ph ph1" style="width:18%"></div><div class="ph ph2" style="width:20%"></div><div class="ph ph3" style="width:38%"></div><div class="ph ph4" style="width:24%"></div>
+                  </div>
+                </div>
+              </div>
+              <div class="grow">
+                <div class="gname"><span class="d" style="background:#2e9e6a"></span>Doc-Automation</div>
+                <div class="track">
+                  <div class="today" style="left:54%"></div>
+                  <div class="bar" style="left:4%;width:66%">
+                    <div class="ph ph1" style="width:15%"></div><div class="ph ph2" style="width:18%"></div><div class="ph ph3" style="width:32%"></div><div class="ph ph4" style="width:20%"></div><div class="ph ph5" style="width:15%"></div>
+                  </div>
+                </div>
+              </div>
+              <div class="grow">
+                <div class="gname"><span class="d" style="background:#d99a2b"></span>Portal-Migration</div>
+                <div class="track">
+                  <div class="today" style="left:54%"></div>
+                  <div class="bar" style="left:24%;width:52%">
+                    <div class="ph ph1" style="width:22%"></div><div class="ph ph2" style="width:28%"></div><div class="ph ph3" style="width:50%"></div>
+                  </div>
+                  <div class="bar over" style="left:76%;width:7%"></div>
+                </div>
+              </div>
+              <div class="grow">
+                <div class="gname"><span class="d" style="background:#2e9e6a"></span>Analytics-Plattform</div>
+                <div class="track">
+                  <div class="today" style="left:54%"></div>
+                  <div class="bar" style="left:12%;width:62%">
+                    <div class="ph ph1" style="width:16%"></div><div class="ph ph2" style="width:22%"></div><div class="ph ph3" style="width:40%"></div><div class="ph ph4" style="width:22%"></div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="phlegend">
+                <span class="k"><span class="swatch" style="background:#c7d2fe"></span>Analyse</span>
+                <span class="k"><span class="swatch" style="background:#a5b4fc"></span>Konzept</span>
+                <span class="k"><span class="swatch" style="background:#818cf8"></span>Umsetzung</span>
+                <span class="k"><span class="swatch" style="background:#6366f1"></span>Pilot</span>
+                <span class="k"><span class="swatch" style="background:#4f46e5"></span>Abschluss</span>
+                <span class="k"><span class="swatch" style="background:repeating-linear-gradient(45deg,#e7a6a1,#e7a6a1 3px,#f0c4c0 3px,#f0c4c0 6px)"></span>Verzug</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- TABLE -->
+          <div class="card">
+            <div class="card-h"><h3>Projekte</h3><span class="hint">20 Einträge · sortierbar</span></div>
+            <div class="card-b" style="padding-top:2px;">
+              <table>
+                <thead><tr><th>Projekt</th><th>Status</th><th>Phase</th><th>Fortschritt</th><th>Termin</th><th style="text-align:right">Budget</th></tr></thead>
+                <tbody>
+                  <tr>
+                    <td><div class="pname">KI-Rollout A</div><div class="cust">Nord GmbH</div></td>
+                    <td><span class="badge b-crit"><span class="d"></span>Kritisch</span></td>
+                    <td>Umsetzung</td>
+                    <td><div class="prog"><div class="track2"><i style="width:45%"></i></div><span class="num">45%</span></div></td>
+                    <td class="down num">+14 Tage</td>
+                    <td style="text-align:right" class="num">92%</td>
+                  </tr>
+                  <tr>
+                    <td><div class="pname">Chatbot B</div><div class="cust">Süd AG</div></td>
+                    <td><span class="badge b-watch"><span class="d"></span>Beobachten</span></td>
+                    <td>Pilot</td>
+                    <td><div class="prog"><div class="track2"><i style="width:60%"></i></div><span class="num">60%</span></div></td>
+                    <td class="warn num">+3 Tage</td>
+                    <td style="text-align:right" class="num">71%</td>
+                  </tr>
+                  <tr>
+                    <td><div class="pname">Doc-Automation</div><div class="cust">West KG</div></td>
+                    <td><span class="badge b-on"><span class="d"></span>Auf Kurs</span></td>
+                    <td>Umsetzung</td>
+                    <td><div class="prog"><div class="track2"><i style="width:80%"></i></div><span class="num">80%</span></div></td>
+                    <td class="num" style="color:#8a97a8">im Plan</td>
+                    <td style="text-align:right" class="num">55%</td>
+                  </tr>
+                  <tr>
+                    <td><div class="pname">Analytics-Plattform</div><div class="cust">Ost SE</div></td>
+                    <td><span class="badge b-on"><span class="d"></span>Auf Kurs</span></td>
+                    <td>Pilot</td>
+                    <td><div class="prog"><div class="track2"><i style="width:72%"></i></div><span class="num">72%</span></div></td>
+                    <td class="num" style="color:#8a97a8">im Plan</td>
+                    <td style="text-align:right" class="num">64%</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- KI COLUMN -->
+        <div class="kicol">
+          <div class="ki-head">
+            <span class="ki-ic">✦</span>
+            <div><div class="t">KI-Einschätzung</div><div class="s">Gemini · Portfolio-Analyse</div></div>
+          </div>
+          <div class="ki-body">
+            <div class="ki-sec">
+              <div class="h">Portfolio-Trendanalyse</div>
+              <p>Das Portfolio ist grundsätzlich stabil — der Ø-Fortschritt steigt leicht. Auffällig ist jedoch der <b>zunehmende Budgetdruck</b>: Der Verbrauch wächst schneller als der Fortschritt. Die Termintreue gibt leicht nach, Risiken häufen sich in Umsetzungsphasen.</p>
+            </div>
+            <div class="ki-sec">
+              <div class="h">Top 3 Handlungsbedarf</div>
+              <div class="top3">
+                <div class="t3"><span class="rk">1</span><span class="tx"><b>KI-Rollout A</b> — Budget bei 92 % und +14 Tage Verzug. Vor dem Steering vertiefen.</span></div>
+                <div class="t3"><span class="rk">2</span><span class="tx"><b>Chatbot B</b> — offene Risiken steigen; Pilot-Freigabe gefährdet.</span></div>
+                <div class="t3"><span class="rk">3</span><span class="tx"><b>Portal-Migration</b> — Terminpuffer aufgebraucht, Abschluss rutscht.</span></div>
+              </div>
+            </div>
+          </div>
+          <div class="ki-foot"><span>ℹ</span><span>KI-Interpretation auf Basis berechneter KPIs. Keine verbindliche Entscheidung.</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== SCREEN 2 · PROJEKT-DETAIL ==================== -->
+  <div class="app">
+    <div class="screentag">SCREEN 2 · Projekt-Detailansicht — UJ-2 (Markus vertieft „KI-Rollout A")</div>
+
+    <aside class="side">
+      <div class="logo"><span class="mark">◧</span> KPI-Board</div>
+      <div class="navgrp">
+        <div class="navlbl">Übersicht</div>
+        <div class="navitem"><svg class="i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/></svg> Portfolio</div>
+        <div class="navitem active"><svg class="i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7h18M3 12h18M3 17h18"/></svg> Projekte</div>
+      </div>
+      <div class="foot">Interner Pilot · Mock-Daten<br>~20 Projekte</div>
+    </aside>
+
+    <div class="main">
+      <div class="top">
+        <div>
+          <div class="backbtn">‹ Zurück zum Portfolio</div>
+          <h2 style="margin-top:6px;">KI-Rollout A <span style="font-weight:500;color:#8a97a8;font-size:15px;">· Nord GmbH</span></h2>
+        </div>
+        <div class="top-right">
+          <span class="badge b-crit"><span class="d"></span>Kritisch</span>
+          <div class="avatar"></div>
+        </div>
+      </div>
+
+      <div class="canvas">
+        <div class="facts">
+          <div class="zonelabel"><span>Berechnete Kennzahlen</span><span class="ln"></span></div>
+
+          <div class="kpis kpis-3">
+            <div class="kpi"><div class="top-row"><span class="tile" style="background:#e9f6f0;color:#2e9e6a;">↗</span></div><div class="l">Fortschritt</div><div class="v">45%</div><div class="d">Phase: Umsetzung</div></div>
+            <div class="kpi"><div class="top-row"><span class="tile" style="background:#fbeceb;color:#d1544c;">◷</span></div><div class="l">Terminabweichung</div><div class="v down">+14 T</div><div class="d down">Verzug</div></div>
+            <div class="kpi"><div class="top-row"><span class="tile" style="background:#fbf3e2;color:#c9871f;">€</span></div><div class="l">Budgetverbrauch</div><div class="v">92%</div><div class="d warn">386k / 420k €</div></div>
+          </div>
+
+          <div class="vizrow">
+            <div class="card">
+              <div class="card-h"><h3>Budget- &amp; Fortschrittsverlauf</h3><span class="hint">Plan vs. Ist</span></div>
+              <div class="card-b">
+                <svg viewBox="0 0 560 210" width="100%" height="190" font-family="Inter,sans-serif">
+                  <g stroke="#eef1f6" stroke-width="1">
+                    <line x1="44" y1="20" x2="548" y2="20"/><line x1="44" y1="63" x2="548" y2="63"/>
+                    <line x1="44" y1="106" x2="548" y2="106"/><line x1="44" y1="149" x2="548" y2="149"/>
+                  </g>
+                  <g fill="#94a3b8" font-size="10" text-anchor="end">
+                    <text x="38" y="23">100%</text><text x="38" y="66">66%</text><text x="38" y="109">33%</text><text x="38" y="152">0%</text>
+                  </g>
+                  <g fill="#94a3b8" font-size="10" text-anchor="middle">
+                    <text x="44" y="168">Feb</text><text x="127" y="168">Mär</text><text x="209" y="168">Apr</text>
+                    <text x="292" y="168">Mai</text><text x="375" y="168">Jun</text><text x="457" y="168">Jul</text><text x="540" y="168">Aug</text>
+                  </g>
+                  <!-- plan (budget) dashed grey -->
+                  <polyline points="44,140 127,120 209,100 292,80 375,60 457,40 540,20" fill="none" stroke="#94a3b8" stroke-width="2" stroke-dasharray="5 4" stroke-linecap="round"/>
+                  <!-- budget ist (amber, overshoots) -->
+                  <polyline points="44,138 127,112 209,84 292,58 375,40 457,28 540,25" fill="none" stroke="#c9871f" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+                  <!-- progress ist (blue, lagging) -->
+                  <polyline points="44,145 127,133 209,124 292,116 375,108 457,102 540,97" fill="none" stroke="#2563eb" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                <div class="legend">
+                  <span class="k"><span class="swatch" style="background:#94a3b8"></span>Budget Plan</span>
+                  <span class="k"><span class="swatch" style="background:#c9871f"></span>Budget Ist</span>
+                  <span class="k"><span class="swatch" style="background:#2563eb"></span>Fortschritt Ist</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="card-h"><h3>Phasenplan</h3></div>
+              <div class="gantt" style="padding:4px 16px 12px;">
+                <div class="gantt-head"><div></div><div class="months" style="grid-template-columns:repeat(6,1fr)"><span>Feb</span><span>Apr</span><span>Jun</span><span>Aug</span><span>Okt</span><span>Dez</span></div></div>
+                <div class="grow"><div class="gname" style="width:auto">Analyse</div><div class="track"><div class="bar ph1" style="left:2%;width:16%"></div></div></div>
+                <div class="grow"><div class="gname" style="width:auto">Konzept</div><div class="track"><div class="bar ph2" style="left:18%;width:18%"></div></div></div>
+                <div class="grow"><div class="gname" style="width:auto">Umsetzung</div><div class="track"><div class="today" style="left:56%"></div><div class="bar ph3" style="left:36%;width:40%"></div><div class="bar over" style="left:76%;width:10%"></div></div></div>
+                <div class="grow"><div class="gname" style="width:auto">Pilot</div><div class="track"><div class="bar ph4" style="left:86%;width:12%;opacity:.45"></div></div></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-h"><h3>Offene Risiken &amp; kritische Probleme</h3><span class="hint">2 hoch · 1 mittel</span></div>
+            <div class="card-b">
+              <div class="risk"><div class="rl">Datenqualität im Quellsystem unklar<small>blockiert Umsetzung · seit 12 Tagen offen</small></div><span class="badge b-crit"><span class="d"></span>Hoch</span></div>
+              <div class="risk"><div class="rl">Schnittstelle verzögert Freigabe<small>Abhängigkeit externes Team</small></div><span class="badge b-crit"><span class="d"></span>Hoch</span></div>
+              <div class="risk"><div class="rl">Change-Request-Umfang noch offen<small>Scope-Klärung mit Kunde</small></div><span class="badge b-watch"><span class="d"></span>Mittel</span></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- KI COLUMN (detail) -->
+        <div class="kicol">
+          <div class="ki-head">
+            <span class="ki-ic">✦</span>
+            <div><div class="t">KI-Analyse</div><div class="s">Gemini · nur dieses Projekt</div></div>
+          </div>
+          <div class="ki-body">
+            <div class="ki-sec">
+              <div class="h">Management-Zusammenfassung</div>
+              <p>Das Projekt steht unter Druck: Ein Terminverzug von 14 Tagen trifft auf einen hohen Budgetverbrauch (92 %). Zwei Risiken mit hoher Schwere sind offen und blockieren die Umsetzung.</p>
+            </div>
+            <div class="ki-sec">
+              <div class="h">Prognose</div>
+              <p>Verzögerungsrisiko <b>hoch</b> · Budgetrisiko <b>mittel–hoch</b>, wenn der aktuelle Verlauf anhält.</p>
+            </div>
+            <div class="ki-sec" style="border-top:1px solid var(--ki-border);padding-top:14px;">
+              <div class="h">Fragen zum Projekt</div>
+              <div class="chips">
+                <span class="chip">Warum kritisch?</span>
+                <span class="chip">Verzögerungsrisiko?</span>
+                <span class="chip">Risiken priorisieren</span>
+              </div>
+              <div class="chat">
+                <div class="bubble bu">Welche Risiken sollten wir diese Woche zuerst prüfen?</div>
+                <div class="bubble bk">Auf Basis der freigegebenen Projektdaten würde ich die zwei Risiken mit hoher Schwere priorisieren — Datenqualität und Schnittstelle. Beide wirken direkt auf Termin und Budget.</div>
+              </div>
+              <div class="inbar"><span class="fld">Frage zum Projekt stellen …</span><span class="snd">Senden</span></div>
+            </div>
+          </div>
+          <div class="ki-foot"><span>ℹ</span><span>Antworten nur auf Basis freigegebener Projektdaten — keine erfundenen Werte, keine verbindliche Entscheidung.</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

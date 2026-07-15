@@ -1,0 +1,31 @@
+.breadcrumbs ol {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem;
+  list-style: none;
+  margin: 0 0 1rem;
+  padding: 0;
+  font-size: 0.875rem;
+  color: var(--cgi-neutral-700);
+}
+
+.breadcrumbs a {
+  color: var(--cgi-primary);
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.breadcrumbs a:hover {
+  text-decoration: underline;
+}
+
+.breadcrumbs__sep {
+  margin: 0 0.25rem;
+  color: var(--cgi-neutral-700);
+}
+
+.breadcrumbs [aria-current='page'] {
+  color: var(--cgi-neutral-900);
+  font-weight: 600;
+}

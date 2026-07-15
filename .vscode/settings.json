@@ -1,0 +1,5 @@
+{
+    "java.configuration.updateBuildConfiguration": "automatic",
+    "workbench.editor.centeredLayoutAutoResize": true,
+    "workbench.layoutControl.enabled": true
+}

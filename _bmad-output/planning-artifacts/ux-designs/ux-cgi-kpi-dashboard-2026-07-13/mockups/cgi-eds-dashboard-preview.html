@@ -1,0 +1,838 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CGI EDS Vorschau — cgi-kpi-dashboard (Planung)</title>
+<style>
+  :root {
+    --primary-darkest: #200A58;
+    --primary: #5236AB;
+    --primary-light: #9E83F5;
+    --primary-lighter: #CBC3E6;
+    --primary-surface: #F2F1F9;
+    --neutral-900: #151515;
+    --neutral-700: #333333;
+    --neutral-400: #A8A8A8;
+    --neutral-200: #E8E8E8;
+    --neutral-100: #EFEFEF;
+    --neutral-50: #F8F8F8;
+    --neutral-0: #FFFFFF;
+    --success: #1AB977;
+    --warning: #FFAC25;
+    --error: #B00020;
+    --ki-surface: #F2F1F9;
+    --ki-border: #CBC3E6;
+    --ki-ink: #200A58;
+    --on-bg: #E8F8F2; --on-ink: #0F7A52;
+    --watch-bg: #FFF6E8; --watch-ink: #8A5E00;
+    --crit-bg: #FBECEF; --crit-ink: #8A0018;
+    --ph1: #E6E3F3; --ph2: #CBC3E6; --ph3: #9E83F5; --ph4: #5236AB; --ph5: #200A58;
+    --shadow: 0 1px 2px rgba(21,21,21,.04), 0 4px 16px rgba(21,21,21,.06);
+    --radius: 8px;
+    --radius-lg: 12px;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+    font-size: 14px;
+    color: var(--neutral-900);
+    background: #ececf0;
+    line-height: 1.5;
+  }
+  .preview-banner {
+    background: var(--primary-darkest);
+    color: #fff;
+    text-align: center;
+    padding: 10px 16px;
+    font-size: 13px;
+  }
+  .preview-banner a { color: var(--primary-lighter); }
+  .preview-nav {
+    max-width: 1440px;
+    margin: 16px auto 0;
+    padding: 0 24px;
+    display: flex;
+    gap: 8px;
+  }
+  .preview-nav button {
+    border: 1px solid var(--neutral-200);
+    background: #fff;
+    padding: 8px 16px;
+    border-radius: var(--radius);
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--neutral-700);
+  }
+  .preview-nav button.active {
+    background: var(--primary);
+    color: #fff;
+    border-color: var(--primary);
+  }
+  .screen { display: none; max-width: 1440px; margin: 16px auto 40px; }
+  .screen.active { display: block; }
+
+  /* CGI Shell */
+  .app-shell {
+    background: var(--neutral-0);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    box-shadow: 0 8px 32px rgba(21,21,21,.12);
+    border: 1px solid var(--neutral-200);
+    display: flex;
+    flex-direction: column;
+    min-height: 820px;
+  }
+  .top-nav {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 24px;
+    height: 56px;
+    background: var(--primary-darkest);
+    color: #fff;
+  }
+  .top-nav .brand {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-weight: 700;
+    font-size: 15px;
+  }
+  .top-nav .brand-mark {
+    width: 32px; height: 32px;
+    background: var(--primary);
+    border-radius: 6px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px; font-weight: 800;
+  }
+  .top-nav .meta { font-size: 12px; opacity: .85; }
+  .top-nav .user { width: 32px; height: 32px; border-radius: 50%; background: var(--primary-light); }
+
+  .shell-body { display: flex; flex: 1; min-height: 0; }
+  .side-nav {
+    width: 220px;
+    background: var(--neutral-50);
+    border-right: 1px solid var(--neutral-200);
+    padding: 20px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .side-nav .nav-label {
+    font-size: 10px; font-weight: 700; letter-spacing: .08em;
+    text-transform: uppercase; color: var(--neutral-400);
+    padding: 8px 12px 4px;
+  }
+  .side-nav a {
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px 12px; border-radius: var(--radius);
+    color: var(--neutral-700); text-decoration: none; font-weight: 500; font-size: 13px;
+  }
+  .side-nav a:hover { background: var(--neutral-100); }
+  .side-nav a.active {
+    background: var(--primary-surface);
+    color: var(--primary);
+    font-weight: 600;
+    border-left: 3px solid var(--primary);
+    padding-left: 9px;
+  }
+  .side-nav .nav-icon { width: 18px; text-align: center; opacity: .8; }
+
+  .content-area { flex: 1; display: flex; flex-direction: column; min-width: 0; background: var(--neutral-50); }
+  .page-header {
+    background: var(--neutral-0);
+    border-bottom: 1px solid var(--neutral-200);
+    padding: 20px 24px;
+  }
+  .page-header h1 { margin: 0; font-size: 20px; font-weight: 600; }
+  .page-header .context { font-size: 13px; color: var(--neutral-700); margin-top: 4px; }
+  .breadcrumb { font-size: 12px; color: var(--neutral-700); margin-bottom: 8px; }
+  .breadcrumb a { color: var(--primary); text-decoration: none; }
+  .breadcrumb span { color: var(--neutral-400); margin: 0 6px; }
+
+  .page-grid {
+    display: grid;
+    grid-template-columns: 1fr 320px;
+    gap: 24px;
+    padding: 24px;
+    flex: 1;
+  }
+  .facts { display: flex; flex-direction: column; gap: 20px; min-width: 0; }
+  .zone-label {
+    font-size: 11px; font-weight: 700; letter-spacing: .06em;
+    text-transform: uppercase; color: var(--neutral-700);
+    display: flex; align-items: center; gap: 12px;
+  }
+  .zone-label::after { content: ""; flex: 1; height: 1px; background: var(--neutral-200); }
+
+  /* Filters */
+  .filters { display: flex; flex-wrap: wrap; gap: 10px; }
+  .filter-chip {
+    display: flex; align-items: center; gap: 8px;
+    padding: 8px 14px; background: var(--neutral-0);
+    border: 1px solid var(--neutral-200); border-radius: var(--radius);
+    font-size: 13px; cursor: pointer;
+  }
+  .filter-chip b { font-weight: 600; }
+  .filter-chip:hover { border-color: var(--primary-light); }
+
+  /* KPI Cards */
+  .kpi-row { display: grid; grid-template-columns: repeat(5, 1fr); gap: 16px; }
+  .kpi-card {
+    background: var(--neutral-0);
+    border: 1px solid var(--neutral-200);
+    border-radius: var(--radius-lg);
+    padding: 16px;
+    box-shadow: var(--shadow);
+  }
+  .kpi-card .icon {
+    width: 36px; height: 36px; border-radius: var(--radius);
+    background: var(--primary-surface); color: var(--primary);
+    display: flex; align-items: center; justify-content: center; font-size: 16px;
+  }
+  .kpi-card .label { font-size: 12px; font-weight: 600; color: var(--neutral-700); margin-top: 12px; }
+  .kpi-card .value {
+    font-size: 26px; font-weight: 700; font-variant-numeric: tabular-nums;
+    letter-spacing: -.02em; margin-top: 4px;
+  }
+  .kpi-card .delta { font-size: 12px; margin-top: 6px; font-weight: 600; }
+  .delta.up { color: var(--success); }
+  .delta.down { color: var(--error); }
+  .delta.warn { color: var(--warning); }
+
+  .card {
+    background: var(--neutral-0);
+    border: 1px solid var(--neutral-200);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow);
+  }
+  .card-head {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 16px 20px 8px;
+  }
+  .card-head h3 { margin: 0; font-size: 15px; font-weight: 600; }
+  .card-head .hint { font-size: 12px; color: var(--neutral-700); }
+  .card-body { padding: 8px 20px 20px; }
+
+  /* Status bar (no donut) */
+  .status-summary { display: flex; flex-direction: column; gap: 12px; }
+  .status-row {
+    display: grid; grid-template-columns: 100px 1fr 48px;
+    align-items: center; gap: 12px; font-size: 13px;
+  }
+  .status-bar-track {
+    height: 10px; background: var(--neutral-100); border-radius: 5px; overflow: hidden;
+  }
+  .status-bar-fill { height: 100%; border-radius: 5px; }
+  .status-bar-fill.on { background: var(--success); width: 55%; }
+  .status-bar-fill.watch { background: var(--warning); width: 30%; }
+  .status-bar-fill.crit { background: var(--error); width: 15%; }
+
+  /* Trend chart SVG area */
+  .chart-area { width: 100%; height: 160px; }
+  .chart-legend {
+    display: flex; gap: 20px; font-size: 12px; color: var(--neutral-700); margin-top: 8px;
+  }
+  .legend-item { display: flex; align-items: center; gap: 6px; }
+  .legend-swatch { width: 12px; height: 3px; border-radius: 2px; }
+  .seg { display: flex; gap: 2px; background: var(--neutral-100); border-radius: 6px; padding: 2px; }
+  .seg span { font-size: 11px; padding: 4px 10px; border-radius: 4px; cursor: pointer; color: var(--neutral-700); }
+  .seg span.on { background: #fff; color: var(--primary); font-weight: 600; box-shadow: 0 1px 2px rgba(0,0,0,.06); }
+
+  /* Gantt */
+  .gantt-head {
+    display: grid; grid-template-columns: 160px 1fr;
+    font-size: 11px; color: var(--neutral-700); font-weight: 600;
+    border-bottom: 1px solid var(--neutral-200); padding-bottom: 8px;
+  }
+  .gantt-months {
+    display: grid; grid-template-columns: repeat(12, 1fr);
+    text-align: center; font-size: 10px;
+  }
+  .gantt-row {
+    display: grid; grid-template-columns: 160px 1fr;
+    align-items: center; border-bottom: 1px solid var(--neutral-100);
+    padding: 8px 0;
+  }
+  .gantt-name { font-size: 12px; font-weight: 600; padding-right: 8px; }
+  .gantt-track {
+    position: relative; height: 22px;
+    background: repeating-linear-gradient(90deg, transparent, transparent calc(8.333% - 1px),
+      var(--neutral-100) calc(8.333% - 1px), var(--neutral-100) 8.333%);
+    border-radius: 4px;
+  }
+  .gantt-bar {
+    position: absolute; top: 3px; height: 16px; border-radius: 4px;
+    display: flex; overflow: hidden;
+  }
+  .gantt-bar .ph { height: 100%; }
+  .gantt-bar .ph:nth-child(1) { background: var(--ph1); flex: 1; }
+  .gantt-bar .ph:nth-child(2) { background: var(--ph2); flex: 1.2; }
+  .gantt-bar .ph:nth-child(3) { background: var(--ph3); flex: 1.5; }
+  .gantt-over {
+    position: absolute; top: 3px; height: 16px; width: 8%;
+    background: repeating-linear-gradient(45deg, #f5c6cb, #f5c6cb 3px, #fde8ea 3px, #fde8ea 6px);
+    border-radius: 0 4px 4px 0;
+  }
+  .gantt-today {
+    position: absolute; top: -2px; bottom: -2px; width: 2px;
+    background: var(--primary); left: 58%;
+  }
+  .gantt-today::after {
+    content: "Heute"; position: absolute; top: -16px; left: 50%;
+    transform: translateX(-50%); font-size: 9px; color: var(--primary); font-weight: 700;
+  }
+  .gantt-legend { display: flex; flex-wrap: wrap; gap: 12px; font-size: 11px; color: var(--neutral-700); margin-top: 12px; }
+
+  /* Action needed */
+  .action-list { list-style: none; margin: 0; padding: 0; }
+  .action-list li {
+    display: flex; align-items: flex-start; gap: 12px;
+    padding: 12px 0; border-bottom: 1px solid var(--neutral-100);
+    font-size: 13px;
+  }
+  .action-list li:last-child { border-bottom: none; }
+  .action-rank {
+    width: 24px; height: 24px; border-radius: 50%;
+    background: var(--primary-surface); color: var(--primary);
+    font-size: 12px; font-weight: 700;
+    display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+  }
+
+  /* Table */
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th {
+    text-align: left; padding: 10px 12px; font-size: 11px; font-weight: 700;
+    text-transform: uppercase; letter-spacing: .04em; color: var(--neutral-700);
+    border-bottom: 2px solid var(--neutral-200);
+  }
+  td { padding: 12px; border-bottom: 1px solid var(--neutral-100); }
+  tr:hover td { background: var(--neutral-50); cursor: pointer; }
+  .progress-cell { display: flex; align-items: center; gap: 10px; }
+  .progress-bar {
+    flex: 1; max-width: 80px; height: 6px; background: var(--neutral-100);
+    border-radius: 3px; overflow: hidden;
+  }
+  .progress-bar span { display: block; height: 100%; background: var(--primary); border-radius: 3px; }
+  .tabular { font-variant-numeric: tabular-nums; }
+
+  .badge {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 12px; font-weight: 600; padding: 4px 10px 4px 8px;
+    border-radius: 999px; border: 1px solid var(--neutral-200);
+  }
+  .badge .dot { width: 7px; height: 7px; border-radius: 50%; }
+  .badge.on { background: var(--on-bg); color: var(--on-ink); border-color: #b8e6d4; }
+  .badge.on .dot { background: var(--success); }
+  .badge.watch { background: var(--watch-bg); color: var(--watch-ink); border-color: #ffe0a8; }
+  .badge.watch .dot { background: var(--warning); }
+  .badge.crit { background: var(--crit-bg); color: var(--crit-ink); border-color: #f0c4cc; }
+  .badge.crit .dot { background: var(--error); }
+
+  /* KI Panel */
+  .ki-column { display: flex; flex-direction: column; gap: 16px; }
+  .ki-panel {
+    background: var(--ki-surface);
+    border: 1px solid var(--ki-border);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+  }
+  .ki-panel-head {
+    display: flex; align-items: center; gap: 10px;
+    padding: 14px 16px;
+    background: linear-gradient(135deg, var(--primary-surface), var(--ki-surface));
+    border-bottom: 1px solid var(--ki-border);
+  }
+  .ki-badge {
+    background: var(--primary); color: #fff;
+    font-size: 10px; font-weight: 700; letter-spacing: .04em;
+    padding: 4px 8px; border-radius: 4px;
+  }
+  .ki-panel-head h4 { margin: 0; font-size: 14px; font-weight: 600; color: var(--ki-ink); flex: 1; }
+  .ki-panel-head .sub { font-size: 11px; color: var(--neutral-700); }
+  .ki-panel-body { padding: 16px; font-size: 13px; color: var(--neutral-900); line-height: 1.6; }
+  .ki-panel-body p { margin: 0 0 12px; }
+  .ki-panel-body ul { margin: 8px 0; padding-left: 18px; }
+  .ki-panel-body li { margin-bottom: 8px; }
+  .ki-panel-foot {
+    padding: 12px 16px; border-top: 1px solid var(--ki-border);
+    font-size: 11px; font-style: italic; color: var(--neutral-700);
+  }
+
+  .chat-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
+  .chat-chip {
+    padding: 6px 12px; border-radius: 999px;
+    border: 1px solid var(--ki-border); background: #fff;
+    color: var(--primary); font-size: 12px; cursor: pointer;
+  }
+  .chat-msg {
+    padding: 10px 12px; border-radius: var(--radius); margin-bottom: 8px; font-size: 13px;
+  }
+  .chat-msg.user { background: var(--primary-lightest); margin-left: 24px; text-align: right; }
+  .chat-msg.ai { background: #fff; border: 1px solid var(--ki-border); }
+  .chat-input {
+    display: flex; gap: 8px; margin-top: 12px;
+  }
+  .chat-input input {
+    flex: 1; padding: 10px 12px; border: 1px solid var(--neutral-200);
+    border-radius: var(--radius); font-size: 13px;
+  }
+  .chat-input button {
+    padding: 10px 16px; background: var(--primary); color: #fff;
+    border: none; border-radius: var(--radius); font-weight: 600; cursor: pointer;
+  }
+
+  .budget-grid {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 16px;
+  }
+  .budget-item {
+    padding: 14px; background: var(--neutral-50); border-radius: var(--radius);
+    border: 1px solid var(--neutral-100);
+  }
+  .budget-item .lbl { font-size: 12px; color: var(--neutral-700); font-weight: 600; }
+  .budget-item .vals { font-size: 18px; font-weight: 700; margin-top: 6px; font-variant-numeric: tabular-nums; }
+
+  @media (max-width: 1100px) {
+    .page-grid { grid-template-columns: 1fr; }
+    .kpi-row { grid-template-columns: repeat(3, 1fr); }
+    .side-nav { width: 64px; padding: 12px 8px; }
+    .side-nav a span:not(.nav-icon) { display: none; }
+    .side-nav .nav-label { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<div class="preview-banner">
+  <strong>Planungsvorschau</strong> — CGI EDS 19.0.0 · Angular 20 (noch nicht implementiert) · Mock-Daten ·
+  <a href="#portfolio">Portfolio</a> · <a href="#detail">Projekt-Detail</a>
+</div>
+
+<div class="preview-nav">
+  <button type="button" class="active" onclick="showScreen('portfolio')">Portfolio-Übersicht</button>
+  <button type="button" onclick="showScreen('detail')">Projekt-Detail</button>
+</div>
+
+<!-- ========== PORTFOLIO ========== -->
+<div id="portfolio" class="screen active">
+  <div class="app-shell">
+    <header class="top-nav">
+      <div class="brand">
+        <div class="brand-mark">CGI</div>
+        <div>
+          <div>KPI-Board</div>
+          <div class="meta">KI-Implementierungsprojekte · Pilot</div>
+        </div>
+      </div>
+      <div class="user" title="Nutzer"></div>
+    </header>
+    <div class="shell-body">
+      <nav class="side-nav" aria-label="Hauptnavigation">
+        <div class="nav-label">Navigation</div>
+        <a href="#" class="active"><span class="nav-icon">▣</span><span>Portfolio</span></a>
+        <a href="#"><span class="nav-icon">☰</span><span>Projekte</span></a>
+      </nav>
+      <div class="content-area">
+        <div class="page-header">
+          <h1>Portfolio-Übersicht</h1>
+          <p class="context">20 aktive Projekte · Stand Juli 2026 · Mock-Daten</p>
+        </div>
+        <div class="page-grid">
+          <main class="facts">
+            <div class="filters">
+              <div class="filter-chip">Kunde <b>Alle</b> ▾</div>
+              <div class="filter-chip">Status <b>Alle</b> ▾</div>
+              <div class="filter-chip">Zeitraum <b>Q3 2026</b> ▾</div>
+              <div class="filter-chip">Projekt <b>Alle</b> ▾</div>
+            </div>
+
+            <div>
+              <div class="zone-label">Berechnete Kennzahlen</div>
+              <div class="kpi-row" style="margin-top:12px">
+                <div class="kpi-card">
+                  <div class="icon">📁</div>
+                  <div class="label">Aktive Projekte</div>
+                  <div class="value">20</div>
+                  <div class="delta">±0 vs. Vormonat</div>
+                </div>
+                <div class="kpi-card">
+                  <div class="icon">📈</div>
+                  <div class="label">Ø Fortschritt</div>
+                  <div class="value">63 %</div>
+                  <div class="delta up">+4 % vs. Vormonat</div>
+                </div>
+                <div class="kpi-card">
+                  <div class="icon">💶</div>
+                  <div class="label">Budgetabweichung</div>
+                  <div class="value">+8,2 %</div>
+                  <div class="delta warn">Trend steigend</div>
+                </div>
+                <div class="kpi-card">
+                  <div class="icon">📅</div>
+                  <div class="label">Termintreue</div>
+                  <div class="value">72 %</div>
+                  <div class="delta down">−3 % vs. Vormonat</div>
+                </div>
+                <div class="kpi-card">
+                  <div class="icon">⚠</div>
+                  <div class="label">Kritische Risiken</div>
+                  <div class="value">7</div>
+                  <div class="delta warn">+2 vs. Vormonat</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="card-head">
+                <h3>Portfolio-Zeitleiste</h3>
+                <span class="hint">Gantt · Plan vs. Ist</span>
+              </div>
+              <div class="card-body">
+                <div class="gantt-head">
+                  <div>Projekt</div>
+                  <div class="gantt-months">
+                    <span>Jan</span><span>Feb</span><span>Mär</span><span>Apr</span>
+                    <span>Mai</span><span>Jun</span><span>Jul</span><span>Aug</span>
+                    <span>Sep</span><span>Okt</span><span>Nov</span><span>Dez</span>
+                  </div>
+                </div>
+                <div class="gantt-row">
+                  <div class="gantt-name">KI-Rollout A</div>
+                  <div class="gantt-track">
+                    <div class="gantt-bar" style="left:8%;width:42%"><div class="ph"></div><div class="ph"></div><div class="ph"></div></div>
+                    <div class="gantt-over" style="left:46%"></div>
+                    <div class="gantt-today"></div>
+                  </div>
+                </div>
+                <div class="gantt-row">
+                  <div class="gantt-name">Data Hub B</div>
+                  <div class="gantt-track">
+                    <div class="gantt-bar" style="left:20%;width:35%"><div class="ph"></div><div class="ph"></div></div>
+                    <div class="gantt-today"></div>
+                  </div>
+                </div>
+                <div class="gantt-row">
+                  <div class="gantt-name">Pilot Chat C</div>
+                  <div class="gantt-track">
+                    <div class="gantt-bar" style="left:35%;width:28%"><div class="ph"></div><div class="ph"></div><div class="ph"></div></div>
+                    <div class="gantt-today"></div>
+                  </div>
+                </div>
+                <div class="gantt-legend">
+                  <span>■ Analyse</span><span>■ Konzept</span><span>■ Umsetzung</span>
+                  <span>▨ Verzug</span><span>| Heute</span>
+                </div>
+              </div>
+            </div>
+
+            <div style="display:grid;grid-template-columns:1.4fr 1fr;gap:16px">
+              <div class="card">
+                <div class="card-head">
+                  <h3>Fortschritt & Budget</h3>
+                  <div class="seg"><span>3M</span><span class="on">6M</span><span>12M</span></div>
+                </div>
+                <div class="card-body">
+                  <svg class="chart-area" viewBox="0 0 400 120" aria-label="Fortschritt und Budget über 6 Monate">
+                    <line x1="40" y1="100" x2="380" y2="100" stroke="#E8E8E8"/>
+                    <line x1="40" y1="20" x2="40" y2="100" stroke="#E8E8E8"/>
+                    <text x="42" y="16" font-size="10" fill="#333">100%</text>
+                    <text x="42" y="98" font-size="10" fill="#333">0%</text>
+                    <text x="80" y="115" font-size="9" fill="#333">Feb</text>
+                    <text x="140" y="115" font-size="9" fill="#333">Apr</text>
+                    <text x="200" y="115" font-size="9" fill="#333">Jun</text>
+                    <text x="260" y="115" font-size="9" fill="#333">Aug</text>
+                    <polyline fill="none" stroke="#5236AB" stroke-width="2.5"
+                      points="60,75 120,68 180,62 240,58 300,52 360,48"/>
+                    <polyline fill="none" stroke="#FFAC25" stroke-width="2" stroke-dasharray="5,4"
+                      points="60,82 120,78 180,72 240,70 300,65 360,60"/>
+                  </svg>
+                  <div class="chart-legend">
+                    <span class="legend-item"><span class="legend-swatch" style="background:#5236AB"></span>Fortschritt (Ist)</span>
+                    <span class="legend-item"><span class="legend-swatch" style="background:#FFAC25;border-style:dashed"></span>Budget (Ist)</span>
+                  </div>
+                </div>
+              </div>
+              <div class="card">
+                <div class="card-head"><h3>Statusverteilung</h3></div>
+                <div class="card-body status-summary">
+                  <div class="status-row">
+                    <span class="badge on"><span class="dot"></span> Auf Kurs</span>
+                    <div class="status-bar-track"><div class="status-bar-fill on"></div></div>
+                    <strong class="tabular">11</strong>
+                  </div>
+                  <div class="status-row">
+                    <span class="badge watch"><span class="dot"></span> Beobachten</span>
+                    <div class="status-bar-track"><div class="status-bar-fill watch"></div></div>
+                    <strong class="tabular">6</strong>
+                  </div>
+                  <div class="status-row">
+                    <span class="badge crit"><span class="dot"></span> Kritisch</span>
+                    <div class="status-bar-track"><div class="status-bar-fill crit"></div></div>
+                    <strong class="tabular">3</strong>
+                  </div>
+                  <p style="font-size:12px;color:#333;margin:8px 0 0">Gesamt: 20 Projekte — keine Donut-Darstellung (CGI-Vorgabe)</p>
+                </div>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="card-head"><h3>Projekte</h3><span class="hint">Klick öffnet Detail</span></div>
+              <div class="card-body" style="padding-top:0">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Projekt</th><th>Kunde</th><th>Status</th><th>Phase</th>
+                      <th>Fortschritt</th><th>Termin</th><th>Budget</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr onclick="showScreen('detail')">
+                      <td><strong>KI-Rollout A</strong></td>
+                      <td>Intern A</td>
+                      <td><span class="badge crit"><span class="dot"></span> Kritisch</span></td>
+                      <td>Umsetzung</td>
+                      <td><div class="progress-cell"><div class="progress-bar"><span style="width:45%"></span></div><span class="tabular">45 %</span></div></td>
+                      <td class="tabular" style="color:var(--error)">+14 T</td>
+                      <td class="tabular">92 %</td>
+                    </tr>
+                    <tr>
+                      <td><strong>Data Hub B</strong></td>
+                      <td>Intern B</td>
+                      <td><span class="badge watch"><span class="dot"></span> Beobachten</span></td>
+                      <td>Konzept</td>
+                      <td><div class="progress-cell"><div class="progress-bar"><span style="width:58%"></span></div><span class="tabular">58 %</span></div></td>
+                      <td class="tabular">+3 T</td>
+                      <td class="tabular">78 %</td>
+                    </tr>
+                    <tr>
+                      <td><strong>Pilot Chat C</strong></td>
+                      <td>Intern C</td>
+                      <td><span class="badge on"><span class="dot"></span> Auf Kurs</span></td>
+                      <td>Pilot</td>
+                      <td><div class="progress-cell"><div class="progress-bar"><span style="width:81%"></span></div><span class="tabular">81 %</span></div></td>
+                      <td class="tabular">0 T</td>
+                      <td class="tabular">65 %</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </main>
+
+          <aside class="ki-column" aria-label="KI-Einschätzungen">
+            <div class="ki-panel">
+              <div class="ki-panel-head">
+                <span class="ki-badge">KI-EINSCHÄTZUNG</span>
+                <div>
+                  <h4>Portfolio-Trendanalyse</h4>
+                  <div class="sub">Gemini · auf Basis freigegebener KPIs</div>
+                </div>
+              </div>
+              <div class="ki-panel-body">
+                <p>Auf Basis der freigegebenen Portfolio-Daten zeigt sich ein <strong>wachsender Budgetdruck</strong> in mehreren Umsetzungsprojekten. Die Termintreue ist leicht rückläufig (−3 %).</p>
+                <p><strong>Top 3 Handlungsbedarf:</strong></p>
+                <ul>
+                  <li><strong>KI-Rollout A</strong> — Terminverzug +14 T, Budget 92 %, 2 kritische Risiken</li>
+                  <li><strong>Legacy Migration D</strong> — widersprüchliche Signale: Fortschritt ok, Budget kritisch</li>
+                  <li><strong>Data Hub B</strong> — steigender Aufwand (+18 PT), Meilenstein Q3 gefährdet</li>
+                </ul>
+              </div>
+              <div class="ki-panel-foot">KI-Interpretation — keine verbindliche Entscheidung. Keine erfundenen KPI-Werte.</div>
+            </div>
+          </aside>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ========== PROJEKT-DETAIL ========== -->
+<div id="detail" class="screen">
+  <div class="app-shell">
+    <header class="top-nav">
+      <div class="brand">
+        <div class="brand-mark">CGI</div>
+        <div><div>KPI-Board</div><div class="meta">Projekt-Detail</div></div>
+      </div>
+      <div class="user"></div>
+    </header>
+    <div class="shell-body">
+      <nav class="side-nav">
+        <div class="nav-label">Navigation</div>
+        <a href="#" onclick="showScreen('portfolio');return false"><span class="nav-icon">▣</span><span>Portfolio</span></a>
+        <a href="#" class="active"><span class="nav-icon">☰</span><span>Projekte</span></a>
+      </nav>
+      <div class="content-area">
+        <div class="page-header">
+          <nav class="breadcrumb" aria-label="Breadcrumb">
+            <a href="#" onclick="showScreen('portfolio');return false">Portfolio</a>
+            <span>/</span> KI-Rollout A
+          </nav>
+          <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap">
+            <h1 style="flex:1">KI-Rollout A</h1>
+            <span class="badge crit"><span class="dot"></span> Kritisch</span>
+          </div>
+          <p class="context">Kunde: Intern A · Phase: Umsetzung · Projektleitung: M. Keller</p>
+        </div>
+        <div class="page-grid">
+          <main class="facts">
+            <div class="kpi-row">
+              <div class="kpi-card">
+                <div class="icon">📈</div>
+                <div class="label">Fortschritt</div>
+                <div class="value">45 %</div>
+                <div class="delta down">Plan: 58 %</div>
+              </div>
+              <div class="kpi-card">
+                <div class="icon">📅</div>
+                <div class="label">Terminabweichung</div>
+                <div class="value">+14 T</div>
+                <div class="delta down">Ende: 15.09.2026</div>
+              </div>
+              <div class="kpi-card">
+                <div class="icon">💶</div>
+                <div class="label">Budget Ist / Plan</div>
+                <div class="value">920k</div>
+                <div class="delta warn">92 % verbraucht</div>
+              </div>
+              <div class="kpi-card">
+                <div class="icon">⏱</div>
+                <div class="label">Aufwand Ist / Plan</div>
+                <div class="value">1.240 PT</div>
+                <div class="delta warn">+25 PT</div>
+              </div>
+              <div class="kpi-card">
+                <div class="icon">⚠</div>
+                <div class="label">Offene Risiken</div>
+                <div class="value">4</div>
+                <div class="delta crit">2 kritisch</div>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="card-head"><h3>Projektzeitleiste & Meilensteine</h3></div>
+              <div class="card-body">
+                <div class="gantt-row">
+                  <div class="gantt-name">Phasen</div>
+                  <div class="gantt-track" style="height:28px">
+                    <div class="gantt-bar" style="left:5%;width:90%">
+                      <div class="ph" style="flex:1;background:var(--ph1)"></div>
+                      <div class="ph" style="flex:1.2;background:var(--ph2)"></div>
+                      <div class="ph" style="flex:2;background:var(--ph3)"></div>
+                      <div class="ph" style="flex:0.8;background:var(--ph4)"></div>
+                    </div>
+                    <div class="gantt-over" style="left:78%;width:12%"></div>
+                    <div class="gantt-today" style="left:62%"></div>
+                  </div>
+                </div>
+                <p style="font-size:12px;color:#333;margin-top:12px">
+                  Meilensteine: M1 Analyse ✓ · M2 Konzept ✓ · <strong>M3 Pilot (15.08.) — gefährdet</strong> · M4 Rollout (15.09.)
+                </p>
+              </div>
+            </div>
+
+            <div class="budget-grid">
+              <div class="budget-item">
+                <div class="lbl">Budget Plan / Ist / Rest</div>
+                <div class="vals">1,0 Mio € / 920k € / 80k €</div>
+              </div>
+              <div class="budget-item">
+                <div class="lbl">Aufwand Plan / Ist / Rest</div>
+                <div class="vals">1.215 PT / 1.240 PT / −25 PT</div>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="card-head"><h3>Risiken & Maßnahmen</h3></div>
+              <div class="card-body" style="padding-top:0">
+                <table>
+                  <thead><tr><th>Risiko</th><th>Schwere</th><th>Maßnahme</th><th>Status</th></tr></thead>
+                  <tbody>
+                    <tr>
+                      <td>GPU-Kapazität unzureichend</td>
+                      <td><span class="badge crit"><span class="dot"></span> Hoch</span></td>
+                      <td>Kapazitätserhöhung prüfen</td>
+                      <td>Offen</td>
+                    </tr>
+                    <tr>
+                      <td>Datenqualität Trainingskorpus</td>
+                      <td><span class="badge crit"><span class="dot"></span> Hoch</span></td>
+                      <td>Data-Review Sprint 28</td>
+                      <td>In Arbeit</td>
+                    </tr>
+                    <tr>
+                      <td>Change Management Verzug</td>
+                      <td><span class="badge watch"><span class="dot"></span> Mittel</span></td>
+                      <td>Stakeholder-Workshop</td>
+                      <td>Offen</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </main>
+
+          <aside class="ki-column">
+            <div class="ki-panel">
+              <div class="ki-panel-head">
+                <span class="ki-badge">KI-EINSCHÄTZUNG</span>
+                <div><h4>Management-Zusammenfassung</h4><div class="sub">Gemini</div></div>
+              </div>
+              <div class="ki-panel-body">
+                <p>Das Projekt <strong>KI-Rollout A</strong> weist eine kritische Termin- und Budgetlage auf. Fortschritt (45 %) liegt unter Plan; der Meilenstein M3 ist gefährdet. Zwei Risiken hoher Schwere erfordern prioritäre Aufmerksamkeit diese Woche.</p>
+              </div>
+              <div class="ki-panel-foot">KI-Interpretation — keine verbindliche Entscheidung.</div>
+            </div>
+            <div class="ki-panel">
+              <div class="ki-panel-head">
+                <span class="ki-badge">KI-PROGNOSE</span>
+                <div><h4>Verzögerungs- & Budgetrisiko</h4></div>
+              </div>
+              <div class="ki-panel-body">
+                <p><strong>Verzögerungsrisiko:</strong> Hoch — ohne Gegenmaßnahmen ist mit weiteren 2–3 Wochen Verzug zu rechnen.</p>
+                <p><strong>Budgetrisiko:</strong> Mittel–Hoch — Aufwandstrend deutet auf Überschreitung hin.</p>
+              </div>
+              <div class="ki-panel-foot">Prognose ersetzt keine berechneten KPIs links.</div>
+            </div>
+            <div class="ki-panel">
+              <div class="ki-panel-head">
+                <span class="ki-badge">KI-EINSCHÄTZUNG</span>
+                <div><h4>Projekt-Q&A</h4><div class="sub">Nur dieses Projekt</div></div>
+              </div>
+              <div class="ki-panel-body">
+                <div class="chat-chips">
+                  <button type="button" class="chat-chip">Warum kritisch?</button>
+                  <button type="button" class="chat-chip">Verzögerungsrisiko?</button>
+                  <button type="button" class="chat-chip">Risiko-Priorisierung</button>
+                </div>
+                <div class="chat-msg user">Welche Risiken zuerst prüfen?</div>
+                <div class="chat-msg ai">Auf Basis der freigegebenen Daten würde ich <strong>GPU-Kapazität</strong> und <strong>Datenqualität</strong> priorisieren — beide mit Schwere „Hoch" und direktem Einfluss auf M3.</div>
+                <div class="chat-input">
+                  <input type="text" placeholder="Frage zum Projekt stellen …" aria-label="Freitextfrage">
+                  <button type="button">Senden</button>
+                </div>
+              </div>
+              <div class="ki-panel-foot">Antworten beziehen sich nur auf freigegebene Projektdaten.</div>
+            </div>
+          </aside>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  document.querySelectorAll('.preview-nav button').forEach((b, i) => {
+    b.classList.toggle('active', (id === 'portfolio' && i === 0) || (id === 'detail' && i === 1));
+  });
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+</script>
+</body>
+</html>

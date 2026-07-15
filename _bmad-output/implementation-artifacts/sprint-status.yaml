@@ -1,0 +1,23 @@
+# Sprint Status — cgi-kpi-dashboard MVP
+# STATUS DEFINITIONS:
+#   ready-for-dev: Story spezifiziert, bereit zur Implementierung
+#   in-progress: Aktiv in Entwicklung
+#   review: Implementierung abgeschlossen, wartet auf Review
+#   done: Abgeschlossen und gemerged
+
+last_updated: 2026-07-14
+development_status:
+  epic-1: done
+  1-1-backend-grundgeruest-spring-boot: done
+  1-2-angular-grundstruktur-feature-basiert: done
+  1-3-lokales-entwicklungs-setup: done
+  1-4-einheitliches-api-fehlerformat: done
+  epic-2: done
+  2-1-cgi-shell-top-nav-side-nav: done
+  2-2-routing-und-lazy-loading: done
+  2-3-breadcrumbs-und-seitentitel: done
+  2-4-layout-raster-haupt-vs-ki-spalte: done
+  epic-3: in-progress
+  3-1-domain-modell-und-jpa: done
+  3-2-flyway-migrationen: done
+  3-3-mock-seed-20-projekte: done

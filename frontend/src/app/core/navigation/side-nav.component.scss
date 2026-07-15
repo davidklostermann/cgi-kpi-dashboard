@@ -1,0 +1,16 @@
+.cgi-side-nav__list {
+  padding-top: 0.5rem;
+}
+
+a[mat-list-item] {
+  color: var(--cgi-neutral-700);
+  font-weight: 500;
+  border-left: 3px solid transparent;
+}
+
+a[mat-list-item].cgi-side-nav__link--active {
+  background: var(--cgi-primary-surface);
+  color: var(--cgi-primary-darkest);
+  border-left-color: var(--cgi-primary);
+  font-weight: 700;
+}

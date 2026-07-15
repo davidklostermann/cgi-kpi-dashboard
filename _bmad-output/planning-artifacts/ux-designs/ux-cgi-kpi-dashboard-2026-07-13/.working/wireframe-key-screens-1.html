@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Wireframe – cgi-kpi-dashboard</title>
+<style>
+  /* Theme "Clear Executive" tokens */
+  :root{
+    --primary:#2563eb; --ki:#7c3aed; --ki-bg:#f5f3ff; --ki-border:#ddd6fe;
+    --success:#15803d; --warning:#ca8a04; --danger:#b91c1c;
+    --app-bg:#f4f6f9; --card:#ffffff; --text:#1a2230; --muted:#64748b; --border:#e3e8ef;
+    --radius:10px;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;font-family:"Inter",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:#e2e6ec;color:var(--text);padding:28px;}
+  h1{font-size:20px;margin:0 0 4px;}
+  .intro{color:#54606f;font-size:13px;margin:0 0 24px;max-width:820px;line-height:1.5;}
+  .screen{background:var(--app-bg);border-radius:16px;box-shadow:0 10px 30px rgba(0,0,0,.08);margin-bottom:36px;overflow:hidden;border:1px solid #d6dbe2;}
+  .screen-label{background:#1e293b;color:#fff;font-size:12px;font-weight:600;padding:8px 16px;letter-spacing:.03em;}
+  /* top bar */
+  .topbar{display:flex;align-items:center;justify-content:space-between;background:var(--card);border-bottom:1px solid var(--border);padding:12px 20px;}
+  .brand{display:flex;align-items:center;gap:10px;font-weight:700;font-size:15px;}
+  .logo{width:26px;height:26px;border-radius:7px;background:var(--primary);}
+  .nav{display:flex;gap:6px;}
+  .nav span{font-size:12.5px;color:var(--muted);padding:6px 12px;border-radius:7px;}
+  .nav span.active{color:var(--primary);background:#eef2ff;font-weight:600;}
+  .user{width:30px;height:30px;border-radius:50%;background:#cbd5e1;}
+  /* filter bar */
+  .filterbar{display:flex;gap:8px;align-items:center;padding:12px 20px;background:var(--card);border-bottom:1px solid var(--border);flex-wrap:wrap;}
+  .filter{font-size:12px;color:var(--muted);border:1px solid var(--border);border-radius:8px;padding:6px 12px;background:#fff;display:flex;gap:6px;align-items:center;}
+  .filter b{color:var(--text);font-weight:600;}
+  .layout{display:grid;grid-template-columns:1fr 340px;gap:18px;padding:20px;}
+  .col-facts{display:flex;flex-direction:column;gap:16px;}
+  .facts-tag,.ki-tag{font-size:10.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;margin-bottom:2px;}
+  .facts-tag{color:var(--muted);}
+  .ki-tag{color:var(--ki);}
+  /* KPI cards */
+  .kpi-row{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;}
+  .kpi{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:14px;}
+  .kpi .l{font-size:10.5px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);font-weight:600;}
+  .kpi .v{font-size:26px;font-weight:700;margin-top:6px;line-height:1;}
+  .kpi .d{font-size:11.5px;margin-top:5px;font-weight:600;}
+  .card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:16px;}
+  .card h3{margin:0 0 12px;font-size:13px;}
+  .chartrow{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+  .chart-ph{height:120px;border-radius:8px;background:linear-gradient(180deg,#f8fafc,#eef2f7);border:1px dashed #cbd5e1;display:flex;align-items:flex-end;gap:6px;padding:12px;}
+  .bar{flex:1;background:#c7d2fe;border-radius:3px 3px 0 0;}
+  /* status pills w/ redundant shape */
+  .status{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:600;padding:2px 8px;border-radius:6px;}
+  .dot{width:9px;height:9px;display:inline-block;}
+  .g{border-radius:50%;background:var(--success);} .y{background:var(--warning);} .r{background:var(--danger);transform:rotate(45deg);}
+  .st-g{background:#dcfce7;color:#166534;} .st-y{background:#fef9c3;color:#854d0e;} .st-r{background:#fee2e2;color:#991b1b;}
+  /* table */
+  table{width:100%;border-collapse:collapse;font-size:12px;}
+  th{text-align:left;color:var(--muted);font-weight:600;font-size:10.5px;text-transform:uppercase;letter-spacing:.03em;padding:8px 8px;border-bottom:1px solid var(--border);}
+  td{padding:9px 8px;border-bottom:1px solid #eef1f5;}
+  tr:hover td{background:#f8fafc;cursor:pointer;}
+  .progress{height:6px;border-radius:99px;background:#e5e9f0;width:80px;overflow:hidden;}
+  .progress i{display:block;height:100%;background:var(--primary);}
+  /* KI column */
+  .col-ki{background:var(--ki-bg);border:1px solid var(--ki-border);border-left:4px solid var(--ki);border-radius:var(--radius);padding:16px;display:flex;flex-direction:column;gap:14px;}
+  .ki-badge{display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:700;color:#fff;background:var(--ki);padding:4px 10px;border-radius:6px;align-self:flex-start;}
+  .ki-h{font-size:12.5px;font-weight:700;color:#3b345a;margin:2px 0 0;}
+  .ki-p{font-size:12px;line-height:1.5;color:#463a67;margin:0;}
+  .ki-top{background:#fff;border:1px solid var(--ki-border);border-radius:8px;padding:10px;}
+  .ki-top .item{font-size:11.5px;padding:5px 0;border-bottom:1px dashed #e4ddf7;color:#463a67;display:flex;gap:6px;align-items:center;}
+  .ki-top .item:last-child{border-bottom:none;}
+  .ki-note{font-size:10px;font-style:italic;color:#7a6ba3;margin:0;}
+  .rank{font-weight:700;color:var(--ki);}
+  /* chat */
+  .chips{display:flex;flex-wrap:wrap;gap:6px;}
+  .qchip{font-size:11px;background:#fff;border:1px solid var(--ki-border);color:var(--ki);border-radius:99px;padding:5px 10px;}
+  .bubble{font-size:11.5px;border-radius:10px;padding:9px 11px;line-height:1.45;}
+  .b-user{background:#e0e7ff;color:#1e3a8a;align-self:flex-end;border-bottom-right-radius:2px;max-width:85%;}
+  .b-ki{background:#fff;border:1px solid var(--ki-border);color:#463a67;border-bottom-left-radius:2px;}
+  .chatbox{display:flex;flex-direction:column;gap:8px;}
+  .input{display:flex;gap:6px;margin-top:4px;}
+  .input .field{flex:1;border:1px solid var(--ki-border);border-radius:8px;padding:7px 10px;font-size:11.5px;color:var(--muted);background:#fff;}
+  .send{background:var(--ki);color:#fff;border-radius:8px;padding:7px 12px;font-size:11.5px;font-weight:600;}
+  .risk{display:flex;justify-content:space-between;align-items:center;font-size:12px;padding:8px 0;border-bottom:1px solid #eef1f5;}
+  .badge-num{background:#fee2e2;color:#991b1b;font-weight:700;border-radius:6px;padding:1px 7px;font-size:11px;}
+  .backlink{font-size:12px;color:var(--primary);font-weight:600;}
+</style>
+</head>
+<body>
+  <h1>Wireframe · Key Screens — cgi-kpi-dashboard</h1>
+  <p class="intro">Beide Screens folgen dem Signatur-Muster: <b>links Fakten</b> (deterministische KPIs, grau/neutral), <b>rechts eine durchgehende, violette KI-Spalte</b>. Ampel-Status trägt zusätzlich eine Form (Kreis = Grün, Quadrat = Gelb, Raute = Rot). Low/Mid-Fi — Feinschliff folgt in den Finalize-Mockups.</p>
+
+  <!-- ===================== SCREEN 1: PORTFOLIO ===================== -->
+  <div class="screen">
+    <div class="screen-label">SCREEN 1 · Portfolio-Übersicht (Startseite) — UJ-1 Sabine</div>
+    <div class="topbar">
+      <div class="brand"><span class="logo"></span> KPI-Dashboard</div>
+      <div class="nav"><span class="active">Portfolio</span><span>Projekte</span></div>
+      <div class="user"></div>
+    </div>
+    <div class="filterbar">
+      <span style="font-size:11px;color:var(--muted);font-weight:600;">FILTER</span>
+      <span class="filter">Kunde: <b>Alle</b> ▾</span>
+      <span class="filter">Status: <b>Alle</b> ▾</span>
+      <span class="filter">Zeitraum: <b>Aktuell</b> ▾</span>
+      <span class="filter" style="color:var(--primary);border-color:var(--primary);">＋ Filter</span>
+    </div>
+    <div class="layout">
+      <div class="col-facts">
+        <div>
+          <div class="facts-tag">◼ Kennzahlen · berechnet</div>
+          <div class="kpi-row">
+            <div class="kpi"><div class="l">Aktive Projekte</div><div class="v">20</div><div class="d" style="color:var(--muted);">3 kritisch</div></div>
+            <div class="kpi"><div class="l">Ø Fortschritt</div><div class="v">63%</div><div class="d" style="color:var(--success);">▲ 4%</div></div>
+            <div class="kpi"><div class="l">Budgetabweichung</div><div class="v">+8,2%</div><div class="d" style="color:var(--warning);">über Plan</div></div>
+            <div class="kpi"><div class="l">Termintreue</div><div class="v">78%</div><div class="d" style="color:var(--muted);">im Plan</div></div>
+            <div class="kpi"><div class="l">Kritische Risiken</div><div class="v">7</div><div class="d" style="color:var(--danger);">offen</div></div>
+            <div class="kpi"><div class="l">Ampelverteilung</div>
+              <div class="d" style="margin-top:8px;display:flex;gap:5px;">
+                <span class="status st-g"><span class="dot g"></span>12</span>
+                <span class="status st-y"><span class="dot y"></span>5</span>
+                <span class="status st-r"><span class="dot r"></span>3</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="card">
+          <h3>Portfolio-Diagramme</h3>
+          <div class="chartrow">
+            <div><div style="font-size:10.5px;color:var(--muted);margin-bottom:4px;">Fortschrittstrend</div><div class="chart-ph"><div class="bar" style="height:40%"></div><div class="bar" style="height:55%"></div><div class="bar" style="height:50%"></div><div class="bar" style="height:70%"></div><div class="bar" style="height:63%"></div></div></div>
+            <div><div style="font-size:10.5px;color:var(--muted);margin-bottom:4px;">Budgetentwicklung</div><div class="chart-ph"><div class="bar" style="height:30%;background:#fde68a"></div><div class="bar" style="height:45%;background:#fde68a"></div><div class="bar" style="height:60%;background:#fca5a5"></div><div class="bar" style="height:75%;background:#fca5a5"></div></div></div>
+          </div>
+        </div>
+        <div class="card">
+          <h3>Projekte (20)</h3>
+          <table>
+            <thead><tr><th>Projekt</th><th>Kunde</th><th>Status</th><th>Phase</th><th>Fortschritt</th><th>Termin</th><th>Budget</th></tr></thead>
+            <tbody>
+              <tr><td>KI-Rollout A</td><td>Nord GmbH</td><td><span class="status st-r"><span class="dot r"></span>Rot</span></td><td>Umsetzung</td><td><div class="progress"><i style="width:45%"></i></div></td><td style="color:var(--danger)">+14 T</td><td>92%</td></tr>
+              <tr><td>Chatbot B</td><td>Süd AG</td><td><span class="status st-y"><span class="dot y"></span>Gelb</span></td><td>Pilot</td><td><div class="progress"><i style="width:60%"></i></div></td><td style="color:var(--warning)">+3 T</td><td>71%</td></tr>
+              <tr><td>Doc-Automation</td><td>West KG</td><td><span class="status st-g"><span class="dot g"></span>Grün</span></td><td>Umsetzung</td><td><div class="progress"><i style="width:80%"></i></div></td><td>im Plan</td><td>55%</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <!-- KI column -->
+      <div class="col-ki">
+        <span class="ki-badge">✦ KI-Einschätzung</span>
+        <div>
+          <div class="ki-h">Portfolio-Trendanalyse</div>
+          <p class="ki-p">Das Portfolio ist grundsätzlich stabil, doch der Budgetdruck nimmt in drei Projekten spürbar zu. Termintreue leicht rückläufig; Risiko-Cluster bei Umsetzungsphasen.</p>
+        </div>
+        <div>
+          <div class="ki-h" style="margin-bottom:6px;">Top 3 Handlungsbedarf</div>
+          <div class="ki-top">
+            <div class="item"><span class="rank">1.</span> KI-Rollout A — Budget & Termin kritisch</div>
+            <div class="item"><span class="rank">2.</span> Chatbot B — offene Risiken steigen</div>
+            <div class="item"><span class="rank">3.</span> Portal-Migration — Terminverzug</div>
+          </div>
+        </div>
+        <p class="ki-note">KI-Interpretation auf Basis berechneter KPIs — keine verbindliche Entscheidung.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================== SCREEN 2: PROJECT DETAIL ===================== -->
+  <div class="screen">
+    <div class="screen-label">SCREEN 2 · Projekt-Detailansicht — UJ-2 Markus</div>
+    <div class="topbar">
+      <div class="brand"><span class="backlink">‹ Zurück zum Portfolio</span></div>
+      <div style="font-weight:700;font-size:14px;">KI-Rollout A · Nord GmbH</div>
+      <div class="user"></div>
+    </div>
+    <div class="layout">
+      <div class="col-facts">
+        <div>
+          <div class="facts-tag">◼ Kennzahlen · berechnet</div>
+          <div class="kpi-row">
+            <div class="kpi"><div class="l">Status</div><div class="d" style="margin-top:8px"><span class="status st-r"><span class="dot r"></span>Rot</span></div></div>
+            <div class="kpi"><div class="l">Fortschritt</div><div class="v">45%</div><div class="d" style="color:var(--muted)">Phase: Umsetzung</div></div>
+            <div class="kpi"><div class="l">Terminabweichung</div><div class="v" style="color:var(--danger)">+14 T</div><div class="d" style="color:var(--danger)">Verzug</div></div>
+          </div>
+          <div class="kpi-row" style="margin-top:12px;grid-template-columns:1fr 1fr;">
+            <div class="kpi"><div class="l">Budget Plan / Ist</div><div class="v" style="font-size:20px">420k / 386k</div><div class="d" style="color:var(--warning)">92% verbraucht</div></div>
+            <div class="kpi"><div class="l">Aufwand Plan / Ist</div><div class="v" style="font-size:20px">180 / 205 PT</div><div class="d" style="color:var(--danger)">+25 PT</div></div>
+          </div>
+        </div>
+        <div class="card">
+          <h3>Offene Risiken & kritische Probleme</h3>
+          <div class="risk"><span>Datenqualität Quellsystem unklar</span><span class="badge-num">Hoch</span></div>
+          <div class="risk"><span>Schnittstelle verzögert Freigabe</span><span class="badge-num">Hoch</span></div>
+          <div class="risk" style="border-bottom:none;"><span>Change-Request Umfang offen</span><span class="status st-y"><span class="dot y"></span>Mittel</span></div>
+        </div>
+      </div>
+      <!-- KI column with chat -->
+      <div class="col-ki">
+        <span class="ki-badge">✦ KI-Analyse</span>
+        <div>
+          <div class="ki-h">Management-Zusammenfassung</div>
+          <p class="ki-p">Projekt unter Druck: Terminverzug (+14 T) trifft auf hohen Budgetverbrauch. Zwei Risiken mit hoher Schwere offen.</p>
+        </div>
+        <div>
+          <div class="ki-h">Prognose</div>
+          <p class="ki-p">Verzögerungsrisiko <b>hoch</b> · Budgetrisiko <b>mittel–hoch</b> bei aktuellem Verlauf.</p>
+        </div>
+        <div style="border-top:1px dashed #e4ddf7;padding-top:12px;">
+          <div class="ki-h" style="margin-bottom:8px;">Fragen zum Projekt</div>
+          <div class="chips">
+            <span class="qchip">Warum kritisch?</span>
+            <span class="qchip">Verzögerungsrisiko?</span>
+            <span class="qchip">Risiken priorisieren</span>
+          </div>
+          <div class="chatbox" style="margin-top:10px;">
+            <div class="bubble b-user">Welche Risiken sollten wir diese Woche zuerst prüfen?</div>
+            <div class="bubble b-ki">Basierend auf den freigegebenen Daten priorisiere ich die zwei Risiken mit hoher Schwere (Datenqualität, Schnittstelle). Beide beeinflussen Termin und Budget direkt.</div>
+          </div>
+          <div class="input"><span class="field">Frage zum Projekt stellen …</span><span class="send">Senden</span></div>
+        </div>
+        <p class="ki-note">KI-Antworten nur auf Basis freigegebener Projektdaten — keine erfundenen Werte, keine verbindliche Entscheidung.</p>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

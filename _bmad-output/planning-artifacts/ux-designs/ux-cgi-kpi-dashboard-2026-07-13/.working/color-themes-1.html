@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Farbthemen – cgi-kpi-dashboard</title>
+<style>
+  /* ============================================================
+     COLOR THEMES for cgi-kpi-dashboard (Light-only, Desktop)
+     Core constraint: the interactive/AI accent must NOT collide
+     with the traffic-light semantics (green/amber/red).
+     Each variation documents concrete hex values below.
+     ============================================================ */
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background: #eef1f5;
+    color: #1a1d24;
+    padding: 32px;
+  }
+  h1 { font-size: 22px; margin: 0 0 4px; }
+  .sub { color: #5b6472; margin: 0 0 28px; font-size: 14px; max-width: 760px; line-height: 1.5; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(420px, 1fr)); gap: 20px; }
+  .theme { border-radius: 14px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,.08), 0 8px 24px rgba(0,0,0,.06); }
+  .theme-head { padding: 14px 18px; color: #fff; }
+  .theme-head h2 { margin: 0; font-size: 16px; }
+  .theme-head p { margin: 2px 0 0; font-size: 12px; opacity: .9; }
+  .theme-body { padding: 18px; }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 16px; }
+  .chip { font-size: 10.5px; padding: 3px 8px; border-radius: 999px; font-weight: 600; border: 1px solid rgba(0,0,0,.08); }
+  .row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .kpi-card { border-radius: 10px; padding: 14px; }
+  .kpi-label { font-size: 11px; text-transform: uppercase; letter-spacing: .04em; font-weight: 600; }
+  .kpi-value { font-size: 28px; font-weight: 700; margin-top: 6px; line-height: 1; }
+  .kpi-delta { font-size: 12px; margin-top: 6px; font-weight: 600; }
+  .ampel { display: flex; gap: 8px; margin-top: 12px; }
+  .status { display: inline-flex; align-items: center; gap: 5px; font-size: 11px; font-weight: 600; padding: 3px 8px; border-radius: 6px; }
+  .dot { width: 9px; height: 9px; border-radius: 2px; display: inline-block; }
+  .dot.g { border-radius: 999px; }             /* Grün: Kreis */
+  .dot.y { border-radius: 0; }                 /* Gelb: Quadrat */
+  .dot.r { border-radius: 0; transform: rotate(45deg); } /* Rot: Raute — redundante Kodierung */
+  .ki-zone { border-radius: 10px; padding: 14px; margin-top: 14px; position: relative; }
+  .ki-badge { display: inline-flex; align-items: center; gap: 5px; font-size: 10.5px; font-weight: 700; padding: 3px 8px; border-radius: 6px; letter-spacing: .03em; }
+  .ki-text { font-size: 12.5px; line-height: 1.5; margin: 10px 0 0; }
+  .ki-note { font-size: 10.5px; margin-top: 8px; font-style: italic; opacity: .8; }
+  .btn { margin-top: 12px; display: inline-block; font-size: 12px; font-weight: 600; padding: 7px 14px; border-radius: 8px; color: #fff; }
+</style>
+</head>
+<body>
+  <h1>Farbthemen · cgi-kpi-dashboard</h1>
+  <p class="sub">5 Richtungen für ein Light-Mode Executive-Dashboard. Jede Karte zeigt links eine <b>KPI-Karte</b> (deterministischer Fakt, neutral), den <b>Ampel-Status</b> mit redundanter Form-Kodierung (Kreis/Quadrat/Raute) und darunter die abgesetzte <b>KI-Zone</b>. Achte darauf, wie sich der Akzent-/KI-Ton klar von Grün/Gelb/Rot abhebt.</p>
+  <div class="grid">
+
+  <!-- ============ THEME 1: Clear Executive ============
+       app-bg #f4f6f9 | card #ffffff | text #1a2230 | text-muted #64708200
+       primary/interactive #2563eb (blau) | KI-accent #7c3aed (violett)
+       success #15803d | warning #b45309 | danger #b91c1c
+  -->
+  <div class="theme" style="background:#f4f6f9;">
+    <div class="theme-head" style="background:#1e293b;">
+      <h2>1 · Clear Executive</h2>
+      <p>Ruhig, sachlich, vertrauenswürdig — Blau führt, Violett signalisiert KI.</p>
+    </div>
+    <div class="theme-body">
+      <div class="chips">
+        <span class="chip" style="background:#2563eb;color:#fff;border-color:transparent;">primary #2563eb</span>
+        <span class="chip" style="background:#7c3aed;color:#fff;border-color:transparent;">KI #7c3aed</span>
+        <span class="chip" style="background:#15803d;color:#fff;border-color:transparent;">grün</span>
+        <span class="chip" style="background:#eab308;color:#3a2f00;border-color:transparent;">gelb</span>
+        <span class="chip" style="background:#b91c1c;color:#fff;border-color:transparent;">rot</span>
+      </div>
+      <div class="row">
+        <div class="kpi-card" style="background:#fff;border:1px solid #e3e8ef;">
+          <div class="kpi-label" style="color:#64748b;">Ø Fortschritt</div>
+          <div class="kpi-value" style="color:#1a2230;">63%</div>
+          <div class="kpi-delta" style="color:#15803d;">▲ 4% ggü. Vorwoche</div>
+        </div>
+        <div class="kpi-card" style="background:#fff;border:1px solid #e3e8ef;">
+          <div class="kpi-label" style="color:#64748b;">Budgetabweichung</div>
+          <div class="kpi-value" style="color:#1a2230;">+8,2%</div>
+          <div class="kpi-delta" style="color:#b45309;">über Plan</div>
+        </div>
+      </div>
+      <div class="ampel">
+        <span class="status" style="background:#dcfce7;color:#166534;"><span class="dot g" style="background:#15803d;"></span>Grün 12</span>
+        <span class="status" style="background:#fef9c3;color:#854d0e;"><span class="dot y" style="background:#ca8a04;"></span>Gelb 5</span>
+        <span class="status" style="background:#fee2e2;color:#991b1b;"><span class="dot r" style="background:#b91c1c;"></span>Rot 3</span>
+      </div>
+      <div class="ki-zone" style="background:#f5f3ff;border:1px solid #ddd6fe;border-left:4px solid #7c3aed;">
+        <span class="ki-badge" style="background:#7c3aed;color:#fff;">✦ KI-Einschätzung</span>
+        <p class="ki-text" style="color:#3b345a;">Das Portfolio ist insgesamt stabil, aber drei Projekte zeigen wachsenden Budgetdruck. Handlungsbedarf v. a. bei „Kunde Nord“.</p>
+        <p class="ki-note" style="color:#6d5f96;">Interpretation, keine verbindliche Entscheidung.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ THEME 2: Deep Indigo ============
+       app-bg #f5f6fa | card #ffffff | text #14161f
+       primary #4f46e5 (indigo) | KI-accent #0891b2 (cyan/teal)
+       success #059669 | warning #d97706 | danger #dc2626
+  -->
+  <div class="theme" style="background:#f5f6fa;">
+    <div class="theme-head" style="background:#312e81;">
+      <h2>2 · Deep Indigo</h2>
+      <p>Kräftiger, moderner — Indigo als Primär, Teal/Cyan als KI-Signal.</p>
+    </div>
+    <div class="theme-body">
+      <div class="chips">
+        <span class="chip" style="background:#4f46e5;color:#fff;border-color:transparent;">primary #4f46e5</span>
+        <span class="chip" style="background:#0891b2;color:#fff;border-color:transparent;">KI #0891b2</span>
+        <span class="chip" style="background:#059669;color:#fff;border-color:transparent;">grün</span>
+        <span class="chip" style="background:#d97706;color:#fff;border-color:transparent;">gelb</span>
+        <span class="chip" style="background:#dc2626;color:#fff;border-color:transparent;">rot</span>
+      </div>
+      <div class="row">
+        <div class="kpi-card" style="background:#fff;border:1px solid #e5e7eb;">
+          <div class="kpi-label" style="color:#6b7280;">Ø Fortschritt</div>
+          <div class="kpi-value" style="color:#14161f;">63%</div>
+          <div class="kpi-delta" style="color:#059669;">▲ 4% ggü. Vorwoche</div>
+        </div>
+        <div class="kpi-card" style="background:#fff;border:1px solid #e5e7eb;">
+          <div class="kpi-label" style="color:#6b7280;">Budgetabweichung</div>
+          <div class="kpi-value" style="color:#14161f;">+8,2%</div>
+          <div class="kpi-delta" style="color:#d97706;">über Plan</div>
+        </div>
+      </div>
+      <div class="ampel">
+        <span class="status" style="background:#d1fae5;color:#065f46;"><span class="dot g" style="background:#059669;"></span>Grün 12</span>
+        <span class="status" style="background:#fef3c7;color:#92400e;"><span class="dot y" style="background:#d97706;"></span>Gelb 5</span>
+        <span class="status" style="background:#fee2e2;color:#991b1b;"><span class="dot r" style="background:#dc2626;"></span>Rot 3</span>
+      </div>
+      <div class="ki-zone" style="background:#ecfeff;border:1px solid #a5f3fc;border-left:4px solid #0891b2;">
+        <span class="ki-badge" style="background:#0891b2;color:#fff;">✦ KI-Einschätzung</span>
+        <p class="ki-text" style="color:#164e5a;">Das Portfolio ist insgesamt stabil, aber drei Projekte zeigen wachsenden Budgetdruck. Handlungsbedarf v. a. bei „Kunde Nord“.</p>
+        <p class="ki-note" style="color:#3b7f8c;">Interpretation, keine verbindliche Entscheidung.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ THEME 3: Warm Slate ============
+       app-bg #f6f4f1 | card #fffdfb | text #26221d
+       primary #0f766e (teal-grün-neutral) | KI-accent #9333ea (purple)
+       success #4d7c0f | warning #c2410c | danger #b91c1c
+       NB: Ampel-Grün als Oliv, um sich von Teal-Primary abzuheben
+  -->
+  <div class="theme" style="background:#f6f4f1;">
+    <div class="theme-head" style="background:#3f3a34;">
+      <h2>3 · Warm Slate</h2>
+      <p>Wärmer, erdig, weniger „Tech“ — gedeckte Töne, Purple für KI.</p>
+    </div>
+    <div class="theme-body">
+      <div class="chips">
+        <span class="chip" style="background:#0f766e;color:#fff;border-color:transparent;">primary #0f766e</span>
+        <span class="chip" style="background:#9333ea;color:#fff;border-color:transparent;">KI #9333ea</span>
+        <span class="chip" style="background:#4d7c0f;color:#fff;border-color:transparent;">grün</span>
+        <span class="chip" style="background:#c2410c;color:#fff;border-color:transparent;">gelb/orange</span>
+        <span class="chip" style="background:#b91c1c;color:#fff;border-color:transparent;">rot</span>
+      </div>
+      <div class="row">
+        <div class="kpi-card" style="background:#fffdfb;border:1px solid #e7e1d9;">
+          <div class="kpi-label" style="color:#7a7166;">Ø Fortschritt</div>
+          <div class="kpi-value" style="color:#26221d;">63%</div>
+          <div class="kpi-delta" style="color:#4d7c0f;">▲ 4% ggü. Vorwoche</div>
+        </div>
+        <div class="kpi-card" style="background:#fffdfb;border:1px solid #e7e1d9;">
+          <div class="kpi-label" style="color:#7a7166;">Budgetabweichung</div>
+          <div class="kpi-value" style="color:#26221d;">+8,2%</div>
+          <div class="kpi-delta" style="color:#c2410c;">über Plan</div>
+        </div>
+      </div>
+      <div class="ampel">
+        <span class="status" style="background:#ecfccb;color:#3f6212;"><span class="dot g" style="background:#4d7c0f;"></span>Grün 12</span>
+        <span class="status" style="background:#ffedd5;color:#9a3412;"><span class="dot y" style="background:#ea9410;"></span>Gelb 5</span>
+        <span class="status" style="background:#fee2e2;color:#991b1b;"><span class="dot r" style="background:#b91c1c;"></span>Rot 3</span>
+      </div>
+      <div class="ki-zone" style="background:#faf5ff;border:1px solid #e9d5ff;border-left:4px solid #9333ea;">
+        <span class="ki-badge" style="background:#9333ea;color:#fff;">✦ KI-Einschätzung</span>
+        <p class="ki-text" style="color:#4a2d63;">Das Portfolio ist insgesamt stabil, aber drei Projekte zeigen wachsenden Budgetdruck. Handlungsbedarf v. a. bei „Kunde Nord“.</p>
+        <p class="ki-note" style="color:#7a5b93;">Interpretation, keine verbindliche Entscheidung.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ THEME 4: Cool Neutral / Observability ============
+       app-bg #f8fafc | card #ffffff | text #0f172a
+       primary #0284c7 (sky) | KI-accent #7e22ce (violett-purple)
+       success #16a34a | warning #ca8a04 | danger #dc2626
+       Sehr klare Graustufen, hoher Kontrast, Monitoring-Anmutung
+  -->
+  <div class="theme" style="background:#f8fafc;">
+    <div class="theme-head" style="background:#0f172a;">
+      <h2>4 · Cool Neutral</h2>
+      <p>Klare Graustufen, hoher Kontrast — nüchterne Monitoring-Anmutung.</p>
+    </div>
+    <div class="theme-body">
+      <div class="chips">
+        <span class="chip" style="background:#0284c7;color:#fff;border-color:transparent;">primary #0284c7</span>
+        <span class="chip" style="background:#7e22ce;color:#fff;border-color:transparent;">KI #7e22ce</span>
+        <span class="chip" style="background:#16a34a;color:#fff;border-color:transparent;">grün</span>
+        <span class="chip" style="background:#ca8a04;color:#fff;border-color:transparent;">gelb</span>
+        <span class="chip" style="background:#dc2626;color:#fff;border-color:transparent;">rot</span>
+      </div>
+      <div class="row">
+        <div class="kpi-card" style="background:#fff;border:1px solid #e2e8f0;">
+          <div class="kpi-label" style="color:#64748b;">Ø Fortschritt</div>
+          <div class="kpi-value" style="color:#0f172a;">63%</div>
+          <div class="kpi-delta" style="color:#16a34a;">▲ 4% ggü. Vorwoche</div>
+        </div>
+        <div class="kpi-card" style="background:#fff;border:1px solid #e2e8f0;">
+          <div class="kpi-label" style="color:#64748b;">Budgetabweichung</div>
+          <div class="kpi-value" style="color:#0f172a;">+8,2%</div>
+          <div class="kpi-delta" style="color:#ca8a04;">über Plan</div>
+        </div>
+      </div>
+      <div class="ampel">
+        <span class="status" style="background:#dcfce7;color:#166534;"><span class="dot g" style="background:#16a34a;"></span>Grün 12</span>
+        <span class="status" style="background:#fef9c3;color:#854d0e;"><span class="dot y" style="background:#ca8a04;"></span>Gelb 5</span>
+        <span class="status" style="background:#fee2e2;color:#991b1b;"><span class="dot r" style="background:#dc2626;"></span>Rot 3</span>
+      </div>
+      <div class="ki-zone" style="background:#faf5ff;border:1px solid #e9d5ff;border-left:4px solid #7e22ce;">
+        <span class="ki-badge" style="background:#7e22ce;color:#fff;">✦ KI-Einschätzung</span>
+        <p class="ki-text" style="color:#4a2072;">Das Portfolio ist insgesamt stabil, aber drei Projekte zeigen wachsenden Budgetdruck. Handlungsbedarf v. a. bei „Kunde Nord“.</p>
+        <p class="ki-note" style="color:#7038a0;">Interpretation, keine verbindliche Entscheidung.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ THEME 5: Editorial Calm ============
+       app-bg #ffffff | card #fbfbfa | text #1c1c1a | borders subtle
+       primary #1d4ed8 (blau, gedeckt) | KI-accent #6d28d9 (deep violet)
+       success #15803d | warning #a16207 | danger #b42318
+       Viel Weißraum, ruhige Typo-Anmutung, dezente Rahmen
+  -->
+  <div class="theme" style="background:#ffffff;">
+    <div class="theme-head" style="background:#111827;">
+      <h2>5 · Editorial Calm</h2>
+      <p>Viel Weißraum, ruhig, „redaktionell“ — dezente Rahmen, gedecktes Blau.</p>
+    </div>
+    <div class="theme-body">
+      <div class="chips">
+        <span class="chip" style="background:#1d4ed8;color:#fff;border-color:transparent;">primary #1d4ed8</span>
+        <span class="chip" style="background:#6d28d9;color:#fff;border-color:transparent;">KI #6d28d9</span>
+        <span class="chip" style="background:#15803d;color:#fff;border-color:transparent;">grün</span>
+        <span class="chip" style="background:#a16207;color:#fff;border-color:transparent;">gelb</span>
+        <span class="chip" style="background:#b42318;color:#fff;border-color:transparent;">rot</span>
+      </div>
+      <div class="row">
+        <div class="kpi-card" style="background:#fbfbfa;border:1px solid #ededea;">
+          <div class="kpi-label" style="color:#6b6b64;">Ø Fortschritt</div>
+          <div class="kpi-value" style="color:#1c1c1a;">63%</div>
+          <div class="kpi-delta" style="color:#15803d;">▲ 4% ggü. Vorwoche</div>
+        </div>
+        <div class="kpi-card" style="background:#fbfbfa;border:1px solid #ededea;">
+          <div class="kpi-label" style="color:#6b6b64;">Budgetabweichung</div>
+          <div class="kpi-value" style="color:#1c1c1a;">+8,2%</div>
+          <div class="kpi-delta" style="color:#a16207;">über Plan</div>
+        </div>
+      </div>
+      <div class="ampel">
+        <span class="status" style="background:#e7f6ec;color:#166534;"><span class="dot g" style="background:#15803d;"></span>Grün 12</span>
+        <span class="status" style="background:#fbf1d3;color:#854d0e;"><span class="dot y" style="background:#a16207;"></span>Gelb 5</span>
+        <span class="status" style="background:#fbe9e7;color:#991b1b;"><span class="dot r" style="background:#b42318;"></span>Rot 3</span>
+      </div>
+      <div class="ki-zone" style="background:#f6f2fd;border:1px solid #e4d9fb;border-left:4px solid #6d28d9;">
+        <span class="ki-badge" style="background:#6d28d9;color:#fff;">✦ KI-Einschätzung</span>
+        <p class="ki-text" style="color:#40286e;">Das Portfolio ist insgesamt stabil, aber drei Projekte zeigen wachsenden Budgetdruck. Handlungsbedarf v. a. bei „Kunde Nord“.</p>
+        <p class="ki-note" style="color:#6b4aa0;">Interpretation, keine verbindliche Entscheidung.</p>
+      </div>
+    </div>
+  </div>
+
+  </div>
+</body>
+</html>

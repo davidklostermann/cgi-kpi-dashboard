@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<title>Architecture Validation: cgi-kpi-dashboard</title>
+<style>
+  :root { --bg:#fafaf9; --surface:#fff; --border:#e7e5e4; --text:#1c1917; --muted:#78716c;
+    --strong:#16a34a; --adequate:#65a30d; --high:#ea580c; --crit:#dc2626; --med:#ca8a04; --low:#64748b; }
+  *{box-sizing:border-box} body{margin:0;font-family:system-ui,sans-serif;background:var(--bg);color:var(--text);line-height:1.6;font-size:15px}
+  .c{max-width:960px;margin:0 auto;padding:32px 24px 64px}
+  header{border-bottom:1px solid var(--border);padding-bottom:16px;margin-bottom:24px}
+  h1{margin:0;font-size:22px} .sub{color:var(--muted);font-size:13px;font-family:monospace;margin-top:4px}
+  .syn{background:var(--surface);border:1px solid var(--border);border-left:3px solid var(--muted);border-radius:8px;padding:18px 22px;margin-bottom:24px}
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px;margin-bottom:24px}
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:12px 14px}
+  .card .n{font-size:13px;color:var(--muted)} .card .v{font-weight:600;margin-top:4px}
+  details{background:var(--surface);border:1px solid var(--border);border-radius:8px;margin-bottom:12px}
+  summary{padding:14px 20px;cursor:pointer;font-weight:600;list-style:none;display:flex;gap:12px;align-items:center}
+  summary::-webkit-details-marker{display:none}
+  .body{padding:4px 20px 16px;font-size:14.5px}
+  .f{padding:12px 0;border-top:1px solid var(--border)}
+  .badge{font-size:10px;padding:3px 8px;border-radius:4px;font-weight:700;text-transform:uppercase}
+  .bh{background:rgba(234,88,12,.14);color:var(--high)} .bm{background:rgba(202,138,4,.14);color:var(--med)} .bl{background:rgba(100,116,139,.12);color:var(--low)}
+  footer{margin-top:32px;padding-top:16px;border-top:1px solid var(--border);font-size:12px;color:var(--muted);font-family:monospace}
+</style>
+</head>
+<body>
+<div class="c">
+  <header><h1>Architecture Spine — Validation Report</h1><div class="sub">cgi-kpi-dashboard · 2026-07-14</div></header>
+
+  <div class="syn">
+    <p><strong>Build-ready für MVP-Pilot</strong> — keine critical Findings. 1× high (AI→Domain-Bypass), 4× medium, 5× low. Empfehlung: kurzes Update der Spines, dann Epics & Stories.</p>
+  </div>
+
+  <div class="grid">
+    <div class="card"><div class="n">lint_spine.py</div><div class="v" style="color:var(--low)">4× low (false positive)</div></div>
+    <div class="card"><div class="n">Rubric Walker</div><div class="v" style="color:var(--strong)">strong (Pilot)</div></div>
+    <div class="card"><div class="n">Version Check</div><div class="v" style="color:var(--adequate)">adequate</div></div>
+    <div class="card"><div class="n">Adversarial</div><div class="v" style="color:var(--high)">1 high · 2 med</div></div>
+  </div>
+
+  <details open>
+    <summary><span class="badge bh">high</span> AI bypasses KPI reader layer (AD-2)</summary>
+    <div class="body"><p><code>ai.*</code> könnte JPA-Repositories statt KPI-Reader nutzen → unterschiedliche Gemini-Datengrundlage (FR-14).</p><p><strong>Fix:</strong> AD-2 — kein <code>domain.*</code> in <code>ai.*</code>, nur Reader-Interfaces.</p></div>
+  </details>
+
+  <details open>
+    <summary><span class="badge bm">medium</span> Weitere Findings (4)</summary>
+    <div class="body">
+      <div class="f">KPI-Berechnung nicht auf <code>kpi.*</code> beschränkt (AD-3)</div>
+      <div class="f">TanStack Query shared keys (AD-7 / FR-15)</div>
+      <div class="f">Vite 6.x vs aktuelles Vite 8.0 (Stack)</div>
+      <div class="f">Spring Boot 3.5 OSS EOL — deferred, Pilot ok</div>
+    </div>
+  </details>
+
+  <details>
+    <summary><span class="badge bl">low</span> 5 low findings</summary>
+    <div class="body"><p>ID-Typ, AD-5 Wording, Filter-Persistenz, Gemini SDK unpinned, Lint <code>{id}</code> paths.</p></div>
+  </details>
+
+  <footer>Spine: ARCHITECTURE-SPINE.md · Reviews: reviews/review-*.md</footer>
+</div>
+</body>
+</html>

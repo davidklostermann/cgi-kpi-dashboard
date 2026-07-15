@@ -1,0 +1,19 @@
+<nav aria-label="Hauptnavigation">
+  <mat-nav-list class="cgi-side-nav__list">
+    <a
+      mat-list-item
+      routerLink="/portfolio"
+      routerLinkActive="cgi-side-nav__link--active"
+      [routerLinkActiveOptions]="{ exact: true }"
+    >
+      Portfolio
+    </a>
+    <a
+      mat-list-item
+      routerLink="/projects"
+      routerLinkActive="cgi-side-nav__link--active"
+    >
+      Projekte
+    </a>
+  </mat-nav-list>
+</nav>

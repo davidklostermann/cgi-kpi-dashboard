@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8"> 
+<title>UX Design Validation: KPI-Board — cgi-kpi-dashboard</title>
+<style>
+  :root {
+    --bg: #fafaf9; --surface: #ffffff; --border: #e7e5e4; --text: #1c1917; --muted: #78716c;
+    --verdict-strong: #16a34a; --verdict-adequate: #65a30d; --verdict-thin: #d97706; --verdict-broken: #dc2626;
+    --sev-low: #64748b; --sev-medium: #ca8a04; --sev-high: #ea580c; --sev-critical: #dc2626;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, system-ui, sans-serif; background: var(--bg); color: var(--text); line-height: 1.6; font-size: 15px; }
+  .container { max-width: 960px; margin: 0 auto; padding: 32px 24px 64px; }
+  header.report-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 24px; padding-bottom: 16px; border-bottom: 1px solid var(--border); margin-bottom: 24px; }
+  .title h1 { margin: 0; font-size: 22px; font-weight: 600; letter-spacing: -0.01em; }
+  .title .subtitle { color: var(--muted); font-size: 13px; margin-top: 4px; font-family: ui-monospace, "SF Mono", Menlo, monospace; }
+  .synthesis { background: var(--surface); border: 1px solid var(--border); border-left: 3px solid var(--muted); border-radius: 8px; padding: 18px 22px; margin-bottom: 24px; font-size: 15.5px; }
+  .synthesis p { margin: 0 0 10px; } .synthesis p:last-child { margin-bottom: 0; }
+  .dimension-summary { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 10px; margin-bottom: 24px; }
+  .dim-card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 12px 14px; }
+  .dim-card .dim-name { font-size: 13px; color: var(--muted); margin-bottom: 6px; }
+  .dim-card .dim-verdict { font-size: 14px; font-weight: 600; }
+  section.dimension, section.reviewer-section { margin-bottom: 14px; }
+  section.dimension details, section.reviewer-section details { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+  section summary { padding: 14px 20px; cursor: pointer; user-select: none; list-style: none; display: flex; align-items: center; gap: 12px; }
+  section summary::-webkit-details-marker { display: none; }
+  section summary::before { content: "▸"; display: inline-block; color: var(--muted); transition: transform 0.15s ease; }
+  section details[open] summary::before { transform: rotate(90deg); }
+  section summary h2 { display: inline; margin: 0; font-size: 16px; font-weight: 600; flex: 1; }
+  .verdict-pill { font-size: 11px; padding: 3px 10px; border-radius: 999px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; color: white; }
+  .verdict-strong { background: var(--verdict-strong); }
+  .verdict-adequate { background: var(--verdict-adequate); }
+  .dim-body { padding: 4px 20px 18px; } .dim-judgment p { margin: 0 0 10px; }
+  .findings-list { padding: 0 20px 4px; }
+  article.finding { padding: 14px 0; border-top: 1px solid var(--border); }
+  article.finding:first-child { border-top: none; }
+  article.finding header { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 6px; }
+  .badge { font-size: 10.5px; padding: 3px 8px; border-radius: 4px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; }
+  .badge-sev-low { background: rgba(100,116,139,.12); color: var(--sev-low); }
+  .badge-sev-medium { background: rgba(202,138,4,.14); color: var(--sev-medium); }
+  .badge-sev-high { background: rgba(234,88,12,.14); color: var(--sev-high); }
+  .finding-title { margin: 0; font-size: 15px; font-weight: 500; flex: 1; min-width: 200px; }
+  .finding-location { font-family: ui-monospace, monospace; font-size: 12.5px; color: var(--muted); }
+  .finding-note, .finding-fix { margin-top: 6px; font-size: 14px; }
+  .finding-fix strong { color: var(--muted); font-weight: 500; }
+  .reviewer-source { font-size: 12px; color: var(--muted); font-family: ui-monospace, monospace; }
+  .mechanical { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 16px 20px; margin-top: 24px; font-size: 14px; }
+  .mechanical h3 { margin: 0 0 10px; font-size: 14px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.04em; }
+  .mechanical ul { margin: 0; padding-left: 20px; }
+  footer.report-footer { margin-top: 40px; padding-top: 16px; border-top: 1px solid var(--border); font-size: 12px; color: var(--muted); font-family: ui-monospace, monospace; }
+</style>
+</head>
+<body>
+<div class="container">
+  <header class="report-header">
+    <div class="title">
+      <h1>KPI-Board — UX Design Validation Report</h1>
+      <div class="subtitle">ux-designs/ux-cgi-kpi-dashboard-2026-07-13/</div>
+    </div>
+  </header>
+
+  <div class="synthesis">
+    <p>Das Spine-Paar ist <strong>downstream-tauglich</strong> — UJ-1/UJ-2, KPI/KI-Trennung und das Token-System sind solide verankert. Flow coverage und Shape fit sind <em>strong</em>; fünf Rubrik-Kategorien sind <em>adequate</em>.</p>
+    <p>Die Accessibility-Lens bestätigt die Tragfähigkeit der Status- und KI-Text-Kontraste, findet aber <strong>1 high</strong>-Finding: <code>{colors.muted}</code> (#8A97A8) auf Weiß (~2.97:1) für Caption-/Achsentexte. Zusätzlich 5 medium- und 5 low-Findings — vor Story-Dev schließen, Finalisierung bleibt gültig.</p>
+  </div>
+
+  <div class="dimension-summary">
+    <div class="dim-card"><div class="dim-name">Flow coverage</div><div class="dim-verdict" style="color:var(--verdict-strong)">strong</div></div>
+    <div class="dim-card"><div class="dim-name">Token completeness</div><div class="dim-verdict" style="color:var(--verdict-adequate)">adequate</div></div>
+    <div class="dim-card"><div class="dim-name">Component coverage</div><div class="dim-verdict" style="color:var(--verdict-adequate)">adequate</div></div>
+    <div class="dim-card"><div class="dim-name">State coverage</div><div class="dim-verdict" style="color:var(--verdict-adequate)">adequate</div></div>
+    <div class="dim-card"><div class="dim-name">Visual reference coverage</div><div class="dim-verdict" style="color:var(--verdict-adequate)">adequate</div></div>
+    <div class="dim-card"><div class="dim-name">Bloat & overspecification</div><div class="dim-verdict" style="color:var(--verdict-strong)">strong</div></div>
+    <div class="dim-card"><div class="dim-name">Inheritance discipline</div><div class="dim-verdict" style="color:var(--verdict-adequate)">adequate</div></div>
+    <div class="dim-card"><div class="dim-name">Shape fit</div><div class="dim-verdict" style="color:var(--verdict-strong)">strong</div></div>
+  </div>
+
+  <section class="dimension"><details open>
+    <summary><h2>Token completeness</h2><span class="verdict-pill verdict-adequate">adequate</span></summary>
+    <div class="dim-body"><div class="dim-judgment"><p>Alle referenzierten Tokens lösen auf; Kontrastziele genannt. <code>muted</code> und zwei Hardcoded-Hex-Werte schwächen die Vollständigkeit.</p></div></div>
+    <div class="findings-list">
+      <article class="finding"><header><span class="badge badge-sev-high">high</span><h3 class="finding-title">Caption/Achsentext-Kontrast unter AA</h3><span class="finding-location">DESIGN.md §Colors</span></header>
+        <div class="finding-note"><code>{colors.muted}</code> #8A97A8 auf #FFFFFF ≈ 2.97:1.</div>
+        <div class="finding-fix"><strong>Fix:</strong> Token abdunkeln oder Captions auf foreground-muted umstellen.</div></article>
+      <article class="finding"><header><span class="badge badge-sev-low">low</span><h3 class="finding-title">chat-user-Hintergrund nicht tokenisiert</h3><span class="finding-location">DESIGN.md Components</span></header>
+        <div class="finding-fix"><strong>Fix:</strong> <code>chat-user-surface: '#E7DFFB'</code> ergänzen.</div></article>
+    </div>
+  </details></section>
+
+  <section class="dimension"><details>
+    <summary><h2>Component & State coverage</h2><span class="verdict-pill verdict-adequate">adequate</span></summary>
+    <div class="dim-body"><div class="dim-judgment"><p>Kernkomponenten doppelt abgedeckt. Lücken bei button-primary, Fakten-API-Fehler, Leerzustand-Text.</p></div></div>
+    <div class="findings-list">
+      <article class="finding"><header><span class="badge badge-sev-medium">medium</span><h3 class="finding-title">button-primary ohne Verhaltensregel</h3><span class="finding-location">EXPERIENCE.md</span></header>
+        <div class="finding-fix"><strong>Fix:</strong> Senden/disabled während Q&A in Component Patterns.</div></article>
+      <article class="finding"><header><span class="badge badge-sev-medium">medium</span><h3 class="finding-title">Fakten-API-Fehlerzustand fehlt</h3><span class="finding-location">EXPERIENCE.md State Patterns</span></header>
+        <div class="finding-fix"><strong>Fix:</strong> Retry-Pattern für Backend-KPI-Fehler ergänzen.</div></article>
+    </div>
+  </details></section>
+
+  <section class="reviewer-section"><details open>
+    <summary><h2>Accessibility review</h2><span class="reviewer-source">review-accessibility.md</span></summary>
+    <div class="dim-body"><div class="dim-judgment"><p>WCAG-Ziel verankert; Status-/KI-Text-Kontraste bestehen. Rot-Grün durch Wort+Zahlen abgemildert; Form-Redundanz fehlt im finalen Design.</p></div></div>
+    <div class="findings-list">
+      <article class="finding"><header><span class="badge badge-sev-medium">medium</span><h3 class="finding-title">Status-Form-Redundanz inkonsistent</h3><span class="finding-location">EXPERIENCE.md vs Mockup</span></header>
+        <div class="finding-fix"><strong>Fix:</strong> Form-Kodierung einführen oder Spine-Text korrigieren.</div></article>
+      <article class="finding"><header><span class="badge badge-sev-medium">medium</span><h3 class="finding-title">Charts ohne Screenreader-Alternative</h3><span class="finding-location">EXPERIENCE.md Accessibility Floor</span></header>
+        <div class="finding-fix"><strong>Fix:</strong> sr-only-Zusammenfassung oder versteckte Datentabelle pro Chart.</div></article>
+      <article class="finding"><header><span class="badge badge-sev-medium">medium</span><h3 class="finding-title">KI-Fehlerzustand A11y unvollständig</h3><span class="finding-location">EXPERIENCE.md FR-15</span></header>
+        <div class="finding-fix"><strong>Fix:</strong> aria-live + fokussierbarer Retry-Button.</div></article>
+    </div>
+  </details></section>
+
+  <div class="mechanical">
+    <h3>Mechanical notes</h3>
+    <ul>
+      <li>0 critical · 1 high · 5 medium · 5 low — Spines bleiben final, Findings als Update empfohlen.</li>
+      <li>review-rubric.md + review-accessibility.md im Workspace.</li>
+    </ul>
+  </div>
+
+  <footer class="report-footer">
+    <span>Rubric: review-rubric.md · Accessibility: review-accessibility.md · Generated: 2026-07-13T16:58:00+02:00</span>
+  </footer>
+</div>
+</body>
+</html>

@@ -1,0 +1,40 @@
+.facts-ai-layout {
+  display: grid;
+  gap: 1.5rem;
+  align-items: start;
+}
+
+.facts-ai-layout__main {
+  min-width: 0;
+}
+
+.facts-ai-layout__ai {
+  background: var(--cgi-ki-surface);
+  border: 1px solid var(--cgi-ki-border);
+  border-radius: 8px;
+  padding: 1rem;
+  color: var(--cgi-ki-ink);
+}
+
+.facts-ai-layout__disclaimer {
+  margin: 1rem 0 0;
+  font-size: 0.75rem;
+  line-height: 1.4;
+  color: var(--cgi-neutral-700);
+}
+
+@media (min-width: 1200px) {
+  .facts-ai-layout {
+    grid-template-columns: 9fr 3fr;
+  }
+}
+
+@media (max-width: 1023px) {
+  .facts-ai-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .facts-ai-layout__ai {
+    order: 2;
+  }
+}

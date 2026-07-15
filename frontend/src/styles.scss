@@ -1,0 +1,39 @@
+@import '@angular/material/prebuilt-themes/indigo-pink.css';
+
+:root {
+  --cgi-primary-darkest: #200a58;
+  --cgi-primary: #5236ab;
+  --cgi-primary-light: #9e83f5;
+  --cgi-primary-lighter: #cbc3e6;
+  --cgi-primary-surface: #f2f1f9;
+  --cgi-neutral-900: #151515;
+  --cgi-neutral-700: #333333;
+  --cgi-neutral-200: #e8e8e8;
+  --cgi-neutral-50: #f8f8f8;
+  --cgi-neutral-0: #ffffff;
+  --cgi-ki-surface: #f2f1f9;
+  --cgi-ki-border: #cbc3e6;
+  --cgi-ki-ink: #200a58;
+  --cgi-app-background: #f8f8f8;
+  --cgi-surface: #ffffff;
+  --cgi-border: #e8e8e8;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  height: 100%;
+  margin: 0;
+  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  color: var(--cgi-neutral-900);
+  background: var(--cgi-app-background);
+}
+
+a {
+  color: var(--cgi-primary);
+}
