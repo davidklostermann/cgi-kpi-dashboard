@@ -1,5 +1,8 @@
 <section class="page">
-  <app-breadcrumbs [items]="breadcrumbs()" />
+  <div class="page__nav-row">
+    <app-breadcrumbs [items]="breadcrumbs()" />
+    <a class="page__back" routerLink="/portfolio">Zurück zum Portfolio</a>
+  </div>
 
   <header class="page__header">
     @if (masterDataStatus() === 'loading') {

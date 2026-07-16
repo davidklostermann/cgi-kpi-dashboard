@@ -1,5 +1,6 @@
 import { Component, computed, effect, inject, input, signal } from '@angular/core';
 import { HttpErrorResponse } from '@angular/common/http';
+import { RouterLink } from '@angular/router';
 import { take } from 'rxjs';
 
 import { ProjectApiService } from '../../core/api/project-api.service';
@@ -16,6 +17,7 @@ type LoadStatus = 'loading' | 'success' | 'error';
 @Component({
   selector: 'app-project-detail-page',
   imports: [
+    RouterLink,
     BreadcrumbsComponent,
     FactsAiLayoutComponent,
     StatusBadgeComponent,

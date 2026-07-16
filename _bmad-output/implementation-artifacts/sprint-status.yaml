@@ -77,8 +77,8 @@ development_status:
   6-1-projekt-kpi-api: done
   6-2-projekt-stammdaten-header: done
   6-3-projekt-kpi-karten-budget-aufwand: done
-  6-4-projekt-phasen-meilensteine: review
-  6-5-zurueck-navigation-filter: ready-for-dev
+  6-4-projekt-phasen-meilensteine: done
+  6-5-zurueck-navigation-filter: review
   6-6-management-insights-api-ui: ready-for-dev
   6-7-berichtsstandsvergleich: ready-for-dev
 

@@ -97,5 +97,9 @@ describe('ProjectDetailPageComponent', () => {
     expect(text).toContain('Mara Neumann');
     expect(text).toContain('Rollout & Betrieb');
     expect(text).toContain('Auf Kurs');
+    expect(text).toContain('Zurück zum Portfolio');
+    expect(fixture.nativeElement.querySelector('a.page__back')?.getAttribute('href')).toBe(
+      '/portfolio',
+    );
   });
 });

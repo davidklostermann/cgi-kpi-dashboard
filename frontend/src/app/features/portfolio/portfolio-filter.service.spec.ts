@@ -52,4 +52,26 @@ describe('PortfolioFilterService', () => {
     expect(service.filters().customer).toBe('Acme GmbH');
     expect(service.filters().lifecycle).toBe('active');
   });
+
+  it('should keep filters unchanged when returning from detail via portfolio route (Story 6.5)', async () => {
+    service.update({
+      customer: 'Gamma Industries KG',
+      projectLead: 'Dr. Anna Keller',
+      statuses: ['CRITICAL'],
+      lifecycle: 'active',
+    });
+
+    const router = TestBed.inject(Router);
+    await router.navigate(['/projects', 'a0000000-0000-4000-8000-000000000001']);
+    expect(service.hasActiveFilters()).toBe(true);
+
+    await router.navigate(['/portfolio']);
+    expect(service.filters()).toEqual({
+      ...EMPTY_PORTFOLIO_FILTERS,
+      customer: 'Gamma Industries KG',
+      projectLead: 'Dr. Anna Keller',
+      statuses: ['CRITICAL'],
+      lifecycle: 'active',
+    });
+  });
 });

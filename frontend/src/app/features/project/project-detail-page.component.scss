@@ -1,3 +1,23 @@
+.page__nav-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.page__back {
+  font-weight: 600;
+  text-decoration: none;
+  color: var(--cgi-primary);
+}
+
+.page__back:hover,
+.page__back:focus-visible {
+  text-decoration: underline;
+}
+
 .page__header {
   margin-bottom: 1.5rem;
 }
