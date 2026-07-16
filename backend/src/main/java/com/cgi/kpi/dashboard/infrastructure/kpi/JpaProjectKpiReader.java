@@ -12,20 +12,26 @@ import com.cgi.kpi.dashboard.domain.model.Problem;
 import com.cgi.kpi.dashboard.domain.model.Project;
 import com.cgi.kpi.dashboard.domain.model.ProjectBudget;
 import com.cgi.kpi.dashboard.domain.model.ProjectPhase;
+import com.cgi.kpi.dashboard.domain.model.ProjectReportSnapshot;
 import com.cgi.kpi.dashboard.domain.model.Risk;
 import com.cgi.kpi.dashboard.infrastructure.persistence.MilestoneRepository;
 import com.cgi.kpi.dashboard.infrastructure.persistence.ProblemRepository;
 import com.cgi.kpi.dashboard.infrastructure.persistence.ProjectBudgetRepository;
 import com.cgi.kpi.dashboard.infrastructure.persistence.ProjectPhaseRepository;
+import com.cgi.kpi.dashboard.infrastructure.persistence.ProjectReportSnapshotRepository;
 import com.cgi.kpi.dashboard.infrastructure.persistence.ProjectRepository;
 import com.cgi.kpi.dashboard.infrastructure.persistence.RiskRepository;
+import com.cgi.kpi.dashboard.kpi.dto.ProjectInsightsDto;
 import com.cgi.kpi.dashboard.kpi.dto.ProjectKpiDto;
 import com.cgi.kpi.dashboard.kpi.dto.ProjectMasterDataDto;
 import com.cgi.kpi.dashboard.kpi.dto.ProjectPhasesDto;
+import com.cgi.kpi.dashboard.kpi.dto.ProjectTrendsDto;
+import com.cgi.kpi.dashboard.kpi.insights.ProjectInsightEngine;
 import com.cgi.kpi.dashboard.kpi.reader.ProjectKpiReader;
-import com.cgi.kpi.dashboard.kpi.service.ProjectKpiCalculator;
 import com.cgi.kpi.dashboard.kpi.service.PortfolioStatusLabels;
+import com.cgi.kpi.dashboard.kpi.service.ProjectKpiCalculator;
 import com.cgi.kpi.dashboard.kpi.service.ProjectPhasesAssembler;
+import com.cgi.kpi.dashboard.kpi.service.ProjectTrendAssembler;
 
 @Component
 public class JpaProjectKpiReader implements ProjectKpiReader {
@@ -36,8 +42,11 @@ public class JpaProjectKpiReader implements ProjectKpiReader {
     private final MilestoneRepository milestoneRepository;
     private final RiskRepository riskRepository;
     private final ProblemRepository problemRepository;
+    private final ProjectReportSnapshotRepository projectReportSnapshotRepository;
     private final ProjectKpiCalculator projectKpiCalculator;
     private final ProjectPhasesAssembler projectPhasesAssembler;
+    private final ProjectInsightEngine projectInsightEngine;
+    private final ProjectTrendAssembler projectTrendAssembler;
 
     public JpaProjectKpiReader(
             ProjectRepository projectRepository,
@@ -46,16 +55,22 @@ public class JpaProjectKpiReader implements ProjectKpiReader {
             MilestoneRepository milestoneRepository,
             RiskRepository riskRepository,
             ProblemRepository problemRepository,
+            ProjectReportSnapshotRepository projectReportSnapshotRepository,
             ProjectKpiCalculator projectKpiCalculator,
-            ProjectPhasesAssembler projectPhasesAssembler) {
+            ProjectPhasesAssembler projectPhasesAssembler,
+            ProjectInsightEngine projectInsightEngine,
+            ProjectTrendAssembler projectTrendAssembler) {
         this.projectRepository = projectRepository;
         this.projectBudgetRepository = projectBudgetRepository;
         this.projectPhaseRepository = projectPhaseRepository;
         this.milestoneRepository = milestoneRepository;
         this.riskRepository = riskRepository;
         this.problemRepository = problemRepository;
+        this.projectReportSnapshotRepository = projectReportSnapshotRepository;
         this.projectKpiCalculator = projectKpiCalculator;
         this.projectPhasesAssembler = projectPhasesAssembler;
+        this.projectInsightEngine = projectInsightEngine;
+        this.projectTrendAssembler = projectTrendAssembler;
     }
 
     @Override
@@ -66,16 +81,9 @@ public class JpaProjectKpiReader implements ProjectKpiReader {
         }
 
         Project project = projectOpt.get();
-        ProjectBudget budget = projectBudgetRepository.findAll().stream()
-                .filter(entry -> projectId.equals(entry.getProject().getId()))
-                .findFirst()
-                .orElse(null);
-        List<ProjectPhase> phases = projectPhaseRepository.findAll().stream()
-                .filter(phase -> projectId.equals(phase.getProject().getId()))
-                .collect(Collectors.toList());
-        List<Risk> risks = riskRepository.findAll().stream()
-                .filter(risk -> projectId.equals(risk.getProject().getId()))
-                .toList();
+        ProjectBudget budget = findBudget(projectId);
+        List<ProjectPhase> phases = findPhases(projectId);
+        List<Risk> risks = findRisks(projectId);
         List<Problem> problems = problemRepository.findAll().stream()
                 .filter(problem -> projectId.equals(problem.getProject().getId()))
                 .toList();
@@ -91,9 +99,7 @@ public class JpaProjectKpiReader implements ProjectKpiReader {
         }
 
         Project project = projectOpt.get();
-        List<ProjectPhase> phases = projectPhaseRepository.findAll().stream()
-                .filter(phase -> projectId.equals(phase.getProject().getId()))
-                .collect(Collectors.toList());
+        List<ProjectPhase> phases = findPhases(projectId);
 
         return Optional.of(new ProjectMasterDataDto(
                 project.getId(),
@@ -117,13 +123,63 @@ public class JpaProjectKpiReader implements ProjectKpiReader {
         }
 
         Project project = projectOpt.get();
-        List<ProjectPhase> phases = projectPhaseRepository.findAll().stream()
+        return Optional.of(projectPhasesAssembler.assemble(project, findPhases(projectId), findMilestones(projectId)));
+    }
+
+    @Override
+    public Optional<ProjectInsightsDto> readProjectInsights(UUID projectId) {
+        Optional<Project> projectOpt = projectRepository.findById(projectId);
+        if (projectOpt.isEmpty()) {
+            return Optional.empty();
+        }
+
+        Project project = projectOpt.get();
+        return Optional.of(new ProjectInsightsDto(
+                projectId,
+                projectInsightEngine.evaluate(
+                        project,
+                        findBudget(projectId),
+                        findRisks(projectId),
+                        findMilestones(projectId),
+                        findSnapshots(projectId))));
+    }
+
+    @Override
+    public Optional<ProjectTrendsDto> readProjectTrends(UUID projectId) {
+        if (projectRepository.findById(projectId).isEmpty()) {
+            return Optional.empty();
+        }
+        return Optional.of(projectTrendAssembler.assemble(projectId, findSnapshots(projectId)));
+    }
+
+    private ProjectBudget findBudget(UUID projectId) {
+        return projectBudgetRepository.findAll().stream()
+                .filter(entry -> projectId.equals(entry.getProject().getId()))
+                .findFirst()
+                .orElse(null);
+    }
+
+    private List<ProjectPhase> findPhases(UUID projectId) {
+        return projectPhaseRepository.findAll().stream()
                 .filter(phase -> projectId.equals(phase.getProject().getId()))
                 .collect(Collectors.toList());
-        List<Milestone> milestones = milestoneRepository.findAll().stream()
+    }
+
+    private List<Milestone> findMilestones(UUID projectId) {
+        return milestoneRepository.findAll().stream()
                 .filter(milestone -> projectId.equals(milestone.getProject().getId()))
                 .toList();
+    }
 
-        return Optional.of(projectPhasesAssembler.assemble(project, phases, milestones));
+    private List<Risk> findRisks(UUID projectId) {
+        return riskRepository.findAll().stream()
+                .filter(risk -> projectId.equals(risk.getProject().getId()))
+                .toList();
+    }
+
+    private List<ProjectReportSnapshot> findSnapshots(UUID projectId) {
+        return projectReportSnapshotRepository.findAll().stream()
+                .filter(snapshot -> projectId.equals(snapshot.getProject().getId()))
+                .toList();
     }
 }

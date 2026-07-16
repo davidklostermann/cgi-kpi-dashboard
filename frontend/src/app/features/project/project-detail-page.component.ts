@@ -11,6 +11,8 @@ import { ProjectMasterData } from '../../shared/models/project-detail.model';
 import { AiPanelPlaceholderComponent } from '../ai/ai-panel-placeholder.component';
 import { ProjectKpiSectionComponent } from './project-kpi-section.component';
 import { ProjectPhasesSectionComponent } from './project-phases-section.component';
+import { ProjectInsightsSectionComponent } from './project-insights-section.component';
+import { ProjectReportComparisonComponent } from './project-report-comparison.component';
 
 type LoadStatus = 'loading' | 'success' | 'error';
 
@@ -24,6 +26,8 @@ type LoadStatus = 'loading' | 'success' | 'error';
     AiPanelPlaceholderComponent,
     ProjectKpiSectionComponent,
     ProjectPhasesSectionComponent,
+    ProjectInsightsSectionComponent,
+    ProjectReportComparisonComponent,
   ],
   templateUrl: './project-detail-page.component.html',
   styleUrl: './project-detail-page.component.scss',

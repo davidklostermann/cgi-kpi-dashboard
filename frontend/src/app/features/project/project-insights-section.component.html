@@ -1,0 +1,47 @@
+<section class="insight-list" aria-labelledby="insight-list-heading">
+  <h2 id="insight-list-heading">Management Insights</h2>
+  <p class="insight-list__hint">Deterministische Auffälligkeiten aus Faktenregeln — nicht KI-generiert.</p>
+
+  @if (status() === 'loading') {
+    <p aria-live="polite">Insights werden geladen …</p>
+  } @else if (status() === 'error') {
+    <div class="insight-list__error" role="alert">
+      <p>{{ errorMessage() }}</p>
+      <button type="button" (click)="load()">Erneut laden</button>
+    </div>
+  } @else if (insights(); as data) {
+    @if (data.insights.length === 0) {
+      <p role="status">Keine deterministischen Auffälligkeiten für dieses Projekt.</p>
+    } @else {
+      <ul>
+        @for (insight of data.insights; track insight.code) {
+          <li>
+            <p class="insight-list__statement">{{ insight.statement }}</p>
+            <dl>
+              <div>
+                <dt>Kennzahlen</dt>
+                <dd>{{ insight.metrics }}</dd>
+              </div>
+              <div>
+                <dt>Vergleichswert</dt>
+                <dd>{{ insight.comparisonValue || 'Nicht definiert [OFFEN]' }}</dd>
+              </div>
+              <div>
+                <dt>Zeitraum</dt>
+                <dd>{{ insight.period }}</dd>
+              </div>
+              <div>
+                <dt>Begründung</dt>
+                <dd>{{ insight.rationale }}</dd>
+              </div>
+              <div>
+                <dt>Typ</dt>
+                <dd>{{ insight.type }}</dd>
+              </div>
+            </dl>
+          </li>
+        }
+      </ul>
+    }
+  }
+</section>

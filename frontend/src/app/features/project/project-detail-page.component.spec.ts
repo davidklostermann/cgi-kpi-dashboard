@@ -88,6 +88,27 @@ describe('ProjectDetailPageComponent', () => {
       milestones: [],
       accessibilitySummary: 'Phasen: keine. Keine überfälligen Meilensteine.',
     });
+
+    httpMock.expectOne('/api/projects/a0000000-0000-4000-8000-000000000001/insights').flush({
+      projectId: 'a0000000-0000-4000-8000-000000000001',
+      insights: [],
+    });
+
+    httpMock.expectOne('/api/projects/a0000000-0000-4000-8000-000000000001/trends').flush({
+      projectId: 'a0000000-0000-4000-8000-000000000001',
+      comparisonAvailable: true,
+      unavailableReason: null,
+      previousSnapshotDate: '2026-06-01',
+      currentSnapshotDate: '2026-07-01',
+      progressDeltaPercent: 2,
+      budgetActualDelta: 1000,
+      scheduleDeviationDeltaDays: 0,
+      previousStatus: 'ON_TRACK',
+      previousStatusLabel: 'Auf Kurs',
+      currentStatus: 'ON_TRACK',
+      currentStatusLabel: 'Auf Kurs',
+      openRiskCountDelta: 0,
+    });
     fixture.detectChanges();
 
     const text = fixture.nativeElement.textContent;

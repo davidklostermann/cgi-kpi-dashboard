@@ -78,7 +78,8 @@ development_status:
   6-2-projekt-stammdaten-header: done
   6-3-projekt-kpi-karten-budget-aufwand: done
   6-4-projekt-phasen-meilensteine: done
-  6-5-zurueck-navigation-filter: review
-  6-6-management-insights-api-ui: ready-for-dev
-  6-7-berichtsstandsvergleich: ready-for-dev
+  6-5-zurueck-navigation-filter: done
+  6-6-management-insights-api-ui: done
+  6-7-berichtsstandsvergleich: done
+  epic-6: done
 

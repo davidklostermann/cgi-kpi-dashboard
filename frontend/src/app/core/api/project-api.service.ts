@@ -2,10 +2,11 @@ import { Injectable } from '@angular/core';
 
 import { ApiClient } from './api-client.service';
 import { ProjectMasterData } from '../../shared/models/project-detail.model';
+import { ProjectInsights, ProjectTrends } from '../../shared/models/project-insights.model';
 import { ProjectKpis } from '../../shared/models/project-kpi.model';
 import { ProjectPhases } from '../../shared/models/project-phases.model';
 
-/** Project facts API (FR-5). */
+/** Project facts API (FR-5, FR-20, FR-21). */
 @Injectable({ providedIn: 'root' })
 export class ProjectApiService extends ApiClient {
   listProjects() {
@@ -22,5 +23,13 @@ export class ProjectApiService extends ApiClient {
 
   getProjectPhases(projectId: string) {
     return this.get<ProjectPhases>(`/projects/${projectId}/phases`);
+  }
+
+  getProjectInsights(projectId: string) {
+    return this.get<ProjectInsights>(`/projects/${projectId}/insights`);
+  }
+
+  getProjectTrends(projectId: string) {
+    return this.get<ProjectTrends>(`/projects/${projectId}/trends`);
   }
 }

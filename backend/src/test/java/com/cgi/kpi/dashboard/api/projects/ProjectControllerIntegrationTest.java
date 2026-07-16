@@ -147,6 +147,27 @@ class ProjectControllerIntegrationTest {
     }
 
     @Test
+    void getProjectInsightsReturnsDeterministicList() throws Exception {
+        mockMvc.perform(get("/api/projects/{id}/insights", KNOWN_PROJECT_ID))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.projectId").value(KNOWN_PROJECT_ID.toString()))
+                .andExpect(jsonPath("$.insights").isArray())
+                .andExpect(jsonPath("$.aiGenerated").doesNotExist());
+    }
+
+    @Test
+    void getProjectTrendsReturnsSnapshotComparison() throws Exception {
+        mockMvc.perform(get("/api/projects/{id}/trends", KNOWN_PROJECT_ID))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.projectId").value(KNOWN_PROJECT_ID.toString()))
+                .andExpect(jsonPath("$.comparisonAvailable").value(true))
+                .andExpect(jsonPath("$.previousSnapshotDate").exists())
+                .andExpect(jsonPath("$.currentSnapshotDate").exists())
+                .andExpect(jsonPath("$.progressDeltaPercent").exists())
+                .andExpect(jsonPath("$.aiGenerated").doesNotExist());
+    }
+
+    @Test
     void getProjectByMalformedUuidReturnsStructuredBadRequest() throws Exception {
         mockMvc.perform(get("/api/projects/not-a-uuid"))
                 .andExpect(status().isBadRequest())

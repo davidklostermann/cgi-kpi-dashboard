@@ -11,9 +11,11 @@ import org.springframework.web.bind.annotation.RestController;
 import com.cgi.kpi.dashboard.api.projects.dto.ProjectDetailDto;
 import com.cgi.kpi.dashboard.api.projects.dto.ProjectListItemDto;
 import com.cgi.kpi.dashboard.application.ProjectQueryService;
+import com.cgi.kpi.dashboard.kpi.dto.ProjectInsightsDto;
 import com.cgi.kpi.dashboard.kpi.dto.ProjectKpiDto;
 import com.cgi.kpi.dashboard.kpi.dto.ProjectMasterDataDto;
 import com.cgi.kpi.dashboard.kpi.dto.ProjectPhasesDto;
+import com.cgi.kpi.dashboard.kpi.dto.ProjectTrendsDto;
 import com.cgi.kpi.dashboard.kpi.service.ProjectKpiService;
 
 @RestController
@@ -51,5 +53,15 @@ public class ProjectController {
     @GetMapping("/{id}/phases")
     public ProjectPhasesDto getProjectPhases(@PathVariable UUID id) {
         return projectKpiService.getProjectPhases(id);
+    }
+
+    @GetMapping("/{id}/insights")
+    public ProjectInsightsDto getProjectInsights(@PathVariable UUID id) {
+        return projectKpiService.getProjectInsights(id);
+    }
+
+    @GetMapping("/{id}/trends")
+    public ProjectTrendsDto getProjectTrends(@PathVariable UUID id) {
+        return projectKpiService.getProjectTrends(id);
     }
 }
