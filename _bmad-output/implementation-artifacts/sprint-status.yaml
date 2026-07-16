@@ -73,7 +73,7 @@ development_status:
   5-4-trend-statusvisualisierung: done
 
   5-5-navigation-tabelle-detail: done
-  epic-6: in-progress
+  epic-6: done
   6-1-projekt-kpi-api: done
   6-2-projekt-stammdaten-header: done
   6-3-projekt-kpi-karten-budget-aufwand: done
@@ -81,5 +81,4 @@ development_status:
   6-5-zurueck-navigation-filter: done
   6-6-management-insights-api-ui: done
   6-7-berichtsstandsvergleich: done
-  epic-6: done
 
