@@ -1,0 +1,32 @@
+.portfolio-trends-section__loading,
+.portfolio-trends-section__empty {
+  margin: 0;
+  color: var(--cgi-neutral-700);
+}
+
+.portfolio-trends-section__error {
+  padding: 1rem;
+  border: 1px solid var(--cgi-border);
+  border-radius: 8px;
+  background: var(--cgi-surface);
+}
+
+.portfolio-trends-section__error p {
+  margin: 0 0 0.75rem;
+  color: var(--cgi-neutral-700);
+}
+
+.portfolio-trends-section__retry {
+  border: 1px solid var(--cgi-primary);
+  border-radius: 6px;
+  background: var(--cgi-primary);
+  color: #fff;
+  font-weight: 600;
+  padding: 0.5rem 0.875rem;
+  cursor: pointer;
+}
+
+.portfolio-trends-section__retry:hover {
+  background: var(--cgi-primary-darkest);
+  border-color: var(--cgi-primary-darkest);
+}

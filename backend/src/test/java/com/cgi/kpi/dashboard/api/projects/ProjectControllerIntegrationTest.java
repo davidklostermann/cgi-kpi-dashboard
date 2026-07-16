@@ -67,6 +67,43 @@ class ProjectControllerIntegrationTest {
     }
 
     @Test
+    void getProjectKpisReturnsCalculatedManagementMetrics() throws Exception {
+        mockMvc.perform(get("/api/projects/{id}/kpis", KNOWN_PROJECT_ID))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.projectId").value(KNOWN_PROJECT_ID.toString()))
+                .andExpect(jsonPath("$.status").value("ON_TRACK"))
+                .andExpect(jsonPath("$.statusLabel").value("Auf Kurs"))
+                .andExpect(jsonPath("$.progressPercent").value(62))
+                .andExpect(jsonPath("$.currentPhaseName").value("Rollout & Betrieb"))
+                .andExpect(jsonPath("$.schedule.plannedEndDate").value("2026-06-30"))
+                .andExpect(jsonPath("$.schedule.forecastEndDate").value("2026-06-30"))
+                .andExpect(jsonPath("$.schedule.deviationDays").value(0))
+                .andExpect(jsonPath("$.schedule.timeElapsedPercent").exists())
+                .andExpect(jsonPath("$.budget.planned").value(500000.0))
+                .andExpect(jsonPath("$.budget.actual").value(475000.0))
+                .andExpect(jsonPath("$.budget.utilizationPercent").value(95.0))
+                .andExpect(jsonPath("$.budget.deviationPercent").value(-5.0))
+                .andExpect(jsonPath("$.budget.remaining").value(25000.0))
+                .andExpect(jsonPath("$.budget.forecastAtCompletion").exists())
+                .andExpect(jsonPath("$.effort.plannedDays").value(120.0))
+                .andExpect(jsonPath("$.effort.actualDays").value(108.0))
+                .andExpect(jsonPath("$.effort.deviationPercent").value(-10.0))
+                .andExpect(jsonPath("$.risks.openCount").exists())
+                .andExpect(jsonPath("$.problems.openCount").exists())
+                .andExpect(jsonPath("$.aiGenerated").doesNotExist());
+    }
+
+    @Test
+    void getProjectKpisByUnknownIdReturnsStructuredNotFound() throws Exception {
+        UUID unknownId = UUID.fromString("00000000-0000-4000-8000-000000000099");
+
+        mockMvc.perform(get("/api/projects/{id}/kpis", unknownId))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.code").value("NOT_FOUND"))
+                .andExpect(jsonPath("$.message").exists());
+    }
+
+    @Test
     void getProjectByMalformedUuidReturnsStructuredBadRequest() throws Exception {
         mockMvc.perform(get("/api/projects/not-a-uuid"))
                 .andExpect(status().isBadRequest())

@@ -1,0 +1,165 @@
+<section class="project-table" aria-labelledby="project-table-heading">
+  <div class="project-table__head">
+    <div>
+      <p class="project-table__eyebrow">Projektportfolio</p>
+      <h2 id="project-table-heading" class="project-table__title">
+        Projekte im aktuellen Filter
+      </h2>
+    </div>
+    <p class="project-table__hint">
+      Zeile auswählen, um Projektdetails zu öffnen.
+    </p>
+  </div>
+
+  <div
+    class="project-table__scroll"
+    tabindex="0"
+    role="region"
+    aria-labelledby="project-table-heading"
+  >
+    <table class="project-table__grid">
+      <thead>
+        <tr>
+          <th scope="col" class="project-table__sticky-col">Projekt</th>
+          <th scope="col">Kunde</th>
+          <th scope="col">Projektleitung</th>
+          <th scope="col" [attr.aria-sort]="ariaSort('status')">
+            <button
+              type="button"
+              class="project-table__sort"
+              (click)="toggleSort('status')"
+            >
+              Status
+              <span aria-hidden="true">{{ sortIndicator("status") }}</span>
+            </button>
+          </th>
+          <th scope="col">Phase</th>
+          <th scope="col" [attr.aria-sort]="ariaSort('progressPercent')">
+            <button
+              type="button"
+              class="project-table__sort"
+              (click)="toggleSort('progressPercent')"
+            >
+              Fortschritt
+              <span aria-hidden="true">{{
+                sortIndicator("progressPercent")
+              }}</span>
+            </button>
+          </th>
+          <th scope="col">Planende</th>
+          <th scope="col">Prognose</th>
+          <th scope="col" [attr.aria-sort]="ariaSort('scheduleDeviationDays')">
+            <button
+              type="button"
+              class="project-table__sort"
+              (click)="toggleSort('scheduleDeviationDays')"
+            >
+              Terminabw.
+              <span aria-hidden="true">{{
+                sortIndicator("scheduleDeviationDays")
+              }}</span>
+            </button>
+          </th>
+          <th scope="col">Budgetnutzung</th>
+          <th scope="col" [attr.aria-sort]="ariaSort('budgetDeviationPercent')">
+            <button
+              type="button"
+              class="project-table__sort"
+              (click)="toggleSort('budgetDeviationPercent')"
+            >
+              Budgetabw.
+              <span aria-hidden="true">{{
+                sortIndicator("budgetDeviationPercent")
+              }}</span>
+            </button>
+          </th>
+          <th scope="col">Aufwandsabw.</th>
+          <th scope="col">Offene Risiken</th>
+          <th scope="col" [attr.aria-sort]="ariaSort('criticalIssueCount')">
+            <button
+              type="button"
+              class="project-table__sort"
+              (click)="toggleSort('criticalIssueCount')"
+            >
+              Kritische Risiken/Probleme
+              <span aria-hidden="true">{{
+                sortIndicator("criticalIssueCount")
+              }}</span>
+            </button>
+          </th>
+          <th scope="col" [attr.aria-sort]="ariaSort('lastDataUpdate')">
+            <button
+              type="button"
+              class="project-table__sort"
+              (click)="toggleSort('lastDataUpdate')"
+            >
+              Aktualisiert
+              <span aria-hidden="true">{{
+                sortIndicator("lastDataUpdate")
+              }}</span>
+            </button>
+          </th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (row of sortedRows(); track row.id) {
+          <tr
+            class="project-table__row"
+            role="link"
+            tabindex="0"
+            [attr.aria-label]="'Projektdetails für ' + row.name"
+            (click)="onRowClick(row.id)"
+            (keydown)="onRowKeydown($event, row.id)"
+          >
+            <th scope="row" class="project-table__sticky-col">
+              {{ row.name }}
+            </th>
+            <td>{{ row.customerName }}</td>
+            <td>{{ row.projectLead || "—" }}</td>
+            <td>
+              <app-status-badge
+                [status]="row.status"
+                [label]="row.statusLabel"
+              />
+            </td>
+            <td>{{ row.currentPhaseName || "—" }}</td>
+            <td>
+              <div class="project-table__progress">
+                <div class="project-table__progress-track" aria-hidden="true">
+                  <div
+                    class="project-table__progress-bar"
+                    [style.width.%]="row.progressPercent"
+                  ></div>
+                </div>
+                <span class="project-table__progress-value">{{
+                  formatPercent(row.progressPercent)
+                }}</span>
+              </div>
+            </td>
+            <td>{{ row.plannedEndDate | date: "dd.MM.yyyy" }}</td>
+            <td>
+              {{
+                row.forecastEndDate
+                  ? (row.forecastEndDate | date: "dd.MM.yyyy")
+                  : "—"
+              }}
+            </td>
+            <td>{{ formatDays(row.scheduleDeviationDays) }}</td>
+            <td>{{ formatPercent(row.budgetUtilizationPercent) }}</td>
+            <td>{{ formatSignedPercent(row.budgetDeviationPercent) }}</td>
+            <td>{{ formatSignedPercent(row.effortDeviationPercent) }}</td>
+            <td>{{ row.openRiskCount }}</td>
+            <td>{{ row.criticalIssueCount }}</td>
+            <td>
+              {{
+                row.lastDataUpdate
+                  ? (row.lastDataUpdate | date: "dd.MM.yyyy")
+                  : "—"
+              }}
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+</section>

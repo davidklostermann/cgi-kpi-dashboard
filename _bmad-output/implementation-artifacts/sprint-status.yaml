@@ -1,32 +1,84 @@
 # Sprint Status — cgi-kpi-dashboard MVP
+
 # STATUS DEFINITIONS:
+
 #   ready-for-dev: Story spezifiziert, bereit zur Implementierung
+
 #   in-progress: Aktiv in Entwicklung
+
 #   review: Implementierung abgeschlossen, wartet auf Review
+
 #   done: Abgeschlossen und gemerged
 
-last_updated: 2026-07-15
+
+
+last_updated: 2026-07-16
+
 development_status:
+
   epic-1: done
+
   1-1-backend-grundgeruest-spring-boot: done
+
   1-2-angular-grundstruktur-feature-basiert: done
+
   1-3-lokales-entwicklungs-setup: done
+
   1-4-einheitliches-api-fehlerformat: done
+
   epic-2: done
+
   2-1-cgi-shell-top-nav-side-nav: done
+
   2-2-routing-und-lazy-loading: done
+
   2-3-breadcrumbs-und-seitentitel: done
+
   2-4-layout-raster-haupt-vs-ki-spalte: done
+
   epic-3: done
+
   3-1-domain-modell-und-jpa: done
+
   3-2-flyway-migrationen: done
+
   3-3-mock-seed-20-projekte: done
+
   3-4-kpi-modul-grundstruktur: done
+
   3-5-basis-rest-projekte-und-portfolio: done
+
   3-6-domain-erweiterung-stammdaten-probleme-snapshots: done
+
   3-7-mock-seed-erweiterung: done
+
   epic-4: done
+
   4-1-portfolio-kpi-berechnung-api: done
+
   4-2-kpi-card-komponente: done
+
   4-3-portfolio-kpi-sektion: done
+
   4-4-portfolio-filter: done
+
+  epic-5: done
+
+  5-1-portfolio-gantt-api: done
+
+  5-2-gantt-timeline-komponente: done
+
+  5-3-portfolio-projekttabelle: done
+
+  5-4-trend-statusvisualisierung: done
+
+  5-5-navigation-tabelle-detail: done
+  epic-6: in-progress
+  6-1-projekt-kpi-api: review
+  6-2-projekt-stammdaten-header: ready-for-dev
+  6-3-projekt-kpi-karten-budget-aufwand: ready-for-dev
+  6-4-projekt-phasen-meilensteine: ready-for-dev
+  6-5-zurueck-navigation-filter: ready-for-dev
+  6-6-management-insights-api-ui: ready-for-dev
+  6-7-berichtsstandsvergleich: ready-for-dev
+

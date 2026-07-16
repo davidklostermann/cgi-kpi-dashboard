@@ -1,31 +1,33 @@
 .app-shell {
   height: 100vh;
-  background: var(--cgi-app-background);
+  min-height: 100vh;
+  background: #f7f7f8;
 }
 
 .app-shell__sidenav {
   width: 240px;
   background: var(--cgi-surface);
-  border-right: 1px solid var(--cgi-border);
+  border-right: 1px solid var(--cgi-gray-7);
 }
 
 .app-shell__content {
   display: flex;
   flex-direction: column;
   min-height: 100vh;
+  background: #f7f7f8;
 }
 
 .app-shell__main {
   flex: 1;
-  padding: 1.5rem;
+  padding: 2rem;
 }
 
-@media (max-width: 767px) {
+@media (max-width: 900px) {
   .app-shell__sidenav {
     width: 200px;
   }
 
   .app-shell__main {
-    padding: 1rem;
+    padding: 1.25rem;
   }
 }

@@ -1,47 +1,50 @@
 .portfolio-kpi-section__grid {
   display: grid;
-  gap: 1rem;
   grid-template-columns: repeat(auto-fit, minmax(10.5rem, 1fr));
+  gap: 1rem;
 }
 
 .portfolio-kpi-section__loading {
   margin: 0;
-  color: var(--cgi-neutral-700);
+  color: var(--cgi-gray-3);
 }
 
-.portfolio-kpi-section__error {
+.portfolio-kpi-section__error,
+.portfolio-kpi-section__empty {
   padding: 1rem;
-  border: 1px solid var(--cgi-border);
-  border-radius: 8px;
+  border-radius: 0.5rem;
   background: var(--cgi-surface);
 }
 
+.portfolio-kpi-section__error {
+  border: 1px solid var(--cgi-error);
+}
+
 .portfolio-kpi-section__empty {
-  padding: 1rem;
-  border: 1px dashed var(--cgi-border);
-  border-radius: 8px;
-  background: var(--cgi-neutral-50);
+  border: 1px dashed var(--cgi-gray-5);
+  background: var(--cgi-gray-7);
 }
 
 .portfolio-kpi-section__empty p,
 .portfolio-kpi-section__error p {
   margin: 0 0 0.75rem;
-  color: var(--cgi-neutral-700);
+  color: var(--cgi-gray-2);
 }
 
 .portfolio-kpi-section__retry {
-  border: 1px solid var(--cgi-primary);
-  border-radius: 6px;
-  background: var(--cgi-primary);
-  color: #fff;
-  font-weight: 600;
+  min-height: 2.5rem;
   padding: 0.5rem 0.875rem;
+  border: 1px solid var(--cgi-purple-2);
+  border-radius: 0.25rem;
+  background: var(--cgi-purple-2);
+  color: #fff;
+  font-weight: 700;
   cursor: pointer;
 }
 
 .portfolio-kpi-section__retry:hover {
-  background: var(--cgi-primary-darkest);
-  border-color: var(--cgi-primary-darkest);
+  border-color: var(--cgi-purple-1);
+  background: var(--cgi-purple-1);
 }
 
 .visually-hidden {

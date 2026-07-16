@@ -17,7 +17,7 @@ import org.springframework.test.context.ActiveProfiles;
 @ActiveProfiles("test")
 class FlywayMigrationIntegrationTest {
 
-    private static final int EXPECTED_MIGRATION_COUNT = 4;
+    private static final int EXPECTED_MIGRATION_COUNT = 5;
 
     @Autowired
     private Flyway flyway;
@@ -27,7 +27,7 @@ class FlywayMigrationIntegrationTest {
         MigrationInfo[] applied = flyway.info().applied();
 
         assertEquals(EXPECTED_MIGRATION_COUNT, applied.length);
-        assertEquals("4", flyway.info().current().getVersion().getVersion());
+        assertEquals("5", flyway.info().current().getVersion().getVersion());
         assertEquals(MigrationState.SUCCESS, flyway.info().current().getState());
 
         long successCount = java.util.Arrays.stream(flyway.info().all())
@@ -43,7 +43,7 @@ class FlywayMigrationIntegrationTest {
         MigrateResult secondRun = flyway.migrate();
 
         assertEquals(0, secondRun.migrationsExecuted);
-        assertEquals("4", flyway.info().current().getVersion().getVersion());
+        assertEquals("5", flyway.info().current().getVersion().getVersion());
         assertTrue(flyway.validateWithResult().validationSuccessful);
     }
 }

@@ -36,11 +36,7 @@
           [value]="formatPercent(summary.scheduleCompliancePercent)"
           unit="%"
         />
-        <app-kpi-card label="Kritische Risiken" [value]="summary.criticalRiskCount" />
-        <app-kpi-card
-          label="Ampelverteilung"
-          [value]="formatStatusDistribution(summary)"
-        />
+        <app-kpi-card label="Kritische Risiken (offen)" [value]="summary.criticalRiskCount" />
       </div>
     }
   }

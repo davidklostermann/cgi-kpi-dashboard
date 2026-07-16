@@ -55,7 +55,7 @@ describe('PortfolioKpiSectionComponent', () => {
     req.flush(mockSummary);
     fixture.detectChanges();
 
-    expect(fixture.nativeElement.querySelectorAll('app-kpi-card').length).toBe(6);
+    expect(fixture.nativeElement.querySelectorAll('app-kpi-card').length).toBe(5);
   });
 
   it('should reload KPIs when filters change (Story 4.4)', () => {
@@ -93,10 +93,14 @@ describe('PortfolioKpiSectionComponent', () => {
     expect(fixture.nativeElement.querySelectorAll('app-kpi-card').length).toBe(0);
   });
 
-  it('should format ampel distribution readably (Epic 4 review fix)', () => {
+  it('should label critical risks distinctly from table issues (Epic 5 review)', () => {
     const fixture = TestBed.createComponent(PortfolioKpiSectionComponent);
-    const component = fixture.componentInstance;
-    expect(component.formatStatusDistribution(mockSummary)).toBe('Grün: 9 · Gelb: 6 · Rot: 4');
+    fixture.detectChanges();
+    httpMock.expectOne('/api/portfolio/kpis').flush(mockSummary);
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.textContent).toContain('Kritische Risiken (offen)');
+    expect(fixture.nativeElement.textContent).not.toContain('Ampelverteilung');
   });
 
   it('should show error panel only in KPI section and retry on failure (Story 4.3)', () => {
@@ -115,6 +119,6 @@ describe('PortfolioKpiSectionComponent', () => {
     retryReq.flush(mockSummary);
     fixture.detectChanges();
 
-    expect(fixture.nativeElement.querySelectorAll('app-kpi-card').length).toBe(6);
+    expect(fixture.nativeElement.querySelectorAll('app-kpi-card').length).toBe(5);
   });
 });

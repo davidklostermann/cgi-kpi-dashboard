@@ -5,7 +5,7 @@ import {
   PortfolioFilters,
 } from '../../shared/models/portfolio-filter.model';
 
-/** Shared portfolio filter state for KPI and future views (FR-8). */
+/** Shared portfolio filter state — root singleton preserves filters across navigation (FR-7 / Story 5.5). */
 @Injectable({ providedIn: 'root' })
 export class PortfolioFilterService {
   readonly filters = signal<PortfolioFilters>({ ...EMPTY_PORTFOLIO_FILTERS });

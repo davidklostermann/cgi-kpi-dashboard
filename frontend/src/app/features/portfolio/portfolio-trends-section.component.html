@@ -1,0 +1,18 @@
+<section class="portfolio-trends-section" aria-live="polite">
+  @if (status() === 'loading') {
+    <p class="portfolio-trends-section__loading">Trends werden geladen …</p>
+  } @else if (status() === 'error') {
+    <div class="portfolio-trends-section__error" role="alert">
+      <p>{{ errorMessage() }}</p>
+      <button type="button" class="portfolio-trends-section__retry" (click)="load()">
+        Erneut laden
+      </button>
+    </div>
+  } @else if (trends(); as data) {
+    @if (data.empty) {
+      <p class="portfolio-trends-section__empty" role="status">Keine Trenddaten für diesen Filter.</p>
+    } @else {
+      <app-trend-chart [points]="data.points" [statusDistribution]="data.statusDistribution" />
+    }
+  }
+</section>

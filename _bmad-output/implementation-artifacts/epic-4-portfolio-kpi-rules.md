@@ -169,7 +169,7 @@ Wenn `filteredProjects` leer ist:
 | Gantt, Charts | 5 |
 | Problem-KPI Portfolio-Ebene | 5/6 (Change Request) |
 | Projektsuche nach Name | Follow-up |
-| Filter-Sync mit Tabelle/Gantt/Charts | 5 |
+| Filter-Sync mit Tabelle/Gantt/Charts | 5 (Gantt ✓, Tabelle/Charts offen) |
 
 ---
 

@@ -1,22 +1,54 @@
-@import '@angular/material/prebuilt-themes/indigo-pink.css';
+@import "@angular/material/prebuilt-themes/indigo-pink.css";
 
 :root {
-  --cgi-primary-darkest: #200a58;
-  --cgi-primary: #5236ab;
-  --cgi-primary-light: #9e83f5;
-  --cgi-primary-lighter: #cbc3e6;
-  --cgi-primary-surface: #f2f1f9;
-  --cgi-neutral-900: #151515;
-  --cgi-neutral-700: #333333;
-  --cgi-neutral-200: #e8e8e8;
+  /* CGI chart and application palette */
+  --cgi-purple-1: #200a58;
+  --cgi-purple-2: #5236ab;
+  --cgi-purple-3: #6e3fed;
+  --cgi-purple-4: #9e83f5;
+  --cgi-purple-5: #bfb5f9;
+  --cgi-purple-6: #cbc3e6;
+  --cgi-purple-7: #e6e3f3;
+
+  --cgi-red-1: #650a21;
+  --cgi-red-2: #991f3d;
+  --cgi-red-3: #e31937;
+  --cgi-red-4: #ff6a00;
+  --cgi-red-5: #ff7362;
+  --cgi-red-6: #ff978a;
+  --cgi-red-7: #ffcdd2;
+
+  --cgi-gray-1: #000000;
+  --cgi-gray-2: #333333;
+  --cgi-gray-3: #555555;
+  --cgi-gray-4: #777777;
+  --cgi-gray-5: #999999;
+  --cgi-gray-6: #cccccc;
+  --cgi-gray-7: #eeeeee;
+
+  --cgi-success: #128354;
+  --cgi-warning: #f1a425;
+  --cgi-error: #b00020;
+
+  /* Existing aliases retained for the current application. */
+  --cgi-primary-darkest: var(--cgi-purple-1);
+  --cgi-primary: var(--cgi-purple-2);
+  --cgi-primary-light: var(--cgi-purple-4);
+  --cgi-primary-lighter: var(--cgi-purple-6);
+  --cgi-primary-surface: var(--cgi-purple-7);
+  --cgi-neutral-900: var(--cgi-gray-1);
+  --cgi-neutral-700: var(--cgi-gray-2);
+  --cgi-neutral-500: var(--cgi-gray-4);
+  --cgi-neutral-200: var(--cgi-gray-6);
+  --cgi-neutral-100: var(--cgi-gray-7);
   --cgi-neutral-50: #f8f8f8;
   --cgi-neutral-0: #ffffff;
-  --cgi-ki-surface: #f2f1f9;
-  --cgi-ki-border: #cbc3e6;
-  --cgi-ki-ink: #200a58;
+  --cgi-ki-surface: var(--cgi-purple-7);
+  --cgi-ki-border: var(--cgi-purple-6);
+  --cgi-ki-ink: var(--cgi-purple-1);
   --cgi-app-background: #f8f8f8;
   --cgi-surface: #ffffff;
-  --cgi-border: #e8e8e8;
+  --cgi-border: var(--cgi-gray-7);
 }
 
 *,
@@ -29,9 +61,16 @@ html,
 body {
   height: 100%;
   margin: 0;
-  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
-  color: var(--cgi-neutral-900);
+  font-family: "Source Sans 3", "Source Sans Pro", Arial, sans-serif;
+  color: var(--cgi-gray-1);
   background: var(--cgi-app-background);
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
 }
 
 a {

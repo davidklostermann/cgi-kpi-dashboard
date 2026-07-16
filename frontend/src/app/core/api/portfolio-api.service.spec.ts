@@ -6,6 +6,9 @@ import { firstValueFrom } from 'rxjs';
 import { PortfolioApiService } from './portfolio-api.service';
 
 import { PortfolioKpiSummary } from '../../shared/models/portfolio-kpi.model';
+import { PortfolioTimeline } from '../../shared/models/portfolio-timeline.model';
+import { PortfolioTable } from '../../shared/models/portfolio-table.model';
+import { PortfolioTrends } from '../../shared/models/portfolio-trends.model';
 
 describe('PortfolioApiService', () => {
   let service: PortfolioApiService;
@@ -65,6 +68,47 @@ describe('PortfolioApiService', () => {
     });
 
     await expect(responsePromise).resolves.toMatchObject({ activeProjectCount: 1 });
+  });
+
+  it('getPortfolioTimeline should call /api/portfolio/timeline (Story 5.1)', async () => {
+    const mockTimeline: PortfolioTimeline = {
+      projects: [],
+      empty: true,
+    };
+
+    const responsePromise = firstValueFrom(service.getPortfolioTimeline());
+
+    const req = httpMock.expectOne('/api/portfolio/timeline');
+    expect(req.request.method).toBe('GET');
+    req.flush(mockTimeline);
+
+    await expect(responsePromise).resolves.toEqual(mockTimeline);
+  });
+
+  it('getPortfolioProjects should call /api/portfolio/projects (Story 5.3)', async () => {
+    const mockTable: PortfolioTable = { projects: [], empty: true };
+    const responsePromise = firstValueFrom(service.getPortfolioProjects());
+
+    const req = httpMock.expectOne('/api/portfolio/projects');
+    expect(req.request.method).toBe('GET');
+    req.flush(mockTable);
+
+    await expect(responsePromise).resolves.toEqual(mockTable);
+  });
+
+  it('getPortfolioTrends should call /api/portfolio/trends (Story 5.4)', async () => {
+    const mockTrends: PortfolioTrends = {
+      points: [],
+      statusDistribution: { onTrack: 0, atRisk: 0, critical: 0, completed: 0 },
+      empty: true,
+    };
+    const responsePromise = firstValueFrom(service.getPortfolioTrends());
+
+    const req = httpMock.expectOne('/api/portfolio/trends');
+    expect(req.request.method).toBe('GET');
+    req.flush(mockTrends);
+
+    await expect(responsePromise).resolves.toEqual(mockTrends);
   });
 
   it('getHealthProbe should call /actuator/health without /api prefix', async () => {

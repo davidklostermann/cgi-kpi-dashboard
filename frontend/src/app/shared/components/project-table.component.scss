@@ -1,0 +1,162 @@
+.project-table {
+  margin-top: 2rem;
+}
+
+.project-table__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  justify-content: space-between;
+  gap: 0.75rem 1rem;
+  margin-bottom: 1rem;
+}
+
+.project-table__eyebrow {
+  margin: 0 0 0.2rem;
+  color: var(--cgi-primary);
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.project-table__title {
+  margin: 0;
+  color: var(--cgi-neutral-900);
+  font-size: 1.125rem;
+  font-weight: 700;
+}
+
+.project-table__hint {
+  margin: 0;
+  color: var(--cgi-gray-4);
+  font-size: 0.6875rem;
+}
+
+.project-table__scroll {
+  max-height: 34rem;
+  overflow: auto;
+  border: 1px solid var(--cgi-gray-6);
+  border-radius: 0.5rem;
+  background: var(--cgi-surface);
+  box-shadow: 0 1px 3px rgb(32 10 88 / 7%);
+  outline: none;
+}
+
+.project-table__scroll:focus-visible {
+  box-shadow: 0 0 0 3px var(--cgi-purple-5);
+}
+
+.project-table__grid {
+  width: 100%;
+  min-width: 82rem;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: 0.75rem;
+}
+
+.project-table__grid th,
+.project-table__grid td {
+  padding: 0.7rem 0.75rem;
+  border-bottom: 1px solid var(--cgi-gray-6);
+  background: var(--cgi-surface);
+  color: var(--cgi-gray-2);
+  text-align: left;
+  vertical-align: middle;
+  white-space: nowrap;
+}
+
+.project-table__grid thead th {
+  position: sticky;
+  top: 0;
+  z-index: 3;
+  border-bottom: 1px solid var(--cgi-purple-6);
+  background: var(--cgi-purple-1);
+  color: #fff;
+  font-size: 0.6875rem;
+  font-weight: 700;
+}
+
+.project-table__sticky-col {
+  position: sticky;
+  left: 0;
+  z-index: 2;
+  min-width: 12rem;
+  max-width: 16rem;
+  box-shadow: 1px 0 0 var(--cgi-gray-6);
+}
+
+.project-table__grid thead .project-table__sticky-col {
+  z-index: 5;
+  background: var(--cgi-purple-1);
+}
+
+.project-table__grid tbody .project-table__sticky-col {
+  overflow: hidden;
+  color: var(--cgi-purple-1);
+  font-weight: 700;
+  text-overflow: ellipsis;
+}
+
+.project-table__sort {
+  border: 0;
+  background: transparent;
+  padding: 0;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
+.project-table__sort:hover {
+  color: var(--cgi-purple-5);
+}
+
+.project-table__sort:focus-visible {
+  outline: 2px solid #fff;
+  outline-offset: 3px;
+}
+
+.project-table__row {
+  cursor: pointer;
+}
+
+.project-table__row:hover th,
+.project-table__row:hover td,
+.project-table__row:focus-visible th,
+.project-table__row:focus-visible td {
+  background: var(--cgi-purple-7);
+}
+
+.project-table__row:focus-visible {
+  outline: 3px solid var(--cgi-purple-4);
+  outline-offset: -3px;
+}
+
+.project-table__progress {
+  display: flex;
+  min-width: 8rem;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.project-table__progress-track {
+  flex: 1;
+  height: 0.4rem;
+  overflow: hidden;
+  border-radius: 999px;
+  background: var(--cgi-gray-7);
+}
+
+.project-table__progress-bar {
+  height: 100%;
+  border-radius: inherit;
+  background: var(--cgi-purple-2);
+}
+
+.project-table__progress-value {
+  min-width: 3.2rem;
+  color: var(--cgi-gray-2);
+  font-size: 0.6875rem;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}

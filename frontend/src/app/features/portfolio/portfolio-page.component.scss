@@ -1,11 +1,31 @@
+.page {
+  width: min(100%, 100rem);
+  margin: 0 auto;
+}
+
+.page__header {
+  margin-bottom: 1.25rem;
+}
+
 .page__header h1 {
   margin: 0 0 0.25rem;
-  font-size: 1.75rem;
+  color: var(--cgi-purple-1);
+  font-size: 2rem;
+  line-height: 1.1;
 }
 
 .page__header p {
-  margin: 0 0 1.5rem;
-  color: var(--cgi-neutral-700);
+  margin: 0;
+  color: var(--cgi-gray-3);
+}
+
+.page__kpi-row {
+  display: block;
+}
+
+.page__visualizations {
+  width: 100%;
+  margin-top: 1.5rem;
 }
 
 .visually-hidden {

@@ -22,12 +22,17 @@ describe('AppShellComponent', () => {
     expect(element.querySelector('mat-sidenav')).toBeTruthy();
   });
 
-  it('should use CGI primary-darkest on top nav toolbar', () => {
+  it('should render the quiet CGI text brand in the top nav', () => {
     const fixture = TestBed.createComponent(AppShellComponent);
     fixture.detectChanges();
 
     const toolbar = fixture.nativeElement.querySelector('.cgi-top-nav') as HTMLElement;
     expect(toolbar).toBeTruthy();
-    expect(toolbar.textContent).toContain('CGI KPI Dashboard');
+    expect(toolbar.querySelector('.cgi-top-nav__brand-mark')?.textContent?.trim()).toBe('CGI');
+    expect(toolbar.querySelector('.cgi-top-nav__brand-title')?.textContent?.trim()).toBe(
+      'KPI Dashboard',
+    );
+    expect(toolbar.textContent).toContain('Portfolio & Projektsteuerung');
+    expect(toolbar.querySelector('img.cgi-top-nav__logo')).toBeNull();
   });
 });

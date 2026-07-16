@@ -2,6 +2,9 @@ import { Component } from '@angular/core';
 
 import { FactsAiLayoutComponent } from '../../core/layout/facts-ai-layout.component';
 import { AiPanelPlaceholderComponent } from '../ai/ai-panel-placeholder.component';
+import { PortfolioGanttSectionComponent } from './portfolio-gantt-section.component';
+import { PortfolioTableSectionComponent } from './portfolio-table-section.component';
+import { PortfolioTrendsSectionComponent } from './portfolio-trends-section.component';
 import { PortfolioFilterBarComponent } from './portfolio-filter-bar.component';
 import { PortfolioKpiSectionComponent } from './portfolio-kpi-section.component';
 
@@ -13,6 +16,9 @@ import { PortfolioKpiSectionComponent } from './portfolio-kpi-section.component'
     AiPanelPlaceholderComponent,
     PortfolioFilterBarComponent,
     PortfolioKpiSectionComponent,
+    PortfolioTrendsSectionComponent,
+    PortfolioGanttSectionComponent,
+    PortfolioTableSectionComponent,
   ],
   templateUrl: './portfolio-page.component.html',
   styleUrl: './portfolio-page.component.scss',

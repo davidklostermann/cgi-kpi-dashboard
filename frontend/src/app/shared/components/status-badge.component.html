@@ -1,0 +1,10 @@
+<span
+  class="status-badge"
+  [class.status-badge--on-track]="status() === 'ON_TRACK'"
+  [class.status-badge--at-risk]="status() === 'AT_RISK'"
+  [class.status-badge--critical]="status() === 'CRITICAL'"
+  [class.status-badge--completed]="status() === 'COMPLETED'"
+>
+  <span class="status-badge__dot" aria-hidden="true"></span>
+  <span class="status-badge__label">{{ label() }}</span>
+</span>

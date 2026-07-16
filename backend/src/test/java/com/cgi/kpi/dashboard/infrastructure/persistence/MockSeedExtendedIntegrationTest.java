@@ -32,7 +32,7 @@ import com.cgi.kpi.dashboard.infrastructure.persistence.seed.MockSeedInsightClas
 class MockSeedExtendedIntegrationTest {
 
     private static final int EXPECTED_PROJECT_COUNT = 20;
-    private static final int SNAPSHOTS_PER_PROJECT = 2;
+    private static final int SNAPSHOTS_PER_PROJECT = 12;
 
     @Autowired
     private ProjectRepository projectRepository;
@@ -81,7 +81,7 @@ class MockSeedExtendedIntegrationTest {
     }
 
     @Test
-    void seedV4ProvidesTwoReportSnapshotsPerProject() {
+    void seedV4ProvidesTwelveReportSnapshotsPerProject() {
         List<ProjectReportSnapshot> snapshots = projectReportSnapshotRepository.findAll();
         assertEquals(EXPECTED_PROJECT_COUNT * SNAPSHOTS_PER_PROJECT, snapshots.size());
 

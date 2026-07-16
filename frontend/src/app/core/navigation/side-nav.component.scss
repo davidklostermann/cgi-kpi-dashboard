@@ -1,16 +1,22 @@
 .cgi-side-nav__list {
-  padding-top: 0.5rem;
+  padding: 0.75rem 0.5rem;
 }
 
 a[mat-list-item] {
-  color: var(--cgi-neutral-700);
-  font-weight: 500;
   border-left: 3px solid transparent;
+  border-radius: 0.5rem;
+  min-height: 3rem;
+  color: var(--cgi-gray-2);
+  font-weight: 500;
+}
+
+a[mat-list-item]:hover {
+  background: var(--cgi-gray-7);
 }
 
 a[mat-list-item].cgi-side-nav__link--active {
-  background: var(--cgi-primary-surface);
+  background: var(--cgi-purple-7);
   color: var(--cgi-primary-darkest);
-  border-left-color: var(--cgi-primary);
+  border-left-color: var(--cgi-red-3);
   font-weight: 700;
 }
