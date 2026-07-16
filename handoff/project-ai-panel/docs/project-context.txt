@@ -1,0 +1,449 @@
+# Projektkontext: CGI KPI Dashboard
+
+## Projektziel
+
+Ich entwickle eine interne Unternehmensanwendung für CGI zur Steuerung eines Projektportfolios.
+
+Die Anwendung soll Führungskräften und Projektleitern ermöglichen:
+
+- Portfolio-Kennzahlen zu überblicken
+- Projekte nach verschiedenen Kriterien zu filtern
+- kritische Projekte schnell zu erkennen
+- Fortschritt, Termine, Budget und Aufwand zu analysieren
+- einzelne Projekte detailliert zu öffnen
+- Risiken, eingetretene Probleme und Maßnahmen nachzuverfolgen
+- später KI-gestützte Zusammenfassungen und Analysen zu nutzen
+
+GitHub-Repository:
+
+https://github.com/davidklostermann/cgi-kpi-dashboard
+
+Der aktuelle Entwicklungsstand befindet sich auf dem Branch `main`.
+
+---
+
+## Technologie
+
+### Frontend
+
+- Angular 22
+- TypeScript 6
+- Angular Material/CDK
+- RxJS
+- SCSS
+- Vitest
+- Standalone Components
+- Angular Router
+
+### Backend
+
+- Java
+- Spring Boot
+- REST-API
+- JPA
+- PostgreSQL
+- Flyway-Migrationen
+- Maven
+
+### Vorgehensmodell
+
+Das Projekt wird mit der BMAD-Methode entwickelt:
+
+- Analyse
+- Product Brief
+- PRD
+- UX
+- Architektur
+- Epics
+- Stories
+- Implementierung
+- Tests
+- Reviews
+
+Cursor AI wird als Entwicklungsumgebung und Coding-Agent verwendet.
+
+---
+
+## Architekturprinzipien
+
+- Das Angular-Frontend kommuniziert über REST mit Spring Boot.
+- Präsentationskomponenten sollen keinen direkten `HttpClient` verwenden.
+- API-Zugriffe liegen in `core/api`.
+- Fachliche KPI-Berechnungen liegen im Backend unter `kpi.*`.
+- PostgreSQL enthält reproduzierbare Mock-/Seed-Daten.
+- Filterzustände werden zentral im Angular-Frontend verwaltet.
+- Risiken und bereits eingetretene Probleme sind fachlich getrennte Entitäten.
+- Fachliche Regeln dürfen nicht stillschweigend im Code erfunden werden.
+- KPI-Formeln und Annahmen müssen dokumentiert sein.
+
+---
+
+# Aktueller BMAD-Stand
+
+## Epic 1–3
+
+Abgeschlossen:
+
+- Grundstruktur Frontend und Backend
+- Angular-Anwendungsstruktur
+- REST- und Datenbankgrundlage
+- PostgreSQL-Domainmodell
+- Flyway-Seeds mit ungefähr 20 fiktiven Projekten
+- Projekte, Phasen, Meilensteine, Budget, Aufwand, Risiken und Probleme
+- verschiedene Testszenarien:
+  - im Plan
+  - Terminverzug
+  - Budgetüberzug
+  - offene Risiken
+  - widersprüchliche Signale
+  - abgeschlossenes Projekt
+
+---
+
+## Epic 4: Portfolio-KPIs und Filter
+
+Implementiert, reviewed und freigegeben.
+
+Auf `/portfolio` sind vorhanden:
+
+- aktive beziehungsweise gefilterte Projekte
+- durchschnittlicher Fortschritt
+- Budgetabweichung
+- Termintreue
+- kritische Risiken
+- Statusverteilung
+- Filter für:
+  - Kunde/Geschäftsbereich
+  - Projektleitung
+  - Ampelstatus
+  - Phase
+  - Projektstatus
+  - Berichtsmonat
+  - Risikostufe
+- Laden-, Fehler- und Leerzustände
+- Filter zurücksetzen
+
+KPI-Regeln sind zentral dokumentiert:
+
+`_bmad-output/implementation-artifacts/epic-4-portfolio-kpi-rules.md`
+
+Wichtige fachliche Regeln:
+
+- Durchschnittsfortschritt = arithmetisches Mittel
+- Budgetabweichung wird im Backend berechnet
+- Termintreue basiert auf Terminabweichungen
+- kritische Risiken umfassen die dokumentierten hohen/kritischen Stufen
+- Statusverteilung und Projektanzahl sind konsistent
+
+---
+
+## Epic 5: Portfolio-Visualisierungen
+
+Implementiert und funktional.
+
+Die Portfolio-Seite enthält:
+
+- Fortschrittstrend
+- Budgetentwicklung
+- Statusverteilung
+- Auswahl 3M / 6M / 12M
+- Portfolio-Gantt beziehungsweise Portfolio-Zeitleiste
+- Projektphasen
+- Plan-/Prognoseabweichungen
+- Heute-Markierung
+- Kundenübergabe
+- horizontales Scrollen
+- Management-Projekttabelle
+- sortierbare Spalten
+- Klick auf ein Projekt öffnet die Detailseite
+- Portfoliofilter bleiben erhalten
+
+Die Charts und das Gantt wurden bereits auf das CGI-Design überarbeitet.
+
+Wichtige Designentscheidungen:
+
+- CGI-Purple für zentrale Daten
+- CGI-Red nur für negative/gefährdete Zustände
+- Success, Warning und Error gemäß CGI-Farbsystem
+- keine gelben Meilenstein-Diamanten
+- Kundenübergabe wird beschriftet dargestellt
+- deutsche Monats-, Datums- und Zahlenformate
+- keine sichtbaren Balken bei Wert null
+- Jahres- und Monatsachse im Gantt sind lesbar und fixiert
+
+Der formale Reviewstatus von Epic 5 sollte im Repository beziehungsweise Sprintstatus geprüft werden.
+
+---
+
+## Epic 6: Projekt-Detailseite
+
+Alle Stories 6.1–6.7 wurden implementiert und im BMAD-Sprintstatus auf `done` gesetzt.
+
+Die Detailseite ist erreichbar unter:
+
+`/projects/{uuid}`
+
+Runtime wurde geprüft und liefert echte Daten.
+
+Aktuell vorhanden:
+
+### Projektkopf
+
+- Breadcrumb
+- Projektname
+- technische Projekt-ID
+- Kunde/Geschäftsbereich
+- Projektleitung
+- Startdatum
+- Planende
+- Prognoseende
+- aktuelle Phase
+- letzte Datenaktualisierung
+- Status
+- Zurück zum Portfolio
+
+### Management-KPIs
+
+- Status
+- Fortschritt
+- Zeitverbrauch
+- Terminabweichung
+- offene Risiken
+- offene Probleme
+- kritische Risiken/Probleme
+
+### Budget und Aufwand
+
+- Plan
+- Ist
+- Verbrauch
+- Abweichung
+- Rest
+- Hochrechnung/Forecast
+
+### Phasen und Meilensteine
+
+- Projekt-Gantt
+- Phasen
+- Plantermine
+- Prognosetermine
+- Verzögerungen
+- Heute-Markierung
+- Kundenübergabe
+- Meilensteine
+
+### Weitere Bereiche
+
+- deterministische Management Insights
+- Berichtsstandsvergleich
+- Rückkehr zum Portfolio mit erhaltenen Filtern
+- KI-Platzhalter für spätere Epics
+
+---
+
+# Aktuelle fachliche Bewertung der Detailseite
+
+Die Seite zeigt Zahlen und Termine bereits gut, beantwortet aber noch nicht ausreichend:
+
+- Was ist das konkrete Problem?
+- Was ist die Ursache?
+- Welche Auswirkungen entstehen?
+- Wer ist verantwortlich?
+- Welche Maßnahme läuft?
+- Bis wann muss die Maßnahme umgesetzt sein?
+- Welche Entscheidung oder Eskalationsvorbereitung ist nötig?
+- Fehlen Teammitglieder oder bestimmte Kompetenzen?
+
+Beispiel eines relevanten Problems:
+
+- Problemtyp: Ressourcenengpass
+- fehlende Rolle: Cloud Engineer
+- Bedarf: 3 FTE
+- verfügbar: 1 FTE
+- Lücke: 2 FTE
+- Auswirkung: Rollout verzögert sich um 18 Tage
+- Owner: Projektleitung
+- Maßnahme: externe Unterstützung beauftragen
+- Fälligkeit: konkretes Datum
+
+---
+
+# Empfohlene Weiterentwicklung
+
+## Probleme, Risiken und Maßnahmen
+
+Der zentrale Bereich sollte erhalten und ausgebaut werden.
+
+Pro Problem beziehungsweise Risiko sollten sichtbar sein:
+
+- Titel
+- Beschreibung
+- Kategorie
+- Schweregrad
+- Status
+- Ursache
+- Auswirkung auf Termin, Budget, Scope oder Qualität
+- Owner
+- Fälligkeit
+- verknüpfte Maßnahme
+- betroffener Meilenstein
+- Eskalationsbedarf
+
+Maßnahmen sollten enthalten:
+
+- konkrete Maßnahme
+- Verantwortlicher
+- Fälligkeit
+- Status
+- verknüpftes Problem/Risiko
+- erwartete Wirkung
+
+Mögliche Kategorien:
+
+- Ressourcen
+- Termine
+- Budget
+- Qualität
+- Technik
+- Kunde
+- Lieferant
+- Abhängigkeit
+- Scope
+- Organisation
+
+---
+
+## Team und Kapazität
+
+Ein kompakter Bereich wäre sinnvoll:
+
+- Rollenbesetzung
+- verfügbare Kapazität
+- fehlende Rollen
+- fehlende Skills
+- überlastete Rollen
+- Schlüsselpersonenrisiken
+- externe Unterstützung
+- nächste Verfügbarkeit
+- Auswirkungen auf Termine und Budget
+
+Die Anwendung soll dabei keine sensiblen Krankheits- oder Personaldetails anzeigen, sondern nur projektbezogene Kapazitätswirkungen.
+
+---
+
+## KI-Integration
+
+Die KI soll keine Entscheidungen selbst treffen und keine Maßnahmen automatisch auslösen.
+
+Ein realistischer KI-Bereich soll stattdessen:
+
+- Projektsituation zusammenfassen
+- Hauptursachen erkennen
+- Probleme priorisieren
+- Maßnahmenoptionen vorschlagen
+- Auswirkungen erklären
+- fehlende Informationen benennen
+- Statusberichte entwerfen
+- Maßnahmenlisten vorbereiten
+- Eskalations- oder Steering-Unterlagen vorbereiten
+- Fragen auf Basis freigegebener Backend-Daten beantworten
+
+Sinnvolle KI-Tabs:
+
+1. Überblick
+2. Maßnahmenvorschläge
+3. Fragen
+
+Nicht sinnvoll ist eine direkte Schaltfläche wie „Zusatzbudget entscheiden“. Entscheidungen bleiben bei Projektleitung, Steering Committee oder Management.
+
+---
+
+# Aktueller UI-Entwurf
+
+Eine HTML-Vorschau wurde erstellt, in der:
+
+- links „Probleme, Risiken & Maßnahmen“ bleibt
+- darunter der Projektzeitplan bleibt
+- rechts ein realistischer KI-Arbeitsbereich integriert ist
+- die unrealistische Box „Offene Entscheidungen“ entfernt wurde
+- Team und Kapazität kompakt dargestellt werden
+
+Dateiname der Vorschau aus dem vorherigen Chat:
+
+`project-detail-realistic-ai-preview.html`
+
+Diese Vorschau ist bislang ein Designziel und noch nicht zwingend vollständig in Angular integriert.
+
+---
+
+# CGI-Design
+
+Die Anwendung orientiert sich am CGI Experience Design System und den CGI Brand Guidelines.
+
+Verwendete Hauptfarben:
+
+- Purple 1: `#200a58`
+- Purple 2: `#5236ab`
+- Purple 3: `#6e3fed`
+- Purple 6: `#cbc3e6`
+- Purple 7: `#e6e3f3`
+- Red 3: `#e31937`
+- Success: `#128354`
+- Warning: `#f1a425`
+- Error: `#b00020`
+- Gray 2: `#333333`
+- Gray 3: `#555555`
+- Gray 6: `#cccccc`
+- Gray 7: `#eeeeee`
+
+Schrift für Webanwendungen:
+
+- Source Sans
+- Fallback: Arial/Helvetica
+
+Designprinzipien:
+
+- wenige, funktionale Farben
+- klare visuelle Hierarchie
+- Farbe niemals als einzige Information
+- Beschriftungen direkt an Daten
+- wenig dekorative Elemente
+- gute Kontraste
+- verständliche deutsche Begriffe
+- barrierefreie Tastaturbedienung
+
+---
+
+# Header und Navigation
+
+Der Header wurde bereits überarbeitet:
+
+- weißer Header
+- Textmarke `CGI`
+- Titel `KPI Dashboard`
+- Untertitel `Portfolio & Projektsteuerung`
+- keine Logo-Bilddatei
+- helle Sidebar
+- aktiver Menüpunkt mit CGI-Purple-Fläche und rotem Rand
+- Portfolio-Link im Branding
+- Routing unverändert
+
+Build und Shell-Tests waren nach der Änderung grün.
+
+---
+
+# Git-Arbeitsweise
+
+Repository:
+
+`https://github.com/davidklostermann/cgi-kpi-dashboard`
+
+Aktuell wird meist direkt auf `main` gearbeitet.
+
+Typischer Ablauf:
+
+```bash
+git status
+git add .
+git commit -m "feat: kurze Beschreibung"
+git push origin main

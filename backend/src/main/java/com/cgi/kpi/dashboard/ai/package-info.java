@@ -1,4 +1,6 @@
 /**
- * Gemini use cases and AI orchestration; reads only via kpi.reader (Architecture Spine — ai module).
+ * Project AI orchestration. Reads project facts only via {@code kpi.reader}
+ * (Architecture Spine — ai module). External model calls stay server-side;
+ * default provider is a local mock for development and CI.
  */
 package com.cgi.kpi.dashboard.ai;

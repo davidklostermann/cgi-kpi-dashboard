@@ -1,0 +1,49 @@
+{
+  "projectId": "550e8400-e29b-41d4-a716-446655440000",
+  "factsAsOf": "2026-07-01T08:00:00Z",
+  "generatedAt": "2026-07-16T07:30:00Z",
+  "status": "SUCCESS",
+  "availableSources": [
+    "MANAGEMENT_KPI",
+    "BUDGET",
+    "PROBLEM",
+    "RISK",
+    "ACTION",
+    "CAPACITY",
+    "REPORT_DELTA"
+  ],
+  "summary": "Das Projekt ist operativ gefährdet. Die bestätigte Lücke von zwei Cloud-Engineering-FTE ist mit einer Terminabweichung von 18 Tagen verknüpft. Die vorgesehene externe Verstärkung stabilisiert voraussichtlich die Kapazität, ist jedoch mit dem erhöhten Budget-Forecast verbunden.",
+  "priorities": [
+    {
+      "rank": 1,
+      "title": "Ressourcenentscheidung vorbereiten",
+      "reason": "Ohne zusätzliche Cloud-Engineering-Kapazität bleibt die bereits eingetretene Terminabweichung bestehen.",
+      "evidenceFactIds": [
+        "capacity.role.cloud-engineer",
+        "kpi.scheduleDeviationDays"
+      ]
+    }
+  ],
+  "suggestedActions": [
+    {
+      "title": "Optionen für externe Verstärkung gegenüberstellen",
+      "reason": "Kosten, Terminwirkung und Restrisiko sollen als Entscheidungsgrundlage für das Steering transparent werden.",
+      "suggestedOwner": "Projektleitung",
+      "suggestedDueDate": null,
+      "addressesType": "PROBLEM",
+      "addressesId": "problem-123",
+      "expectedEffect": "Bessere Entscheidungsgrundlage zur Reduktion des Terminrisikos",
+      "evidenceFactIds": [
+        "capacity.role.cloud-engineer",
+        "budget.forecastDeviation"
+      ],
+      "isProposal": true
+    }
+  ],
+  "missingData": [
+    {
+      "area": "QUALITY",
+      "description": "Aktuelle Angaben zu offenen Defects, Testabdeckung und Abnahmestatus fehlen."
+    }
+  ]
+}

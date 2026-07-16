@@ -1,0 +1,754 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>CGI KPI Dashboard – Projekt-KI-Panel Vorschau</title>
+  <style>
+    :root {
+      --cgi-purple-1: #200a58;
+      --cgi-purple-2: #5236ab;
+      --cgi-purple-3: #6e3fed;
+      --cgi-purple-6: #cbc3e6;
+      --cgi-purple-7: #e6e3f3;
+      --cgi-red-3: #e31937;
+      --success: #128354;
+      --warning: #a96700;
+      --warning-bg: #fff4db;
+      --error: #b00020;
+      --error-bg: #fff0f2;
+      --gray-1: #1f1f1f;
+      --gray-2: #333;
+      --gray-3: #555;
+      --gray-4: #777;
+      --gray-5: #a7a7a7;
+      --gray-6: #ccc;
+      --gray-7: #eee;
+      --gray-8: #f6f6f8;
+      --white: #fff;
+      --shadow: 0 2px 12px rgba(32, 10, 88, 0.08);
+      --radius: 12px;
+    }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      color: var(--gray-2);
+      background: #f4f3f8;
+      font-family: "Source Sans 3", "Source Sans Pro", Arial, Helvetica, sans-serif;
+      font-size: 15px;
+      line-height: 1.45;
+    }
+    button, input, textarea { font: inherit; }
+    button { cursor: pointer; }
+    a { color: inherit; }
+
+    .app-shell {
+      min-height: 100vh;
+      display: grid;
+      grid-template-columns: 232px minmax(0, 1fr);
+      grid-template-rows: 68px minmax(0, 1fr);
+    }
+
+    .topbar {
+      grid-column: 1 / -1;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 24px;
+      background: var(--white);
+      border-bottom: 1px solid #ddd9e8;
+      position: sticky;
+      top: 0;
+      z-index: 20;
+    }
+    .brand { display: flex; align-items: center; gap: 15px; }
+    .brand__mark {
+      color: var(--cgi-purple-1);
+      font-size: 28px;
+      font-weight: 800;
+      letter-spacing: -.7px;
+    }
+    .brand__divider { width: 1px; height: 34px; background: #d8d4e4; }
+    .brand__title { color: var(--cgi-purple-1); font-size: 17px; font-weight: 700; }
+    .brand__subtitle { color: var(--gray-4); font-size: 12px; margin-top: 1px; }
+    .topbar__actions { display: flex; align-items: center; gap: 12px; }
+    .data-date { color: var(--gray-4); font-size: 13px; }
+    .avatar {
+      width: 36px; height: 36px; border-radius: 50%;
+      display: grid; place-items: center;
+      background: var(--cgi-purple-7); color: var(--cgi-purple-1);
+      font-weight: 700;
+    }
+
+    .sidebar {
+      grid-row: 2;
+      padding: 22px 14px;
+      background: #fbfbfd;
+      border-right: 1px solid #ddd9e8;
+      position: sticky;
+      top: 68px;
+      height: calc(100vh - 68px);
+    }
+    .nav-label { padding: 0 12px 8px; color: var(--gray-4); font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .7px; }
+    .nav-item {
+      display: flex; align-items: center; gap: 11px;
+      width: 100%; padding: 11px 12px; margin: 3px 0;
+      border: 0; border-radius: 8px; background: transparent;
+      color: var(--gray-3); text-align: left;
+    }
+    .nav-item:hover { background: var(--cgi-purple-7); }
+    .nav-item.active {
+      background: var(--cgi-purple-1); color: white;
+      box-shadow: inset 4px 0 0 var(--cgi-red-3);
+    }
+    .nav-icon { width: 22px; text-align: center; font-size: 16px; }
+
+    main { min-width: 0; padding: 24px 28px 56px; }
+    .breadcrumb { display: flex; gap: 7px; align-items: center; color: var(--gray-4); font-size: 13px; margin-bottom: 14px; }
+    .breadcrumb a { color: var(--cgi-purple-2); text-decoration: none; }
+
+    .project-header {
+      display: flex; justify-content: space-between; align-items: flex-start; gap: 24px;
+      margin-bottom: 18px;
+    }
+    .project-header h1 { margin: 0 0 5px; color: var(--cgi-purple-1); font-size: 29px; line-height: 1.15; }
+    .project-header__meta { display: flex; flex-wrap: wrap; gap: 7px 18px; color: var(--gray-4); font-size: 13px; }
+    .project-header__meta strong { color: var(--gray-2); font-weight: 600; }
+    .header-status { display: flex; align-items: center; gap: 10px; }
+    .status-badge {
+      display: inline-flex; align-items: center; gap: 7px;
+      padding: 7px 11px; border-radius: 999px;
+      font-size: 13px; font-weight: 700;
+      background: var(--error-bg); color: var(--error);
+      border: 1px solid #f4c4cc;
+    }
+    .status-dot { width: 8px; height: 8px; border-radius: 50%; background: currentColor; }
+    .secondary-button, .primary-button, .icon-button {
+      min-height: 38px; border-radius: 7px; border: 1px solid var(--cgi-purple-2);
+      padding: 8px 13px; font-weight: 700;
+    }
+    .secondary-button { background: white; color: var(--cgi-purple-2); }
+    .secondary-button:hover { background: var(--cgi-purple-7); }
+    .primary-button { background: var(--cgi-purple-2); color: white; }
+    .primary-button:hover { background: var(--cgi-purple-1); }
+    .icon-button { width: 38px; padding: 0; background: white; color: var(--cgi-purple-2); }
+
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(7, minmax(118px, 1fr));
+      gap: 10px;
+      margin-bottom: 18px;
+    }
+    .kpi-card {
+      min-width: 0; background: white; border: 1px solid #e1deea;
+      border-radius: 9px; padding: 12px 13px; box-shadow: 0 1px 5px rgba(32,10,88,.04);
+    }
+    .kpi-card__label { color: var(--gray-4); font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .45px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .kpi-card__value { margin-top: 6px; color: var(--cgi-purple-1); font-size: 23px; font-weight: 750; line-height: 1.1; }
+    .kpi-card__detail { margin-top: 4px; color: var(--gray-4); font-size: 11px; }
+    .kpi-card.negative { border-top: 3px solid var(--cgi-red-3); }
+    .kpi-card.negative .kpi-card__value { color: var(--error); }
+    .kpi-card.warning { border-top: 3px solid #e49a12; }
+    .kpi-card.warning .kpi-card__value { color: var(--warning); }
+
+    .page-grid {
+      display: grid;
+      grid-template-columns: minmax(620px, 1.55fr) minmax(370px, .9fr);
+      gap: 18px;
+      align-items: start;
+    }
+    .facts-column { min-width: 0; display: grid; gap: 18px; }
+    .ai-column { min-width: 0; position: sticky; top: 88px; }
+
+    .card {
+      background: white; border: 1px solid #dfdbe8; border-radius: var(--radius);
+      box-shadow: var(--shadow); overflow: hidden;
+    }
+    .card-header {
+      display: flex; align-items: flex-start; justify-content: space-between; gap: 16px;
+      padding: 17px 19px 14px; border-bottom: 1px solid #ece9f2;
+    }
+    .card-header h2 { margin: 0; color: var(--cgi-purple-1); font-size: 18px; }
+    .card-header p { margin: 3px 0 0; color: var(--gray-4); font-size: 12px; }
+    .card-body { padding: 17px 19px; }
+    .section-hint {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 4px 8px; border-radius: 5px;
+      background: var(--gray-8); color: var(--gray-4); font-size: 11px;
+      white-space: nowrap;
+    }
+
+    .issue-list { display: grid; gap: 12px; }
+    .issue {
+      border: 1px solid #ded9e8; border-left: 4px solid var(--warning);
+      border-radius: 8px; padding: 13px 14px; background: #fff;
+    }
+    .issue.critical { border-left-color: var(--error); }
+    .issue__top { display: flex; justify-content: space-between; gap: 14px; }
+    .issue__title-wrap { min-width: 0; }
+    .issue__type { color: var(--gray-4); font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .45px; }
+    .issue__title { color: var(--gray-1); font-size: 15px; font-weight: 750; margin-top: 2px; }
+    .severity {
+      flex: 0 0 auto; align-self: flex-start; padding: 4px 8px; border-radius: 999px;
+      font-size: 11px; font-weight: 700; background: var(--warning-bg); color: var(--warning);
+    }
+    .severity.critical { background: var(--error-bg); color: var(--error); }
+    .issue__description { margin: 9px 0 11px; color: var(--gray-3); font-size: 13px; }
+    .issue__facts {
+      display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px;
+      border-top: 1px solid #efedf4; padding-top: 10px;
+    }
+    .fact-label { color: var(--gray-4); font-size: 10px; text-transform: uppercase; letter-spacing: .4px; }
+    .fact-value { margin-top: 2px; color: var(--gray-2); font-size: 12px; font-weight: 650; }
+    .issue__action {
+      margin-top: 10px; padding: 8px 10px; border-radius: 6px;
+      background: var(--cgi-purple-7); color: var(--cgi-purple-1); font-size: 12px;
+    }
+    .issue__action strong { font-weight: 750; }
+
+    .capacity-grid { display: grid; grid-template-columns: 1.1fr .9fr; gap: 16px; }
+    .capacity-bars { display: grid; gap: 12px; }
+    .capacity-row__header { display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 5px; }
+    .capacity-row__header strong { color: var(--gray-2); }
+    .bar { height: 8px; border-radius: 999px; background: var(--gray-7); overflow: hidden; }
+    .bar > span { display: block; height: 100%; border-radius: inherit; background: var(--cgi-purple-3); }
+    .bar.warning > span { background: #d48700; }
+    .bar.error > span { background: var(--cgi-red-3); }
+    .capacity-alert {
+      border: 1px solid #f0c6cd; background: #fff7f8; border-radius: 8px; padding: 12px;
+    }
+    .capacity-alert__title { color: var(--error); font-weight: 750; font-size: 13px; }
+    .capacity-alert p { margin: 5px 0 0; color: var(--gray-3); font-size: 12px; }
+    .mini-metrics { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 8px; margin-top: 10px; }
+    .mini-metric { background: white; border: 1px solid #ecdfe2; border-radius: 6px; padding: 8px; }
+    .mini-metric span { display: block; color: var(--gray-4); font-size: 10px; text-transform: uppercase; }
+    .mini-metric strong { display: block; margin-top: 2px; color: var(--gray-1); font-size: 15px; }
+
+    .timeline-head { display: grid; grid-template-columns: 155px repeat(5, 1fr); border-bottom: 1px solid #e5e1eb; color: var(--gray-4); font-size: 11px; }
+    .timeline-head div { padding: 7px 8px; text-align: center; border-left: 1px solid #f0edf4; }
+    .timeline-head div:first-child { text-align: left; border-left: 0; }
+    .timeline-row { display: grid; grid-template-columns: 155px minmax(0, 1fr); min-height: 42px; border-bottom: 1px solid #f0edf4; }
+    .timeline-row:last-child { border-bottom: 0; }
+    .timeline-label { display: flex; align-items: center; padding: 8px; font-size: 12px; font-weight: 650; }
+    .timeline-track {
+      position: relative;
+      background-image: linear-gradient(to right, transparent calc(20% - 1px), #f0edf4 calc(20% - 1px), #f0edf4 20%, transparent 20%);
+      background-size: 20% 100%;
+    }
+    .timeline-today { position: absolute; top: 0; bottom: 0; left: 56%; width: 2px; background: var(--cgi-red-3); z-index: 2; }
+    .timeline-bar { position: absolute; top: 11px; height: 18px; border-radius: 4px; background: var(--cgi-purple-2); color: white; font-size: 10px; line-height: 18px; padding: 0 7px; overflow: hidden; white-space: nowrap; }
+    .timeline-bar.delay { background: var(--cgi-red-3); }
+    .milestone { position: absolute; top: 15px; width: 11px; height: 11px; transform: rotate(45deg); background: var(--cgi-purple-1); }
+    .timeline-legend { display: flex; gap: 16px; padding: 11px 19px 15px; color: var(--gray-4); font-size: 11px; }
+    .legend-item { display: flex; align-items: center; gap: 6px; }
+    .legend-swatch { width: 16px; height: 7px; border-radius: 2px; background: var(--cgi-purple-2); }
+    .legend-swatch.red { background: var(--cgi-red-3); }
+    .legend-line { width: 2px; height: 13px; background: var(--cgi-red-3); }
+
+    .ai-card { border-top: 4px solid var(--cgi-purple-3); }
+    .ai-header {
+      display: flex; justify-content: space-between; align-items: flex-start; gap: 10px;
+      padding: 16px 17px 13px;
+      background: linear-gradient(135deg, #fbfaff 0%, #f4f0ff 100%);
+      border-bottom: 1px solid #ded9eb;
+    }
+    .ai-title { display: flex; gap: 10px; align-items: center; }
+    .ai-icon {
+      width: 34px; height: 34px; display: grid; place-items: center;
+      border-radius: 8px; color: white; background: var(--cgi-purple-2); font-size: 17px;
+    }
+    .ai-header h2 { margin: 0; color: var(--cgi-purple-1); font-size: 18px; }
+    .ai-header p { margin: 2px 0 0; color: var(--gray-4); font-size: 11px; }
+    .ai-status { display: flex; align-items: center; gap: 5px; color: var(--success); font-size: 11px; font-weight: 700; }
+    .ai-status .dot { width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+
+    .tabs { display: grid; grid-template-columns: repeat(3, 1fr); border-bottom: 1px solid #dfdbe8; }
+    .tab {
+      border: 0; border-bottom: 3px solid transparent; background: white;
+      padding: 11px 6px 9px; color: var(--gray-4); font-size: 12px; font-weight: 700;
+    }
+    .tab:hover { background: #faf9fd; color: var(--cgi-purple-2); }
+    .tab[aria-selected="true"] { color: var(--cgi-purple-1); border-bottom-color: var(--cgi-red-3); }
+    .tab-panel { display: none; padding: 16px; }
+    .tab-panel.active { display: block; }
+
+    .ai-toolbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 13px; color: var(--gray-4); font-size: 10px; }
+    .ai-toolbar__sources { display: flex; align-items: center; gap: 5px; }
+    .source-count { padding: 2px 6px; background: var(--cgi-purple-7); color: var(--cgi-purple-1); border-radius: 999px; font-weight: 700; }
+    .refresh-link { border: 0; background: none; color: var(--cgi-purple-2); font-weight: 700; padding: 4px; }
+
+    .summary-box { border-left: 4px solid var(--cgi-purple-3); background: #f8f6ff; border-radius: 6px; padding: 12px 13px; }
+    .summary-box__label { color: var(--cgi-purple-2); font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: .5px; }
+    .summary-box p { margin: 6px 0 0; color: var(--gray-2); font-size: 13px; }
+    .summary-box strong { color: var(--cgi-purple-1); }
+
+    .ai-section-title { margin: 16px 0 8px; color: var(--gray-2); font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: .45px; }
+    .priority-list { display: grid; gap: 9px; }
+    .priority {
+      border: 1px solid #e0dcea; border-radius: 8px; padding: 11px 12px;
+      background: white;
+    }
+    .priority__top { display: grid; grid-template-columns: 23px minmax(0,1fr); gap: 8px; align-items: start; }
+    .priority__rank {
+      width: 23px; height: 23px; border-radius: 50%; display: grid; place-items: center;
+      background: var(--cgi-purple-1); color: white; font-size: 11px; font-weight: 800;
+    }
+    .priority__title { color: var(--gray-1); font-size: 13px; font-weight: 750; }
+    .priority__reason { margin-top: 3px; color: var(--gray-3); font-size: 11px; }
+    .evidence {
+      margin-top: 8px; padding-top: 7px; border-top: 1px solid #eeebf3;
+      display: flex; gap: 6px; align-items: flex-start; color: var(--gray-4); font-size: 10px;
+    }
+    .evidence strong { color: var(--cgi-purple-2); white-space: nowrap; }
+    .evidence-link { color: var(--cgi-purple-2); text-decoration: underline; text-decoration-style: dotted; text-underline-offset: 2px; }
+
+    .data-gap { margin-top: 12px; border: 1px dashed #c8c0dc; border-radius: 7px; padding: 10px 11px; color: var(--gray-3); font-size: 11px; background: #fcfbfe; }
+    .data-gap strong { color: var(--cgi-purple-1); }
+
+    .measure-list { display: grid; gap: 11px; }
+    .measure {
+      border: 1px solid #dfdbe8; border-radius: 8px; padding: 12px;
+    }
+    .measure__header { display: flex; justify-content: space-between; gap: 10px; }
+    .proposal-badge { padding: 3px 7px; border-radius: 999px; background: var(--cgi-purple-7); color: var(--cgi-purple-2); font-size: 9px; font-weight: 800; text-transform: uppercase; }
+    .measure__title { color: var(--gray-1); font-size: 13px; font-weight: 750; }
+    .measure p { margin: 7px 0 0; color: var(--gray-3); font-size: 11px; }
+    .measure__meta { display: grid; grid-template-columns: repeat(2, 1fr); gap: 7px; margin-top: 9px; }
+    .measure__meta div { background: var(--gray-8); border-radius: 5px; padding: 6px 7px; }
+    .measure__meta span { display: block; color: var(--gray-4); font-size: 9px; text-transform: uppercase; }
+    .measure__meta strong { display: block; margin-top: 1px; color: var(--gray-2); font-size: 10px; }
+    .measure__actions { display: flex; gap: 7px; margin-top: 10px; }
+    .small-button { border: 1px solid var(--cgi-purple-2); background: white; color: var(--cgi-purple-2); border-radius: 6px; padding: 6px 8px; font-size: 10px; font-weight: 700; }
+    .small-button:hover { background: var(--cgi-purple-7); }
+
+    .chat { display: flex; flex-direction: column; gap: 10px; min-height: 420px; }
+    .chat-suggestions { display: flex; flex-wrap: wrap; gap: 6px; }
+    .suggestion { border: 1px solid #d5cde6; border-radius: 999px; background: white; color: var(--cgi-purple-2); padding: 6px 9px; font-size: 10px; }
+    .suggestion:hover { background: var(--cgi-purple-7); }
+    .chat-log { display: flex; flex-direction: column; gap: 9px; max-height: 320px; overflow: auto; padding-right: 2px; }
+    .message { max-width: 91%; padding: 9px 10px; border-radius: 8px; font-size: 11px; }
+    .message.ai { align-self: flex-start; background: #f1eef9; color: var(--gray-2); border-bottom-left-radius: 2px; }
+    .message.user { align-self: flex-end; background: var(--cgi-purple-2); color: white; border-bottom-right-radius: 2px; }
+    .message__source { margin-top: 5px; font-size: 9px; opacity: .76; }
+    .chat-form { margin-top: auto; display: grid; grid-template-columns: minmax(0,1fr) auto; gap: 7px; border-top: 1px solid #e7e3ed; padding-top: 10px; }
+    .chat-input { min-width: 0; border: 1px solid #cfc9dc; border-radius: 7px; padding: 9px 10px; color: var(--gray-2); }
+    .chat-input:focus { outline: 3px solid rgba(110,63,237,.15); border-color: var(--cgi-purple-3); }
+    .send-button { width: 38px; border: 0; border-radius: 7px; background: var(--cgi-purple-2); color: white; font-weight: 800; }
+
+    .disclaimer { padding: 11px 16px 14px; border-top: 1px solid #e5e1eb; color: var(--gray-4); font-size: 9px; background: #fcfbfd; }
+    .disclaimer strong { color: var(--gray-3); }
+
+    .loading-state, .error-state { display: none; padding: 28px 16px 32px; text-align: center; }
+    .spinner { width: 28px; height: 28px; border: 3px solid #ddd6ee; border-top-color: var(--cgi-purple-3); border-radius: 50%; margin: 0 auto 11px; animation: spin .8s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .loading-state strong, .error-state strong { display: block; color: var(--cgi-purple-1); font-size: 13px; }
+    .loading-state p, .error-state p { margin: 5px auto 13px; color: var(--gray-4); font-size: 11px; max-width: 270px; }
+    .error-icon { width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center; margin: 0 auto 10px; background: var(--error-bg); color: var(--error); font-weight: 800; }
+
+    .toast {
+      position: fixed; right: 24px; bottom: 24px; z-index: 40;
+      display: none; align-items: center; gap: 9px;
+      background: var(--cgi-purple-1); color: white; border-radius: 8px;
+      box-shadow: 0 8px 30px rgba(0,0,0,.22); padding: 11px 14px; font-size: 12px;
+    }
+    .toast.show { display: flex; animation: toast-in .2s ease-out; }
+    @keyframes toast-in { from { transform: translateY(8px); opacity: 0; } }
+
+    .focus-flash { animation: focus-flash 1.5s ease-out; }
+    @keyframes focus-flash { 0%, 50% { box-shadow: 0 0 0 4px rgba(110,63,237,.22); } 100% { box-shadow: none; } }
+
+    @media (max-width: 1260px) {
+      .kpi-grid { grid-template-columns: repeat(4, minmax(135px, 1fr)); }
+      .page-grid { grid-template-columns: minmax(0,1fr); }
+      .ai-column { position: static; }
+    }
+    @media (max-width: 850px) {
+      .app-shell { grid-template-columns: 1fr; grid-template-rows: 62px auto; }
+      .topbar { padding: 0 15px; }
+      .sidebar { display: none; }
+      main { grid-row: 2; padding: 18px 14px 42px; }
+      .project-header { flex-direction: column; }
+      .kpi-grid { grid-template-columns: repeat(2, 1fr); }
+      .issue__facts { grid-template-columns: repeat(2, 1fr); }
+      .capacity-grid { grid-template-columns: 1fr; }
+      .timeline-head, .timeline-row { min-width: 650px; }
+      .timeline-scroll { overflow-x: auto; }
+      .data-date, .brand__subtitle { display: none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app-shell">
+    <header class="topbar">
+      <div class="brand" aria-label="CGI KPI Dashboard">
+        <div class="brand__mark">CGI</div>
+        <div class="brand__divider" aria-hidden="true"></div>
+        <div>
+          <div class="brand__title">KPI Dashboard</div>
+          <div class="brand__subtitle">Portfolio &amp; Projektsteuerung</div>
+        </div>
+      </div>
+      <div class="topbar__actions">
+        <div class="data-date">Datenstand: 01.07.2026</div>
+        <button class="icon-button" title="Benachrichtigungen" aria-label="Benachrichtigungen">●</button>
+        <div class="avatar" aria-label="Benutzer DK">DK</div>
+      </div>
+    </header>
+
+    <aside class="sidebar" aria-label="Hauptnavigation">
+      <div class="nav-label">Steuerung</div>
+      <button class="nav-item"><span class="nav-icon">▦</span><span>Portfolio</span></button>
+      <button class="nav-item active"><span class="nav-icon">▤</span><span>Projekte</span></button>
+      <button class="nav-item"><span class="nav-icon">⌁</span><span>Berichte</span></button>
+      <div class="nav-label" style="margin-top:22px">System</div>
+      <button class="nav-item"><span class="nav-icon">⚙</span><span>Einstellungen</span></button>
+    </aside>
+
+    <main>
+      <nav class="breadcrumb" aria-label="Breadcrumb">
+        <a href="#">Portfolio</a><span aria-hidden="true">›</span><a href="#">Projekte</a><span aria-hidden="true">›</span><span>Cloud Migration Wave 2</span>
+      </nav>
+
+      <section class="project-header" aria-labelledby="project-title">
+        <div>
+          <h1 id="project-title">Cloud Migration Wave 2</h1>
+          <div class="project-header__meta">
+            <span><strong>Kunde:</strong> Delta Logistics</span>
+            <span><strong>Projektleitung:</strong> Anna Weber</span>
+            <span><strong>Phase:</strong> Rollout</span>
+            <span><strong>Prognoseende:</strong> 18.09.2026</span>
+            <span><strong>ID:</strong> PRJ-2026-014</span>
+          </div>
+        </div>
+        <div class="header-status">
+          <span class="status-badge"><span class="status-dot"></span>Gefährdet</span>
+          <button class="secondary-button">← Zum Portfolio</button>
+        </div>
+      </section>
+
+      <section class="kpi-grid" aria-label="Management-Kennzahlen">
+        <article class="kpi-card negative" id="fact-status"><div class="kpi-card__label">Status</div><div class="kpi-card__value">Rot</div><div class="kpi-card__detail">seit Berichtsstand 01.07.</div></article>
+        <article class="kpi-card"><div class="kpi-card__label">Fortschritt</div><div class="kpi-card__value">63 %</div><div class="kpi-card__detail">Plan: 71 %</div></article>
+        <article class="kpi-card warning"><div class="kpi-card__label">Zeitverbrauch</div><div class="kpi-card__value">78 %</div><div class="kpi-card__detail">Fortschritt liegt zurück</div></article>
+        <article class="kpi-card negative" id="fact-delay"><div class="kpi-card__label">Terminabweichung</div><div class="kpi-card__value">+18 T.</div><div class="kpi-card__detail">gegenüber Planende</div></article>
+        <article class="kpi-card warning"><div class="kpi-card__label">Offene Risiken</div><div class="kpi-card__value">4</div><div class="kpi-card__detail">davon 1 kritisch</div></article>
+        <article class="kpi-card negative" id="fact-issues"><div class="kpi-card__label">Offene Probleme</div><div class="kpi-card__value">3</div><div class="kpi-card__detail">davon 2 hoch</div></article>
+        <article class="kpi-card negative" id="fact-budget"><div class="kpi-card__label">Budgetprognose</div><div class="kpi-card__value">+9,4 %</div><div class="kpi-card__detail">Forecast: 1,97 Mio. €</div></article>
+      </section>
+
+      <div class="page-grid">
+        <div class="facts-column">
+          <section class="card" aria-labelledby="issues-heading">
+            <header class="card-header">
+              <div><h2 id="issues-heading">Probleme, Risiken &amp; Maßnahmen</h2><p>Operative Ursachen und laufende Gegensteuerung</p></div>
+              <span class="section-hint">◆ Fakten aus Backend</span>
+            </header>
+            <div class="card-body">
+              <div class="issue-list">
+                <article class="issue critical" id="fact-resource-gap">
+                  <div class="issue__top">
+                    <div class="issue__title-wrap"><div class="issue__type">Problem · Ressourcen</div><div class="issue__title">Cloud-Engineering-Kapazität reicht für parallele Rollouts nicht aus</div></div>
+                    <span class="severity critical">Kritisch</span>
+                  </div>
+                  <p class="issue__description">Für die nächsten zwei Rollout-Wellen werden drei Cloud Engineers benötigt; aktuell ist nur eine Vollzeitkapazität verbindlich verfügbar.</p>
+                  <div class="issue__facts">
+                    <div><div class="fact-label">Bedarf</div><div class="fact-value">3,0 FTE</div></div>
+                    <div><div class="fact-label">Verfügbar</div><div class="fact-value">1,0 FTE</div></div>
+                    <div><div class="fact-label">Auswirkung</div><div class="fact-value">+18 Tage</div></div>
+                    <div><div class="fact-label">Owner / Fälligkeit</div><div class="fact-value">A. Weber · 22.07.</div></div>
+                  </div>
+                  <div class="issue__action"><strong>Laufende Maßnahme:</strong> Zwei externe Profile angefragt; ein Anbieterangebot liegt vor, Freigabe noch offen.</div>
+                </article>
+
+                <article class="issue" id="fact-api-dependency">
+                  <div class="issue__top">
+                    <div class="issue__title-wrap"><div class="issue__type">Risiko · Abhängigkeit</div><div class="issue__title">Kundenseitige API-Freigabe für Welle 3 noch ausstehend</div></div>
+                    <span class="severity">Hoch</span>
+                  </div>
+                  <p class="issue__description">Die technische Freigabe muss bis 29.07. erfolgen, damit Integrationstest und Kundenübergabe nicht weiter nach hinten rutschen.</p>
+                  <div class="issue__facts">
+                    <div><div class="fact-label">Wahrscheinlichkeit</div><div class="fact-value">60 %</div></div>
+                    <div><div class="fact-label">Betroffen</div><div class="fact-value">Meilenstein M-08</div></div>
+                    <div><div class="fact-label">Potenzial</div><div class="fact-value">+8 bis 12 Tage</div></div>
+                    <div><div class="fact-label">Owner / Fälligkeit</div><div class="fact-value">T. Keller · 29.07.</div></div>
+                  </div>
+                  <div class="issue__action"><strong>Laufende Maßnahme:</strong> Technisches Klärungsgespräch mit Kundenteam für 20.07. terminiert.</div>
+                </article>
+
+                <article class="issue" id="fact-budget-driver">
+                  <div class="issue__top">
+                    <div class="issue__title-wrap"><div class="issue__type">Problem · Budget</div><div class="issue__title">Externe Unterstützung erhöht Forecast über den genehmigten Plan</div></div>
+                    <span class="severity">Hoch</span>
+                  </div>
+                  <p class="issue__description">Der aktuelle Forecast berücksichtigt sechs Wochen externe Unterstützung. Die Finanzierung ist noch nicht im Steering bestätigt.</p>
+                  <div class="issue__facts">
+                    <div><div class="fact-label">Planbudget</div><div class="fact-value">1,80 Mio. €</div></div>
+                    <div><div class="fact-label">Forecast</div><div class="fact-value">1,97 Mio. €</div></div>
+                    <div><div class="fact-label">Abweichung</div><div class="fact-value">+169 Tsd. €</div></div>
+                    <div><div class="fact-label">Owner / Fälligkeit</div><div class="fact-value">A. Weber · 24.07.</div></div>
+                  </div>
+                  <div class="issue__action"><strong>Vorbereitung:</strong> Kosten-Nutzen-Vergleich „extern verstärken“ versus „Rollout verschieben“ wird erstellt.</div>
+                </article>
+              </div>
+            </div>
+          </section>
+
+          <section class="card" aria-labelledby="capacity-heading">
+            <header class="card-header">
+              <div><h2 id="capacity-heading">Team &amp; Kapazität</h2><p>Projektbezogene Rollen- und Skill-Abdeckung ohne sensible Personaldetails</p></div>
+              <span class="section-hint">Stand: 15.07.2026</span>
+            </header>
+            <div class="card-body capacity-grid">
+              <div class="capacity-bars">
+                <div class="capacity-row"><div class="capacity-row__header"><strong>Cloud Engineering</strong><span>33 % besetzt</span></div><div class="bar error"><span style="width:33%"></span></div></div>
+                <div class="capacity-row"><div class="capacity-row__header"><strong>Application Migration</strong><span>92 % besetzt</span></div><div class="bar"><span style="width:92%"></span></div></div>
+                <div class="capacity-row"><div class="capacity-row__header"><strong>Test &amp; Qualität</strong><span>78 % besetzt</span></div><div class="bar warning"><span style="width:78%"></span></div></div>
+                <div class="capacity-row"><div class="capacity-row__header"><strong>Change &amp; Adoption</strong><span>100 % besetzt</span></div><div class="bar"><span style="width:100%"></span></div></div>
+              </div>
+              <aside class="capacity-alert" id="fact-capacity">
+                <div class="capacity-alert__title">Kapazitätslücke mit Terminwirkung</div>
+                <p>Die fehlenden Cloud-Engineering-Kapazitäten sind derzeit der stärkste bestätigte Treiber für die Prognoseverschiebung.</p>
+                <div class="mini-metrics">
+                  <div class="mini-metric"><span>Fehlende Rollen</span><strong>2 FTE</strong></div>
+                  <div class="mini-metric"><span>Nächste Verfügbarkeit</span><strong>05.08.</strong></div>
+                  <div class="mini-metric"><span>Überlastete Rollen</span><strong>1</strong></div>
+                  <div class="mini-metric"><span>Externe Optionen</span><strong>2</strong></div>
+                </div>
+              </aside>
+            </div>
+          </section>
+
+          <section class="card" aria-labelledby="timeline-heading">
+            <header class="card-header">
+              <div><h2 id="timeline-heading">Projektzeitplan</h2><p>Plan-/Prognosevergleich der aktuellen Projektphasen</p></div>
+              <span class="section-hint">Heute: 16.07.2026</span>
+            </header>
+            <div class="timeline-scroll">
+              <div class="timeline-head"><div>Phase</div><div>Mai</div><div>Jun</div><div>Jul</div><div>Aug</div><div>Sep</div></div>
+              <div class="timeline-row"><div class="timeline-label">Foundation</div><div class="timeline-track"><div class="timeline-today"></div><div class="timeline-bar" style="left:4%;width:30%">Abgeschlossen</div></div></div>
+              <div class="timeline-row"><div class="timeline-label">Pilotmigration</div><div class="timeline-track"><div class="timeline-today"></div><div class="timeline-bar" style="left:24%;width:28%">Abgeschlossen</div></div></div>
+              <div class="timeline-row"><div class="timeline-label">Rollout Welle 1–2</div><div class="timeline-track"><div class="timeline-today"></div><div class="timeline-bar delay" style="left:43%;width:35%">Prognose +18 T.</div></div></div>
+              <div class="timeline-row"><div class="timeline-label">Rollout Welle 3</div><div class="timeline-track"><div class="timeline-today"></div><div class="timeline-bar delay" style="left:69%;width:22%">gefährdet</div><span class="milestone" style="left:84%" title="Kundenübergabe"></span></div></div>
+              <div class="timeline-row"><div class="timeline-label">Hypercare</div><div class="timeline-track"><div class="timeline-today"></div><div class="timeline-bar" style="left:88%;width:10%">Plan</div></div></div>
+            </div>
+            <div class="timeline-legend"><span class="legend-item"><span class="legend-swatch"></span>im Plan / abgeschlossen</span><span class="legend-item"><span class="legend-swatch red"></span>Prognoseabweichung</span><span class="legend-item"><span class="legend-line"></span>Heute</span></div>
+          </section>
+        </div>
+
+        <aside class="ai-column" aria-labelledby="ai-panel-heading">
+          <section class="card ai-card">
+            <div class="ai-header">
+              <div class="ai-title"><div class="ai-icon" aria-hidden="true">✦</div><div><h2 id="ai-panel-heading">Projekt-Assistent</h2><p>Analyse freigegebener Projektfakten</p></div></div>
+              <div class="ai-status"><span class="dot"></span><span id="ai-status-text">Aktuell</span></div>
+            </div>
+
+            <div id="ai-main-content">
+              <div class="tabs" role="tablist" aria-label="KI-Funktionen">
+                <button class="tab" role="tab" id="tab-overview" aria-controls="panel-overview" aria-selected="true" tabindex="0">Überblick</button>
+                <button class="tab" role="tab" id="tab-actions" aria-controls="panel-actions" aria-selected="false" tabindex="-1">Maßnahmen</button>
+                <button class="tab" role="tab" id="tab-questions" aria-controls="panel-questions" aria-selected="false" tabindex="-1">Fragen</button>
+              </div>
+
+              <div class="tab-panel active" id="panel-overview" role="tabpanel" aria-labelledby="tab-overview">
+                <div class="ai-toolbar"><div class="ai-toolbar__sources"><span>Basis</span><span class="source-count">7 Faktenquellen</span></div><button class="refresh-link" id="refresh-ai">↻ Neu analysieren</button></div>
+                <div class="summary-box">
+                  <div class="summary-box__label">Management-Zusammenfassung</div>
+                  <p>Das Projekt ist <strong>operativ gefährdet</strong>. Hauptursache ist eine bestätigte Lücke von <strong>2 Cloud-Engineering-FTE</strong>, die den Rollout aktuell um <strong>18 Tage</strong> verschiebt. Die geplante externe Verstärkung kann den Termin stabilisieren, erhöht den Budget-Forecast jedoch um <strong>9,4 %</strong>. Zusätzlich bleibt die kundenseitige API-Freigabe ein relevantes Folgerisiko.</p>
+                </div>
+
+                <h3 class="ai-section-title">Priorisierte Aufmerksamkeitspunkte</h3>
+                <div class="priority-list">
+                  <article class="priority"><div class="priority__top"><div class="priority__rank">1</div><div><div class="priority__title">Ressourcenentscheidung vorbereiten</div><div class="priority__reason">Ohne zusätzliche Cloud-Engineering-Kapazität bleibt die bereits eingetretene Terminabweichung strukturell bestehen.</div></div></div><div class="evidence"><strong>Beleg:</strong><span><a class="evidence-link" href="#fact-resource-gap">Kapazitätslücke 2 FTE</a>, <a class="evidence-link" href="#fact-delay">Terminabweichung +18 Tage</a></span></div></article>
+                  <article class="priority"><div class="priority__top"><div class="priority__rank">2</div><div><div class="priority__title">Budgetwirkung transparent ins Steering geben</div><div class="priority__reason">Die terminwirksame Gegenmaßnahme ist im aktuellen Forecast enthalten, aber noch nicht genehmigt.</div></div></div><div class="evidence"><strong>Beleg:</strong><span><a class="evidence-link" href="#fact-budget">Forecast +9,4 %</a>, <a class="evidence-link" href="#fact-budget-driver">169 Tsd. € Abweichung</a></span></div></article>
+                  <article class="priority"><div class="priority__top"><div class="priority__rank">3</div><div><div class="priority__title">API-Freigabe als Terminrisiko eng führen</div><div class="priority__reason">Eine verspätete Freigabe kann die Kundenübergabe zusätzlich um 8 bis 12 Tage verschieben.</div></div></div><div class="evidence"><strong>Beleg:</strong><span><a class="evidence-link" href="#fact-api-dependency">Risiko API-Freigabe · 60 %</a></span></div></article>
+                </div>
+
+                <div class="data-gap"><strong>Fehlende Information:</strong> Für eine belastbare Qualitätsprognose liegen noch keine aktuellen Defect- und Abnahmedaten vor. Dazu wird keine Aussage abgeleitet.</div>
+              </div>
+
+              <div class="tab-panel" id="panel-actions" role="tabpanel" aria-labelledby="tab-actions">
+                <div class="ai-toolbar"><div class="ai-toolbar__sources"><span>Vorschläge auf Basis</span><span class="source-count">7 Faktenquellen</span></div><button class="refresh-link refresh-alias">↻ Neu analysieren</button></div>
+                <div class="measure-list">
+                  <article class="measure"><div class="measure__header"><div class="measure__title">Entscheidungsvorlage zu externer Verstärkung erstellen</div><span class="proposal-badge">KI-Vorschlag</span></div><p>Stelle Kosten, Terminwirkung und Restrisiko der Optionen „2 externe FTE“, „1 externe FTE“ und „Rollout verschieben“ gegenüber. Die Entscheidung bleibt beim Steering Committee.</p><div class="measure__meta"><div><span>Empfohlener Owner</span><strong>Projektleitung</strong></div><div><span>Zieltermin</span><strong>vor 24.07.2026</strong></div><div><span>Adressiertes Problem</span><strong>Ressourcenengpass</strong></div><div><span>Erwartete Wirkung</span><strong>Terminrisiko reduzieren</strong></div></div><div class="evidence"><strong>Beleg:</strong><span><a class="evidence-link" href="#fact-resource-gap">2 FTE fehlen</a> · <a class="evidence-link" href="#fact-budget-driver">Forecast +169 Tsd. €</a></span></div><div class="measure__actions"><button class="small-button prepare-button">Als Entwurf vorbereiten</button><button class="small-button">Quelle öffnen</button></div></article>
+                  <article class="measure"><div class="measure__header"><div class="measure__title">API-Freigabe mit Eskalationsschwelle versehen</div><span class="proposal-badge">KI-Vorschlag</span></div><p>Definiere einen verbindlichen Eskalationspunkt: Falls die technische Freigabe am 22.07. nicht belastbar zugesagt ist, Steering-Vorbereitung aktivieren.</p><div class="measure__meta"><div><span>Empfohlener Owner</span><strong>Technical Lead</strong></div><div><span>Zieltermin</span><strong>22.07.2026</strong></div><div><span>Adressiertes Risiko</span><strong>API-Abhängigkeit</strong></div><div><span>Erwartete Wirkung</span><strong>Folgeverzug vermeiden</strong></div></div><div class="evidence"><strong>Beleg:</strong><span><a class="evidence-link" href="#fact-api-dependency">Freigabe fällig 29.07. · 60 %</a></span></div><div class="measure__actions"><button class="small-button prepare-button">Als Entwurf vorbereiten</button><button class="small-button">Quelle öffnen</button></div></article>
+                  <article class="measure"><div class="measure__header"><div class="measure__title">Qualitätsdaten für nächste Analyse vervollständigen</div><span class="proposal-badge">KI-Vorschlag</span></div><p>Ergänze offene Defects, Testabdeckung und Abnahmestatus. Ohne diese Daten kann keine belastbare Aussage zur Lieferqualität oder zum Hypercare-Risiko getroffen werden.</p><div class="measure__meta"><div><span>Empfohlener Owner</span><strong>Test Lead</strong></div><div><span>Zieltermin</span><strong>nächster Bericht</strong></div><div><span>Adressierte Lücke</span><strong>Qualitätsdaten fehlen</strong></div><div><span>Erwartete Wirkung</span><strong>Prognose verbessern</strong></div></div><div class="evidence"><strong>Beleg:</strong><span>Keine aktuelle Backend-Quelle zu Defects und Abnahme vorhanden.</span></div><div class="measure__actions"><button class="small-button prepare-button">Als Aufgabe vorbereiten</button></div></article>
+                </div>
+              </div>
+
+              <div class="tab-panel" id="panel-questions" role="tabpanel" aria-labelledby="tab-questions">
+                <div class="chat">
+                  <div class="chat-suggestions" aria-label="Vorgeschlagene Fragen">
+                    <button class="suggestion">Was gehört ins nächste Steering?</button>
+                    <button class="suggestion">Warum ist der Termin rot?</button>
+                    <button class="suggestion">Welche Daten fehlen?</button>
+                  </div>
+                  <div class="chat-log" id="chat-log" aria-live="polite">
+                    <div class="message ai">Ich beantworte Fragen ausschließlich auf Basis der freigegebenen Projektdaten. Zu nicht belegten Ursachen oder Zahlen sage ich ausdrücklich, dass keine Daten vorliegen.<div class="message__source">Datenbasis: KPIs, Probleme, Risiken, Maßnahmen, Kapazität und Berichtsvergleich</div></div>
+                  </div>
+                  <form class="chat-form" id="chat-form">
+                    <input class="chat-input" id="chat-input" type="text" aria-label="Frage zum Projekt" placeholder="Frage zu diesem Projekt …" autocomplete="off" />
+                    <button class="send-button" type="submit" aria-label="Frage senden">➜</button>
+                  </form>
+                </div>
+              </div>
+            </div>
+
+            <div class="loading-state" id="loading-state" role="status" aria-live="polite"><div class="spinner" aria-hidden="true"></div><strong>Projektfakten werden analysiert</strong><p>Es werden ausschließlich freigegebene Backend-Daten verwendet. Kennzahlen werden nicht durch das Modell neu berechnet.</p></div>
+            <div class="error-state" id="error-state" role="alert"><div class="error-icon">!</div><strong>Analyse konnte nicht geladen werden</strong><p>Die Fakten bleiben unverändert sichtbar. Es wurde keine Ersatzantwort erzeugt.</p><button class="secondary-button" id="retry-button">Erneut versuchen</button></div>
+            <div class="disclaimer"><strong>Hinweis:</strong> KI-generierte Einschätzungen ersetzen keine Fachentscheidung und basieren ausschließlich auf freigegebenen Backend-Daten. Maßnahmen werden nur als Vorschläge vorbereitet und nicht automatisch ausgelöst.</div>
+          </section>
+        </aside>
+      </div>
+    </main>
+  </div>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"><span>✓</span><span id="toast-text">Entwurf wurde vorbereitet.</span></div>
+
+  <script>
+    const tabs = Array.from(document.querySelectorAll('.tab'));
+    const panels = Array.from(document.querySelectorAll('.tab-panel'));
+
+    function activateTab(tab) {
+      tabs.forEach((item) => {
+        const selected = item === tab;
+        item.setAttribute('aria-selected', String(selected));
+        item.tabIndex = selected ? 0 : -1;
+      });
+      panels.forEach((panel) => panel.classList.toggle('active', panel.id === tab.getAttribute('aria-controls')));
+    }
+
+    tabs.forEach((tab, index) => {
+      tab.addEventListener('click', () => activateTab(tab));
+      tab.addEventListener('keydown', (event) => {
+        if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) return;
+        event.preventDefault();
+        let nextIndex = index;
+        if (event.key === 'ArrowRight') nextIndex = (index + 1) % tabs.length;
+        if (event.key === 'ArrowLeft') nextIndex = (index - 1 + tabs.length) % tabs.length;
+        if (event.key === 'Home') nextIndex = 0;
+        if (event.key === 'End') nextIndex = tabs.length - 1;
+        tabs[nextIndex].focus();
+        activateTab(tabs[nextIndex]);
+      });
+    });
+
+    const aiMain = document.getElementById('ai-main-content');
+    const loading = document.getElementById('loading-state');
+    const error = document.getElementById('error-state');
+    const statusText = document.getElementById('ai-status-text');
+    let refreshCount = 0;
+
+    function runAnalysis() {
+      refreshCount += 1;
+      aiMain.style.display = 'none';
+      error.style.display = 'none';
+      loading.style.display = 'block';
+      statusText.textContent = 'Analysiert';
+      window.setTimeout(() => {
+        loading.style.display = 'none';
+        // Every fourth manual refresh demonstrates the explicit error state.
+        if (refreshCount % 4 === 0) {
+          error.style.display = 'block';
+          statusText.textContent = 'Fehler';
+        } else {
+          aiMain.style.display = 'block';
+          statusText.textContent = 'Aktuell';
+          showToast('Analyse wurde mit dem aktuellen Datenstand erneuert.');
+        }
+      }, 950);
+    }
+
+    document.getElementById('refresh-ai').addEventListener('click', runAnalysis);
+    document.querySelectorAll('.refresh-alias').forEach((button) => button.addEventListener('click', runAnalysis));
+    document.getElementById('retry-button').addEventListener('click', runAnalysis);
+
+    function showToast(text) {
+      const toast = document.getElementById('toast');
+      document.getElementById('toast-text').textContent = text;
+      toast.classList.add('show');
+      window.clearTimeout(window.toastTimer);
+      window.toastTimer = window.setTimeout(() => toast.classList.remove('show'), 2600);
+    }
+
+    document.querySelectorAll('.prepare-button').forEach((button) => {
+      button.addEventListener('click', () => showToast('Vorschlag wurde als bearbeitbarer Entwurf vorbereitet – keine Aktion ausgelöst.'));
+    });
+
+    document.querySelectorAll('.evidence-link').forEach((link) => {
+      link.addEventListener('click', () => {
+        const target = document.querySelector(link.getAttribute('href'));
+        if (!target) return;
+        target.classList.remove('focus-flash');
+        window.setTimeout(() => target.classList.add('focus-flash'), 20);
+      });
+    });
+
+    const chatLog = document.getElementById('chat-log');
+    const chatInput = document.getElementById('chat-input');
+
+    const answers = [
+      {
+        match: ['steering', 'lenkung', 'management'],
+        answer: 'Für das nächste Steering sind drei Punkte belegt: Entscheidung zur externen Cloud-Engineering-Verstärkung, Transparenz über den Forecast von 1,97 Mio. € und eine Eskalationsschwelle für die ausstehende API-Freigabe. Eine Qualitätsaussage sollte noch nicht aufgenommen werden, weil aktuelle Defect- und Abnahmedaten fehlen.',
+        source: 'Belege: Ressourcenlücke 2 FTE · Forecast +9,4 % · API-Risiko 60 %'
+      },
+      {
+        match: ['warum', 'termin', 'rot', 'verzug'],
+        answer: 'Der Terminstatus ist rot, weil für die parallelen Rollouts zwei Cloud-Engineering-FTE fehlen. Diese bestätigte Kapazitätslücke ist mit einer Prognoseverschiebung von 18 Tagen verknüpft. Das API-Risiko kann zusätzlichen Verzug verursachen, ist aber noch nicht eingetreten.',
+        source: 'Belege: Problem Ressourcenengpass · KPI Terminabweichung +18 Tage'
+      },
+      {
+        match: ['fehlt', 'daten', 'information', 'qualität'],
+        answer: 'Es fehlen aktuelle Angaben zu offenen Defects, Testabdeckung und Abnahmestatus. Deshalb lässt sich aus den freigegebenen Daten keine belastbare Qualitäts- oder Hypercare-Prognose ableiten.',
+        source: 'Beleg: keine aktuelle Backend-Quelle zu Defects/Abnahme'
+      },
+      {
+        match: ['budget', 'kosten', 'forecast'],
+        answer: 'Das Planbudget beträgt 1,80 Mio. €, der Forecast 1,97 Mio. €. Die Abweichung von rund 169 Tsd. € wird in den Projektdaten der vorgesehenen externen Unterstützung zugerechnet. Ob diese Ausgabe genehmigt wird, ist noch offen.',
+        source: 'Belege: Budget-Forecast +9,4 % · Problem externe Unterstützung'
+      }
+    ];
+
+    function addMessage(text, type, source = '') {
+      const message = document.createElement('div');
+      message.className = `message ${type}`;
+      message.textContent = text;
+      if (source) {
+        const sourceLine = document.createElement('div');
+        sourceLine.className = 'message__source';
+        sourceLine.textContent = source;
+        message.appendChild(sourceLine);
+      }
+      chatLog.appendChild(message);
+      chatLog.scrollTop = chatLog.scrollHeight;
+    }
+
+    function answerQuestion(question) {
+      const normalized = question.toLowerCase();
+      const response = answers.find((item) => item.match.some((term) => normalized.includes(term)));
+      window.setTimeout(() => {
+        if (response) addMessage(response.answer, 'ai', response.source);
+        else addMessage('Dazu liegt in den freigegebenen Projektdaten keine ausreichend konkrete Information vor. Ich kann keine Ursache oder Zahl ergänzen, die nicht als Projektfakt übergeben wurde.', 'ai', 'Keine belegbare Faktenquelle gefunden');
+      }, 350);
+    }
+
+    document.getElementById('chat-form').addEventListener('submit', (event) => {
+      event.preventDefault();
+      const question = chatInput.value.trim();
+      if (!question) return;
+      addMessage(question, 'user');
+      chatInput.value = '';
+      answerQuestion(question);
+    });
+
+    document.querySelectorAll('.suggestion').forEach((button) => {
+      button.addEventListener('click', () => {
+        addMessage(button.textContent, 'user');
+        answerQuestion(button.textContent);
+      });
+    });
+  </script>
+</body>
+</html>

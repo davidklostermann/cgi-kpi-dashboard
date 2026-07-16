@@ -109,6 +109,22 @@ describe('ProjectDetailPageComponent', () => {
       currentStatusLabel: 'Auf Kurs',
       openRiskCountDelta: 0,
     });
+
+    httpMock
+      .expectOne('/api/projects/a0000000-0000-4000-8000-000000000001/ai/analysis?refresh=false')
+      .flush({
+        projectId: 'a0000000-0000-4000-8000-000000000001',
+        factsAsOf: '2026-07-01T08:00:00Z',
+        generatedAt: '2026-07-16T12:00:00Z',
+        status: 'SUCCESS',
+        availableSources: ['KPI'],
+        summary: 'Testzusammenfassung',
+        priorities: [],
+        suggestedActions: [],
+        missingData: [],
+        aiGenerated: true,
+        disclaimer: 'Disclaimer',
+      });
     fixture.detectChanges();
 
     const text = fixture.nativeElement.textContent;

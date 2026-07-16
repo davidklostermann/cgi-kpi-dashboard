@@ -13,7 +13,7 @@
         <button type="button" (click)="loadMasterData()">Erneut laden</button>
       </div>
     } @else if (masterData(); as project) {
-      <div class="page__title-row">
+      <div id="fact-master" class="page__title-row">
         <div>
           <p class="page__eyebrow">Projekt {{ project.id }}</p>
           <h1>{{ project.name }}</h1>
@@ -21,7 +21,7 @@
         <app-status-badge [status]="project.status" [label]="project.statusLabel" />
       </div>
 
-      <dl class="page__master-data" aria-label="Projekt-Stammdaten">
+      <dl id="fact-master-data" class="page__master-data" aria-label="Projekt-Stammdaten">
         <div>
           <dt>Kunde/Geschäftsbereich</dt>
           <dd>{{ project.customer }}</dd>
@@ -57,16 +57,12 @@
   <app-facts-ai-layout>
     <section factsMain class="page__facts">
       <h2 class="visually-hidden">Projektfakten</h2>
-      <app-project-kpi-section [projectId]="id()" />
-      <app-project-phases-section [projectId]="id()" />
-      <app-project-insights-section [projectId]="id()" />
-      <app-project-report-comparison [projectId]="id()" />
+      <div id="fact-kpis-wrap"><app-project-kpi-section [projectId]="id()" /></div>
+      <div id="fact-phases"><app-project-phases-section [projectId]="id()" /></div>
+      <div id="fact-insights"><app-project-insights-section [projectId]="id()" /></div>
+      <div id="fact-report-comparison"><app-project-report-comparison [projectId]="id()" /></div>
     </section>
 
-    <app-ai-panel-placeholder
-      factsAi
-      title="Projekt-KI"
-      message="Management-Zusammenfassung und Prognose folgen in Epic 8/9."
-    />
+    <app-project-ai-panel factsAi [projectId]="id()" />
   </app-facts-ai-layout>
 </section>

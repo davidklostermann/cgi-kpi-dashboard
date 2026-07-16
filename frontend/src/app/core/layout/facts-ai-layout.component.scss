@@ -27,6 +27,14 @@
   .facts-ai-layout {
     grid-template-columns: 9fr 3fr;
   }
+
+  .facts-ai-layout__ai {
+    position: sticky;
+    top: 1rem;
+    align-self: start;
+    max-height: calc(100vh - 2rem);
+    overflow: auto;
+  }
 }
 
 @media (max-width: 1023px) {

@@ -1,4 +1,4 @@
-package com.cgi.kpi.dashboard.kpi;
+package com.cgi.kpi.dashboard.ai;
 
 import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.noClasses;
 
@@ -7,16 +7,16 @@ import com.tngtech.archunit.core.importer.ClassFileImporter;
 import com.tngtech.archunit.lang.ArchRule;
 import org.junit.jupiter.api.Test;
 
-class KpiModuleArchitectureTest {
+class AiModuleArchitectureTest {
 
     private static final JavaClasses CLASSES = new ClassFileImporter()
             .importPackages("com.cgi.kpi.dashboard");
 
     @Test
-    void kpiModuleMustNotDependOnAiModule() {
+    void aiModuleMustNotDependOnPersistenceRepositories() {
         ArchRule rule = noClasses()
-                .that().resideInAPackage("..dashboard.kpi..")
-                .should().dependOnClassesThat().resideInAPackage("..dashboard.ai..");
+                .that().resideInAPackage("..dashboard.ai..")
+                .should().dependOnClassesThat().resideInAPackage("..infrastructure.persistence..");
 
         rule.check(CLASSES);
     }

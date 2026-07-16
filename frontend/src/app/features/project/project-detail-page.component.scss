@@ -18,9 +18,19 @@
   text-decoration: underline;
 }
 
-.page__header {
-  margin-bottom: 1.5rem;
+.page__title-row.fact-highlight,
+#fact-kpis.fact-highlight,
+#fact-phases.fact-highlight,
+#fact-insights.fact-highlight,
+#fact-report-comparison.fact-highlight,
+#fact-budget.fact-highlight,
+#fact-master.fact-highlight {
+  outline: 2px solid var(--cgi-primary);
+  outline-offset: 4px;
+  border-radius: 0.5rem;
+  transition: outline-color 0.2s ease;
 }
+
 
 .page__header h1 {
   margin: 0 0 0.25rem;

@@ -1,0 +1,54 @@
+{
+  "project": {
+    "id": "550e8400-e29b-41d4-a716-446655440000",
+    "name": "Cloud Migration Wave 2",
+    "factsAsOf": "2026-07-01T08:00:00Z"
+  },
+  "facts": [
+    {
+      "factId": "kpi.scheduleDeviationDays",
+      "category": "KPI",
+      "label": "Terminabweichung",
+      "value": 18,
+      "unit": "DAYS",
+      "displayValue": "+18 Tage",
+      "sourceEntityType": "PROJECT_KPI",
+      "sourceEntityId": null,
+      "detailAnchor": "fact-delay"
+    },
+    {
+      "factId": "capacity.role.cloud-engineer",
+      "category": "CAPACITY",
+      "label": "Cloud Engineer Kapazitätslücke",
+      "value": {
+        "requiredFte": 3,
+        "availableFte": 1,
+        "gapFte": 2
+      },
+      "displayValue": "2 FTE fehlen",
+      "sourceEntityType": "PROJECT_CAPACITY",
+      "sourceEntityId": "capacity-cloud-engineer",
+      "detailAnchor": "fact-resource-gap"
+    },
+    {
+      "factId": "budget.forecastDeviation",
+      "category": "BUDGET",
+      "label": "Budget-Forecast-Abweichung",
+      "value": {
+        "amount": 169000,
+        "currency": "EUR",
+        "percentage": 9.4
+      },
+      "displayValue": "+169 Tsd. € / +9,4 %",
+      "sourceEntityType": "PROJECT_BUDGET",
+      "sourceEntityId": null,
+      "detailAnchor": "fact-budget"
+    }
+  ],
+  "missingData": [
+    {
+      "area": "QUALITY",
+      "description": "Keine aktuellen Defect-, Testabdeckungs- oder Abnahmedaten vorhanden."
+    }
+  ]
+}

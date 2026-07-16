@@ -19,6 +19,10 @@ export class ApiClient {
     return this.http.get<T>(`${this.baseUrl}${path}`, { params: this.toHttpParams(query) });
   }
 
+  protected post<T>(path: string, body: unknown) {
+    return this.http.post<T>(`${this.baseUrl}${path}`, body);
+  }
+
   private toHttpParams(query?: Record<string, string | string[] | null | undefined>): HttpParams | undefined {
     if (!query) {
       return undefined;

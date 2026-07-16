@@ -81,4 +81,10 @@ development_status:
   6-5-zurueck-navigation-filter: done
   6-6-management-insights-api-ui: done
   6-7-berichtsstandsvergleich: done
+  epic-9: in-progress
+  9-1-approved-project-data-reader: done
+  9-2-summary-forecast-api: done
+  9-3-projekt-qa-api: done
+  9-4-ki-panels-projekt-detail: review
+  9-5-quick-reply-chips: done
 
