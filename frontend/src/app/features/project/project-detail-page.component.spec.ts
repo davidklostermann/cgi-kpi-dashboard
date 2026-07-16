@@ -73,6 +73,21 @@ describe('ProjectDetailPageComponent', () => {
       risks: { openCount: 0, criticalOpenCount: 0 },
       problems: { openCount: 0, criticalOpenCount: 0 },
     });
+
+    httpMock.expectOne('/api/projects/a0000000-0000-4000-8000-000000000001/phases').flush({
+      projectId: 'a0000000-0000-4000-8000-000000000001',
+      projectName: 'Nexus Analytics Pilot',
+      startDate: '2025-03-01',
+      plannedEndDate: '2026-06-30',
+      forecastEndDate: '2026-06-30',
+      actualEndDate: null,
+      scheduleDeviationDays: 0,
+      status: 'ON_TRACK',
+      statusLabel: 'Auf Kurs',
+      phases: [],
+      milestones: [],
+      accessibilitySummary: 'Phasen: keine. Keine überfälligen Meilensteine.',
+    });
     fixture.detectChanges();
 
     const text = fixture.nativeElement.textContent;

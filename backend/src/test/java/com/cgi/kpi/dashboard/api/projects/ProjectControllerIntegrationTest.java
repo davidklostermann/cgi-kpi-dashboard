@@ -132,6 +132,21 @@ class ProjectControllerIntegrationTest {
     }
 
     @Test
+    void getProjectPhasesReturnsStructuredTimelineData() throws Exception {
+        mockMvc.perform(get("/api/projects/{id}/phases", KNOWN_PROJECT_ID))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.projectId").value(KNOWN_PROJECT_ID.toString()))
+                .andExpect(jsonPath("$.projectName").value("Nexus Analytics Pilot"))
+                .andExpect(jsonPath("$.phases", hasSize(greaterThanOrEqualTo(1))))
+                .andExpect(jsonPath("$.phases[0].name").exists())
+                .andExpect(jsonPath("$.phases[0].plannedStartDate").exists())
+                .andExpect(jsonPath("$.phases[0].plannedEndDate").exists())
+                .andExpect(jsonPath("$.milestones", hasSize(greaterThanOrEqualTo(1))))
+                .andExpect(jsonPath("$.accessibilitySummary").exists())
+                .andExpect(jsonPath("$.aiGenerated").doesNotExist());
+    }
+
+    @Test
     void getProjectByMalformedUuidReturnsStructuredBadRequest() throws Exception {
         mockMvc.perform(get("/api/projects/not-a-uuid"))
                 .andExpect(status().isBadRequest())

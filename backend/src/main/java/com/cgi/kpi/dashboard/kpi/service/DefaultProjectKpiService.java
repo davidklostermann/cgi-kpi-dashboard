@@ -8,6 +8,7 @@ import org.springframework.stereotype.Service;
 import com.cgi.kpi.dashboard.api.error.ApiException;
 import com.cgi.kpi.dashboard.kpi.dto.ProjectKpiDto;
 import com.cgi.kpi.dashboard.kpi.dto.ProjectMasterDataDto;
+import com.cgi.kpi.dashboard.kpi.dto.ProjectPhasesDto;
 import com.cgi.kpi.dashboard.kpi.reader.ProjectKpiReader;
 
 @Service
@@ -31,6 +32,15 @@ public class DefaultProjectKpiService implements ProjectKpiService {
     @Override
     public ProjectMasterDataDto getProjectMasterData(UUID projectId) {
         return projectKpiReader.readProjectMasterData(projectId)
+                .orElseThrow(() -> new ApiException(
+                        "NOT_FOUND",
+                        "Project not found",
+                        HttpStatus.NOT_FOUND));
+    }
+
+    @Override
+    public ProjectPhasesDto getProjectPhases(UUID projectId) {
+        return projectKpiReader.readProjectPhases(projectId)
                 .orElseThrow(() -> new ApiException(
                         "NOT_FOUND",
                         "Project not found",

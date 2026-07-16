@@ -9,6 +9,7 @@ import { StatusBadgeComponent } from '../../shared/components/status-badge.compo
 import { ProjectMasterData } from '../../shared/models/project-detail.model';
 import { AiPanelPlaceholderComponent } from '../ai/ai-panel-placeholder.component';
 import { ProjectKpiSectionComponent } from './project-kpi-section.component';
+import { ProjectPhasesSectionComponent } from './project-phases-section.component';
 
 type LoadStatus = 'loading' | 'success' | 'error';
 
@@ -20,6 +21,7 @@ type LoadStatus = 'loading' | 'success' | 'error';
     StatusBadgeComponent,
     AiPanelPlaceholderComponent,
     ProjectKpiSectionComponent,
+    ProjectPhasesSectionComponent,
   ],
   templateUrl: './project-detail-page.component.html',
   styleUrl: './project-detail-page.component.scss',

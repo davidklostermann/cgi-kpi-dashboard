@@ -5,6 +5,7 @@ import java.util.UUID;
 
 import com.cgi.kpi.dashboard.kpi.dto.ProjectKpiDto;
 import com.cgi.kpi.dashboard.kpi.dto.ProjectMasterDataDto;
+import com.cgi.kpi.dashboard.kpi.dto.ProjectPhasesDto;
 
 /** Reads calculated project KPIs (AD-3). */
 public interface ProjectKpiReader {
@@ -12,4 +13,6 @@ public interface ProjectKpiReader {
     Optional<ProjectKpiDto> readProjectKpis(UUID projectId);
 
     Optional<ProjectMasterDataDto> readProjectMasterData(UUID projectId);
+
+    Optional<ProjectPhasesDto> readProjectPhases(UUID projectId);
 }

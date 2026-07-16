@@ -1,0 +1,31 @@
+<section class="project-phases-section" aria-labelledby="project-phases-heading">
+  <h2 id="project-phases-heading">Phasen &amp; Meilensteine</h2>
+  <p class="project-phases-section__hint">
+    Terminplan mit Planterminen. Blockaden sind noch nicht modelliert [OFFEN].
+  </p>
+
+  @if (status() === 'loading') {
+    <p aria-live="polite">Phasen werden geladen …</p>
+  } @else if (status() === 'error') {
+    <div class="project-phases-section__error" role="alert">
+      <p>{{ errorMessage() }}</p>
+      <button type="button" (click)="load()">Erneut laden</button>
+    </div>
+  } @else if (phases(); as data) {
+    <p class="visually-hidden">{{ data.accessibilitySummary }}</p>
+    <app-gantt-timeline [projects]="ganttProjects()" />
+
+    <ul class="project-phases-section__milestones" aria-label="Meilensteine">
+      @for (milestone of data.milestones; track milestone.name) {
+        <li [class.project-phases-section__milestone--overdue]="milestone.overdue">
+          <strong>{{ milestone.name }}</strong>
+          — {{ milestone.statusLabel }}
+          (Plan: {{ milestone.plannedDueDate }})
+          @if (milestone.deviationDays != null) {
+            , Abweichung {{ milestone.deviationDays }} Tage
+          }
+        </li>
+      }
+    </ul>
+  }
+</section>

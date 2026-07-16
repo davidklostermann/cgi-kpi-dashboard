@@ -1,0 +1,43 @@
+.project-phases-section {
+  margin-bottom: 1.5rem;
+}
+
+.project-phases-section h2 {
+  margin: 0 0 0.35rem;
+  color: var(--cgi-primary-darkest);
+}
+
+.project-phases-section__hint {
+  margin: 0 0 1rem;
+  color: var(--cgi-gray-3);
+}
+
+.project-phases-section__error {
+  padding: 1rem;
+  border: 1px solid var(--cgi-error);
+  border-radius: 0.75rem;
+  background: #ffcdd2;
+}
+
+.project-phases-section__milestones {
+  margin: 1rem 0 0;
+  padding-left: 1.25rem;
+  color: var(--cgi-gray-2);
+}
+
+.project-phases-section__milestone--overdue {
+  color: var(--cgi-red-3);
+  font-weight: 600;
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
