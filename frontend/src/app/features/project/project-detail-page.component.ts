@@ -8,6 +8,7 @@ import { BreadcrumbsComponent } from '../../core/navigation/breadcrumbs.componen
 import { StatusBadgeComponent } from '../../shared/components/status-badge.component';
 import { ProjectMasterData } from '../../shared/models/project-detail.model';
 import { AiPanelPlaceholderComponent } from '../ai/ai-panel-placeholder.component';
+import { ProjectKpiSectionComponent } from './project-kpi-section.component';
 
 type LoadStatus = 'loading' | 'success' | 'error';
 
@@ -18,6 +19,7 @@ type LoadStatus = 'loading' | 'success' | 'error';
     FactsAiLayoutComponent,
     StatusBadgeComponent,
     AiPanelPlaceholderComponent,
+    ProjectKpiSectionComponent,
   ],
   templateUrl: './project-detail-page.component.html',
   styleUrl: './project-detail-page.component.scss',

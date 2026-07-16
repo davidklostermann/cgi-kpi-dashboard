@@ -40,6 +40,39 @@ describe('ProjectDetailPageComponent', () => {
       statusLabel: 'Auf Kurs',
       lastDataUpdate: '2026-07-01T08:00:00Z',
     });
+
+    const kpiRequest = httpMock.expectOne('/api/projects/a0000000-0000-4000-8000-000000000001/kpis');
+    kpiRequest.flush({
+      projectId: 'a0000000-0000-4000-8000-000000000001',
+      status: 'ON_TRACK',
+      statusLabel: 'Auf Kurs',
+      progressPercent: 62,
+      currentPhaseName: 'Rollout & Betrieb',
+      schedule: {
+        timeElapsedPercent: 80.5,
+        deviationDays: 0,
+        plannedEndDate: '2026-06-30',
+        forecastEndDate: '2026-06-30',
+        actualEndDate: null,
+      },
+      budget: {
+        planned: 500000,
+        actual: 475000,
+        utilizationPercent: 95,
+        deviationPercent: -5,
+        remaining: 25000,
+        forecastAtCompletion: 766129.03,
+      },
+      effort: {
+        plannedDays: 120,
+        actualDays: 108,
+        deviationPercent: -10,
+        remainingDays: 12,
+        forecastAtCompletionDays: 174.19,
+      },
+      risks: { openCount: 0, criticalOpenCount: 0 },
+      problems: { openCount: 0, criticalOpenCount: 0 },
+    });
     fixture.detectChanges();
 
     const text = fixture.nativeElement.textContent;

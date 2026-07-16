@@ -1,0 +1,127 @@
+<section class="project-kpi-section" aria-labelledby="project-kpi-heading">
+  <h2 id="project-kpi-heading">Management-KPIs</h2>
+  <p class="project-kpi-section__hint">Plan, Ist und Prognose sind getrennt ausgewiesen.</p>
+
+  @if (status() === 'loading') {
+    <p class="project-kpi-section__loading" aria-live="polite">KPIs werden geladen …</p>
+  } @else if (status() === 'error') {
+    <div class="project-kpi-section__error" role="alert">
+      <p>{{ errorMessage() }}</p>
+      <button type="button" (click)="load()">Erneut laden</button>
+    </div>
+  } @else if (kpis(); as data) {
+    <div class="project-kpi-section__grid">
+      <app-kpi-card label="Status" [value]="data.statusLabel" />
+      <app-kpi-card label="Fortschritt (Ist)" [value]="data.progressPercent" unit="%" />
+      <app-kpi-card
+        label="Zeitverbrauch"
+        [value]="formatPercent(data.schedule.timeElapsedPercent)"
+        unit="%"
+        delta="Bezug: Planlaufzeit"
+      />
+      <app-kpi-card
+        label="Terminabweichung"
+        [value]="data.schedule.deviationDays ?? '—'"
+        unit="Tage"
+        delta="Plan vs. Prognose"
+      />
+      <app-kpi-card
+        label="Offene Risiken"
+        [value]="data.risks.openCount"
+        [delta]="`davon kritisch: ${data.risks.criticalOpenCount}`"
+      />
+      <app-kpi-card
+        label="Offene Probleme"
+        [value]="data.problems.openCount"
+        [delta]="`davon kritisch: ${data.problems.criticalOpenCount}`"
+      />
+    </div>
+
+    <div class="project-kpi-section__tables">
+      <article class="project-kpi-section__panel" aria-labelledby="budget-heading">
+        <h3 id="budget-heading">Budget</h3>
+        <table>
+          <thead>
+            <tr>
+              <th scope="col">Kennzahl</th>
+              <th scope="col">Wert</th>
+              <th scope="col">Kennzeichnung</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <th scope="row">Plan</th>
+              <td>{{ formatMoney(data.budget.planned) }} €</td>
+              <td>Plan</td>
+            </tr>
+            <tr>
+              <th scope="row">Ist</th>
+              <td>{{ formatMoney(data.budget.actual) }} €</td>
+              <td>Ist</td>
+            </tr>
+            <tr>
+              <th scope="row">Verbrauch</th>
+              <td>{{ formatPercent(data.budget.utilizationPercent) }} %</td>
+              <td>Ist / Plan</td>
+            </tr>
+            <tr>
+              <th scope="row">Abweichung</th>
+              <td>{{ formatSignedPercent(data.budget.deviationPercent) }} %</td>
+              <td>Ist vs. Plan</td>
+            </tr>
+            <tr>
+              <th scope="row">Rest</th>
+              <td>{{ formatMoney(data.budget.remaining) }} €</td>
+              <td>Plan − Ist</td>
+            </tr>
+            <tr>
+              <th scope="row">Hochrechnung</th>
+              <td>{{ formatMoney(data.budget.forecastAtCompletion) }} €</td>
+              <td>Prognose</td>
+            </tr>
+          </tbody>
+        </table>
+      </article>
+
+      <article class="project-kpi-section__panel" aria-labelledby="effort-heading">
+        <h3 id="effort-heading">Aufwand</h3>
+        <table>
+          <thead>
+            <tr>
+              <th scope="col">Kennzahl</th>
+              <th scope="col">Wert</th>
+              <th scope="col">Kennzeichnung</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <th scope="row">Plan</th>
+              <td>{{ formatDays(data.effort.plannedDays) }} PT</td>
+              <td>Plan</td>
+            </tr>
+            <tr>
+              <th scope="row">Ist</th>
+              <td>{{ formatDays(data.effort.actualDays) }} PT</td>
+              <td>Ist</td>
+            </tr>
+            <tr>
+              <th scope="row">Abweichung</th>
+              <td>{{ formatSignedPercent(data.effort.deviationPercent) }} %</td>
+              <td>Ist vs. Plan</td>
+            </tr>
+            <tr>
+              <th scope="row">Rest</th>
+              <td>{{ formatDays(data.effort.remainingDays) }} PT</td>
+              <td>Plan − Ist</td>
+            </tr>
+            <tr>
+              <th scope="row">Hochrechnung</th>
+              <td>{{ formatDays(data.effort.forecastAtCompletionDays) }} PT</td>
+              <td>Prognose</td>
+            </tr>
+          </tbody>
+        </table>
+      </article>
+    </div>
+  }
+</section>
