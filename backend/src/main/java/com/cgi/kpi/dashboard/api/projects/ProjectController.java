@@ -12,6 +12,7 @@ import com.cgi.kpi.dashboard.api.projects.dto.ProjectDetailDto;
 import com.cgi.kpi.dashboard.api.projects.dto.ProjectListItemDto;
 import com.cgi.kpi.dashboard.application.ProjectQueryService;
 import com.cgi.kpi.dashboard.kpi.dto.ProjectKpiDto;
+import com.cgi.kpi.dashboard.kpi.dto.ProjectMasterDataDto;
 import com.cgi.kpi.dashboard.kpi.service.ProjectKpiService;
 
 @RestController
@@ -39,5 +40,10 @@ public class ProjectController {
     @GetMapping("/{id}/kpis")
     public ProjectKpiDto getProjectKpis(@PathVariable UUID id) {
         return projectKpiService.getProjectKpis(id);
+    }
+
+    @GetMapping("/{id}/master-data")
+    public ProjectMasterDataDto getProjectMasterData(@PathVariable UUID id) {
+        return projectKpiService.getProjectMasterData(id);
     }
 }

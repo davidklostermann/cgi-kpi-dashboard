@@ -18,8 +18,10 @@ import com.cgi.kpi.dashboard.infrastructure.persistence.ProjectPhaseRepository;
 import com.cgi.kpi.dashboard.infrastructure.persistence.ProjectRepository;
 import com.cgi.kpi.dashboard.infrastructure.persistence.RiskRepository;
 import com.cgi.kpi.dashboard.kpi.dto.ProjectKpiDto;
+import com.cgi.kpi.dashboard.kpi.dto.ProjectMasterDataDto;
 import com.cgi.kpi.dashboard.kpi.reader.ProjectKpiReader;
 import com.cgi.kpi.dashboard.kpi.service.ProjectKpiCalculator;
+import com.cgi.kpi.dashboard.kpi.service.PortfolioStatusLabels;
 
 @Component
 public class JpaProjectKpiReader implements ProjectKpiReader {
@@ -69,5 +71,31 @@ public class JpaProjectKpiReader implements ProjectKpiReader {
                 .toList();
 
         return Optional.of(projectKpiCalculator.calculate(project, budget, phases, risks, problems));
+    }
+
+    @Override
+    public Optional<ProjectMasterDataDto> readProjectMasterData(UUID projectId) {
+        Optional<Project> projectOpt = projectRepository.findById(projectId);
+        if (projectOpt.isEmpty()) {
+            return Optional.empty();
+        }
+
+        Project project = projectOpt.get();
+        List<ProjectPhase> phases = projectPhaseRepository.findAll().stream()
+                .filter(phase -> projectId.equals(phase.getProject().getId()))
+                .collect(Collectors.toList());
+
+        return Optional.of(new ProjectMasterDataDto(
+                project.getId(),
+                project.getName(),
+                project.getCustomerName(),
+                project.getProjectLead(),
+                project.getStartDate(),
+                project.getPlannedEndDate(),
+                project.getPredictedEndDate(),
+                ProjectKpiCalculator.resolveCurrentPhaseName(phases),
+                project.getStatus(),
+                PortfolioStatusLabels.toGermanLabel(project.getStatus()),
+                project.getLastDataUpdate()));
     }
 }

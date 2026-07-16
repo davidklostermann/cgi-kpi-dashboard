@@ -2,8 +2,53 @@
   <app-breadcrumbs [items]="breadcrumbs()" />
 
   <header class="page__header">
-    <h1>{{ projectName() }}</h1>
-    <p>Projekt-Detail — Fakten und KI getrennt (Epic 6/8 folgen).</p>
+    @if (masterDataStatus() === 'loading') {
+      <p class="page__loading" aria-live="polite">Projekt-Stammdaten werden geladen …</p>
+    } @else if (masterDataStatus() === 'error') {
+      <div class="page__error" role="alert">
+        <p>{{ masterDataError() }}</p>
+        <button type="button" (click)="loadMasterData()">Erneut laden</button>
+      </div>
+    } @else if (masterData(); as project) {
+      <div class="page__title-row">
+        <div>
+          <p class="page__eyebrow">Projekt {{ project.id }}</p>
+          <h1>{{ project.name }}</h1>
+        </div>
+        <app-status-badge [status]="project.status" [label]="project.statusLabel" />
+      </div>
+
+      <dl class="page__master-data" aria-label="Projekt-Stammdaten">
+        <div>
+          <dt>Kunde/Geschäftsbereich</dt>
+          <dd>{{ project.customer }}</dd>
+        </div>
+        <div>
+          <dt>Projektleitung</dt>
+          <dd>{{ project.projectLead || 'Nicht gepflegt' }}</dd>
+        </div>
+        <div>
+          <dt>Start</dt>
+          <dd>{{ formatDate(project.startDate) }}</dd>
+        </div>
+        <div>
+          <dt>Plan-Ende</dt>
+          <dd>{{ formatDate(project.plannedEndDate) }}</dd>
+        </div>
+        <div>
+          <dt>Prognose-Ende</dt>
+          <dd>{{ formatDate(project.forecastEndDate) }}</dd>
+        </div>
+        <div>
+          <dt>Aktuelle Phase</dt>
+          <dd>{{ project.currentPhaseName || 'Nicht verfügbar' }}</dd>
+        </div>
+        <div>
+          <dt>Letzte Datenaktualisierung</dt>
+          <dd>{{ formatDate(project.lastDataUpdate) }}</dd>
+        </div>
+      </dl>
+    }
   </header>
 
   <app-facts-ai-layout>

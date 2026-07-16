@@ -104,6 +104,34 @@ class ProjectControllerIntegrationTest {
     }
 
     @Test
+    void getProjectMasterDataReturnsHeaderFields() throws Exception {
+        mockMvc.perform(get("/api/projects/{id}/master-data", KNOWN_PROJECT_ID))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(KNOWN_PROJECT_ID.toString()))
+                .andExpect(jsonPath("$.name").value("Nexus Analytics Pilot"))
+                .andExpect(jsonPath("$.customer").value("Acme Fabrications GmbH"))
+                .andExpect(jsonPath("$.projectLead").value("Dr. Anna Keller"))
+                .andExpect(jsonPath("$.startDate").value("2025-03-01"))
+                .andExpect(jsonPath("$.plannedEndDate").value("2026-06-30"))
+                .andExpect(jsonPath("$.forecastEndDate").value("2026-06-30"))
+                .andExpect(jsonPath("$.currentPhaseName").value("Rollout & Betrieb"))
+                .andExpect(jsonPath("$.status").value("ON_TRACK"))
+                .andExpect(jsonPath("$.statusLabel").value("Auf Kurs"))
+                .andExpect(jsonPath("$.lastDataUpdate").exists())
+                .andExpect(jsonPath("$.aiGenerated").doesNotExist());
+    }
+
+    @Test
+    void getProjectMasterDataByUnknownIdReturnsStructuredNotFound() throws Exception {
+        UUID unknownId = UUID.fromString("00000000-0000-4000-8000-000000000099");
+
+        mockMvc.perform(get("/api/projects/{id}/master-data", unknownId))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.code").value("NOT_FOUND"))
+                .andExpect(jsonPath("$.message").exists());
+    }
+
+    @Test
     void getProjectByMalformedUuidReturnsStructuredBadRequest() throws Exception {
         mockMvc.perform(get("/api/projects/not-a-uuid"))
                 .andExpect(status().isBadRequest())

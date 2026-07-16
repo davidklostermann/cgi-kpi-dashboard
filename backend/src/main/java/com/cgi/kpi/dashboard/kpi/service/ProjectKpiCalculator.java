@@ -29,7 +29,7 @@ public class ProjectKpiCalculator {
     private static final String STATUS_OPEN = "OPEN";
     private static final String SEVERITY_HIGH = "HIGH";
     private static final String SEVERITY_CRITICAL = "CRITICAL";
-    static final LocalDate REFERENCE_DATE = LocalDate.of(2026, 7, 1);
+    public static final LocalDate REFERENCE_DATE = LocalDate.of(2026, 7, 1);
 
     public ProjectKpiDto calculate(
             Project project,
@@ -175,7 +175,7 @@ public class ProjectKpiCalculator {
                 .setScale(2, RoundingMode.HALF_UP);
     }
 
-    static String resolveCurrentPhaseName(List<ProjectPhase> phases) {
+    public static String resolveCurrentPhaseName(List<ProjectPhase> phases) {
         if (phases == null || phases.isEmpty()) {
             return null;
         }

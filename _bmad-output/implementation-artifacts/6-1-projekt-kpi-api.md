@@ -6,7 +6,7 @@ baseline_commit: HEAD
 
 # Story 6.1: Projekt-KPI API (FR-5, FR-9)
 
-Status: review
+Status: done
 
 ## Story
 
