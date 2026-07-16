@@ -6,7 +6,14 @@ baseline_commit: 462b010608597fbf1f3e7c6604578049deadc6ed
 
 # Story 3.7: Mock-Seed Erweiterung
 
-Status: review
+Status: done
+
+## Review Findings (2026-07-15 — kompakt)
+
+- **ACs:** alle erfüllt — V4 Seed, Projektleitung, 8 Probleme, 40 Snapshots, alle Insight-Typen abgedeckt.
+- **Tests:** 32/32 grün; `MockSeedExtendedIntegrationTest` deckt AC1–AC3 ab.
+- **Scope:** Risiko-Erweiterung bewusst ausgelassen (nicht modelliert); Insight-Regeln `[OFFEN]` — Heuristik in Test-Classifier akzeptiert.
+- **Blocker für 4.1:** keine.
 
 ## Story
 

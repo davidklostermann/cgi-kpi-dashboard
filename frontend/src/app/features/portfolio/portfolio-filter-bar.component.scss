@@ -1,0 +1,46 @@
+.filter-bar {
+  display: grid;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.filter-bar__controls {
+  display: grid;
+  gap: 0.75rem;
+  grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
+}
+
+.filter-bar__field {
+  display: grid;
+  gap: 0.35rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--cgi-neutral-700);
+}
+
+.filter-bar__field input,
+.filter-bar__field select {
+  width: 100%;
+  border: 1px solid var(--cgi-border);
+  border-radius: 6px;
+  padding: 0.5rem 0.625rem;
+  font: inherit;
+  color: var(--cgi-neutral-900);
+  background: var(--cgi-surface);
+}
+
+.filter-bar__reset {
+  justify-self: start;
+  border: 1px solid var(--cgi-border);
+  border-radius: 6px;
+  background: var(--cgi-surface);
+  color: var(--cgi-primary);
+  font-weight: 600;
+  padding: 0.5rem 0.875rem;
+  cursor: pointer;
+}
+
+.filter-bar__reset:hover {
+  border-color: var(--cgi-primary-light);
+  background: var(--cgi-primary-surface);
+}

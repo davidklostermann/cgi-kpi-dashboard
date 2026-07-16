@@ -1,5 +1,7 @@
 package com.cgi.kpi.dashboard.kpi.service;
 
+import com.cgi.kpi.dashboard.kpi.dto.PortfolioFilterCriteria;
+import com.cgi.kpi.dashboard.kpi.dto.PortfolioFilterOptionsDto;
 import com.cgi.kpi.dashboard.kpi.dto.PortfolioKpiSummaryDto;
 
 /**
@@ -7,5 +9,7 @@ import com.cgi.kpi.dashboard.kpi.dto.PortfolioKpiSummaryDto;
  */
 public interface PortfolioKpiService {
 
-    PortfolioKpiSummaryDto getPortfolioSummary();
+    PortfolioKpiSummaryDto getPortfolioSummary(PortfolioFilterCriteria criteria);
+
+    PortfolioFilterOptionsDto getFilterOptions();
 }

@@ -1,0 +1,90 @@
+@if (options(); as filterOptions) {
+  <section class="filter-bar" aria-label="Portfolio-Filter">
+    <div class="filter-bar__controls">
+      <label class="filter-bar__field">
+        <span>Kunde / Geschäftsbereich</span>
+        <input
+          type="search"
+          list="portfolio-customers"
+          [value]="filters().customer"
+          (change)="onCustomerChange($event)"
+          placeholder="Kunde filtern"
+        />
+        <datalist id="portfolio-customers">
+          @for (customer of filterOptions.customers; track customer) {
+            <option [value]="customer"></option>
+          }
+        </datalist>
+      </label>
+
+      <label class="filter-bar__field">
+        <span>Projektleitung</span>
+        <input
+          type="search"
+          list="portfolio-leads"
+          [value]="filters().projectLead"
+          (change)="onProjectLeadChange($event)"
+          placeholder="Projektleitung filtern"
+        />
+        <datalist id="portfolio-leads">
+          @for (lead of filterOptions.projectLeads; track lead) {
+            <option [value]="lead"></option>
+          }
+        </datalist>
+      </label>
+
+      <label class="filter-bar__field">
+        <span>Ampelstatus</span>
+        <select [value]="filters().statuses[0] ?? ''" (change)="onStatusChange($event)">
+          <option value="">Alle Ampeln</option>
+          @for (status of filterOptions.statuses; track status) {
+            <option [value]="status">{{ statusLabel(status) }}</option>
+          }
+        </select>
+      </label>
+
+      <label class="filter-bar__field">
+        <span>Phase</span>
+        <select [value]="filters().phase" (change)="onPhaseChange($event)">
+          <option value="">Alle Phasen</option>
+          @for (phase of filterOptions.phases; track phase) {
+            <option [value]="phase">{{ phase }}</option>
+          }
+        </select>
+      </label>
+
+      <label class="filter-bar__field">
+        <span>Projektstatus</span>
+        <select [value]="filters().lifecycle" (change)="onLifecycleChange($event)">
+          <option value="">Aktive Projekte</option>
+          <option value="completed">Abgeschlossen</option>
+          <option value="all">Alle</option>
+        </select>
+      </label>
+
+      <label class="filter-bar__field">
+        <span>Berichtsmonat</span>
+        <select [value]="filters().reportMonth" (change)="onReportMonthChange($event)">
+          <option value="">Alle Monate</option>
+          @for (month of filterOptions.reportMonths; track month) {
+            <option [value]="month">{{ month }}</option>
+          }
+        </select>
+      </label>
+
+      <label class="filter-bar__field">
+        <span>Risikostufe</span>
+        <select [value]="filters().riskSeverity" (change)="onRiskSeverityChange($event)">
+          <option value="">Alle Risikostufen</option>
+          @for (severity of filterOptions.riskSeverities; track severity) {
+            <option [value]="severity">{{ severity }}</option>
+          }
+        </select>
+      </label>
+    </div>
+
+    <button type="button" class="filter-bar__reset" (click)="resetFilters()">
+      Filter zurücksetzen
+    </button>
+  </section>
+}

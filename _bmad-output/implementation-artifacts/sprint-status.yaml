@@ -17,11 +17,16 @@ development_status:
   2-2-routing-und-lazy-loading: done
   2-3-breadcrumbs-und-seitentitel: done
   2-4-layout-raster-haupt-vs-ki-spalte: done
-  epic-3: in-progress
+  epic-3: done
   3-1-domain-modell-und-jpa: done
   3-2-flyway-migrationen: done
   3-3-mock-seed-20-projekte: done
   3-4-kpi-modul-grundstruktur: done
   3-5-basis-rest-projekte-und-portfolio: done
   3-6-domain-erweiterung-stammdaten-probleme-snapshots: done
-  3-7-mock-seed-erweiterung: review
+  3-7-mock-seed-erweiterung: done
+  epic-4: done
+  4-1-portfolio-kpi-berechnung-api: done
+  4-2-kpi-card-komponente: done
+  4-3-portfolio-kpi-sektion: done
+  4-4-portfolio-filter: done

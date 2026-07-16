@@ -15,6 +15,7 @@ import java.util.UUID;
 import org.junit.jupiter.api.Test;
 
 import com.cgi.kpi.dashboard.kpi.dto.ApprovedProjectDataDto;
+import com.cgi.kpi.dashboard.kpi.dto.PortfolioFilterCriteria;
 import com.cgi.kpi.dashboard.kpi.dto.PortfolioKpiSummaryDto;
 import com.cgi.kpi.dashboard.kpi.reader.ApprovedProjectDataReader;
 import com.cgi.kpi.dashboard.kpi.service.PortfolioKpiService;
@@ -31,7 +32,7 @@ class PortfolioKpiServiceContractTest {
 
     @Test
     void portfolioKpiServiceReturnsDtoNotDomainEntity() throws NoSuchMethodException {
-        Method method = PortfolioKpiService.class.getMethod("getPortfolioSummary");
+        Method method = PortfolioKpiService.class.getMethod("getPortfolioSummary", PortfolioFilterCriteria.class);
 
         assertFalse(method.getReturnType().getName().startsWith(DOMAIN_PACKAGE));
         assertTrue(PortfolioKpiSummaryDto.class.isAssignableFrom(method.getReturnType()));

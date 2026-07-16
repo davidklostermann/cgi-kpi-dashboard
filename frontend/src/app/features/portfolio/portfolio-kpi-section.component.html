@@ -1,0 +1,47 @@
+<section class="portfolio-kpi-section" aria-labelledby="portfolio-kpi-heading">
+  <h2 id="portfolio-kpi-heading" class="visually-hidden">Portfolio-KPIs</h2>
+
+  @if (status() === 'loading') {
+    <p class="portfolio-kpi-section__loading" aria-live="polite">KPIs werden geladen …</p>
+  } @else if (status() === 'error') {
+    <div class="portfolio-kpi-section__error" role="alert">
+      <p>{{ errorMessage() }}</p>
+      <button type="button" class="portfolio-kpi-section__retry" (click)="load()">
+        Erneut laden
+      </button>
+    </div>
+  } @else if (kpis(); as summary) {
+    @if (summary.empty && hasActiveFilters()) {
+      <div class="portfolio-kpi-section__empty" role="status">
+        <p>Keine Projekte für diesen Filter.</p>
+        <button type="button" class="portfolio-kpi-section__retry" (click)="resetFilters()">
+          Filter zurücksetzen
+        </button>
+      </div>
+    } @else {
+      <div class="portfolio-kpi-section__grid">
+        <app-kpi-card [label]="projectCountLabel()" [value]="projectCountValue(summary)" />
+        <app-kpi-card
+          label="Ø-Fortschritt"
+          [value]="formatPercent(summary.averageProgressPercent)"
+          unit="%"
+        />
+        <app-kpi-card
+          label="Budgetabweichung"
+          [value]="formatSignedPercent(summary.budgetDeviationPercent)"
+          unit="%"
+        />
+        <app-kpi-card
+          label="Termintreue"
+          [value]="formatPercent(summary.scheduleCompliancePercent)"
+          unit="%"
+        />
+        <app-kpi-card label="Kritische Risiken" [value]="summary.criticalRiskCount" />
+        <app-kpi-card
+          label="Ampelverteilung"
+          [value]="formatStatusDistribution(summary)"
+        />
+      </div>
+    }
+  }
+</section>

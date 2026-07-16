@@ -8,5 +8,18 @@ public record PortfolioKpiSummaryDto(
         double averageProgressPercent,
         double budgetDeviationPercent,
         double scheduleCompliancePercent,
-        int criticalRiskCount) {
+        int criticalRiskCount,
+        PortfolioStatusDistributionDto statusDistribution,
+        boolean empty) {
+
+    public static PortfolioKpiSummaryDto emptyPortfolio() {
+        return new PortfolioKpiSummaryDto(
+                0,
+                0.0,
+                0.0,
+                0.0,
+                0,
+                new PortfolioStatusDistributionDto(0, 0, 0, 0),
+                true);
+    }
 }

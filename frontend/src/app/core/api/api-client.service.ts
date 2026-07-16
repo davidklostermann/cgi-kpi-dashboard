@@ -1,5 +1,5 @@
 import { Injectable, inject } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 
 import { API_BASE_URL } from './api.config';
 
@@ -15,8 +15,36 @@ export class ApiClient {
     return API_BASE_URL;
   }
 
-  protected get<T>(path: string) {
-    return this.http.get<T>(`${this.baseUrl}${path}`);
+  protected get<T>(path: string, query?: Record<string, string | string[] | null | undefined>) {
+    return this.http.get<T>(`${this.baseUrl}${path}`, { params: this.toHttpParams(query) });
+  }
+
+  private toHttpParams(query?: Record<string, string | string[] | null | undefined>): HttpParams | undefined {
+    if (!query) {
+      return undefined;
+    }
+
+    let params = new HttpParams();
+    let hasValues = false;
+
+    for (const [key, value] of Object.entries(query)) {
+      if (value == null || value === '') {
+        continue;
+      }
+      if (Array.isArray(value)) {
+        for (const entry of value) {
+          if (entry) {
+            params = params.append(key, entry);
+            hasValues = true;
+          }
+        }
+      } else {
+        params = params.set(key, value);
+        hasValues = true;
+      }
+    }
+
+    return hasValues ? params : undefined;
   }
 
   /** Paths outside `/api` (e.g. Spring Actuator) — proxied separately in dev. */

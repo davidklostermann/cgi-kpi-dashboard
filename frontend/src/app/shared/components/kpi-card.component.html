@@ -1,0 +1,12 @@
+<article class="kpi-card" aria-label="{{ label() }}">
+  <p class="kpi-card__label">{{ label() }}</p>
+  <p class="kpi-card__value">
+    <span class="kpi-card__number">{{ value() }}</span>
+    @if (unit()) {
+      <span class="kpi-card__unit">{{ unit() }}</span>
+    }
+  </p>
+  @if (delta()) {
+    <p class="kpi-card__delta">{{ delta() }}</p>
+  }
+</article>
