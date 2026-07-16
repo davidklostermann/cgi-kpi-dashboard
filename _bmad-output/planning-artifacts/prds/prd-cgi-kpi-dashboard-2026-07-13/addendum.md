@@ -2,13 +2,22 @@
 title: "PRD Addendum: cgi-kpi-dashboard"
 status: final
 created: 2026-07-13
-updated: 2026-07-15
+updated: 2026-07-16
 parent: prd.md
 ---
 
 # PRD Addendum
 
 Technische und fachliche Vertiefung, die nicht in die PRD-Hauptnarrative gehört. Verbindliche Produktanforderungen stehen in [prd.md](prd.md).
+
+## MVP-Scope-Anpassungen (2026-07-16)
+
+| Thema | Stand |
+|---|---|
+| **Team & Kapazität** | MVP-Scope-Erweiterung (Story 7.5): projektbezogene Rollen, Besetzungsgrad, Kapazitätslücken und Terminwirkung — **keine vollständige Ressourcenplanung**. |
+| **Management Insights (FR-20)** | API, Regel-Engine (`kpi.insights`) und Angular-Komponente bleiben technisch erhalten; **nicht mehr Teil der aktuellen Projekt-Detailseiten-UI**. |
+| **Probleme/Risiken/Maßnahmen** | Kombinierte Section auf der Detailseite über `issues-actions` (nicht separate `/risks`- und `/problems`-Panels). |
+| **KI Projekt-Detail (Epic 9)** | Backend und `app-project-ai-panel` im Codebase; Detailseite zeigt aktuell **`app-ai-panel-placeholder`**. |
 
 ## Technische Grundrichtung (aus Brief, für Architecture)
 
@@ -43,7 +52,7 @@ Bestehend (Stories 3.1–3.3): `Project`, `ProjectPhase`, `Milestone`, `Risk`, `
 | `ProjectPhase` / `Milestone` Erweiterung | Status, Ist/Prognose-Termine, Abweichung, Blockade | `[OFFEN]` |
 | `ProjectReportSnapshot` (neu) | Berichtsstand aktuell/vorherig | `[ASSUMPTION]` 2 Snapshots/Projekt im Seed |
 
-**Kein Scope:** Aufgaben, Ressourcenplanung, vollständiges Maßnahmenmanagement.
+**Kein Scope:** Aufgaben, vollständige Personal-/Ressourcenplanung, vollständiges Maßnahmenmanagement.
 
 ## Mock-Portfolio (FR-19)
 
@@ -67,11 +76,13 @@ Seed-Erweiterung (Story 3.7): Projektleitung, Probleme, Insight-Szenarien, 2 Ber
 | `GET /api/projects` | FR-2 | Erweiterte Tabellenfelder |
 | `GET /api/projects/{id}/master-data` | FR-5 | Stammdaten |
 | `GET /api/projects/{id}/kpis` | FR-5 | Management-KPIs inkl. Prognose |
-| `GET /api/projects/{id}/insights` | FR-20 | Deterministische Management Insights |
+| `GET /api/projects/{id}/insights` | FR-20 | Deterministische Management Insights (API; UI derzeit nicht auf Detailseite) |
 | `GET /api/projects/{id}/trends` | FR-21 | Berichtsstandsvergleich |
 | `GET /api/projects/{id}/phases` | FR-5 | Phasen/Meilensteine Detail |
-| `GET /api/projects/{id}/risks` | FR-6 | Risiken |
-| `GET /api/projects/{id}/problems` | FR-6 | Probleme (getrennt) |
+| `GET /api/projects/{id}/issues-actions` | FR-6 | Probleme, Risiken & Maßnahmen (kombiniert) |
+| `GET /api/projects/{id}/capacity` | FR-6 / 7.5 | Team & Kapazität (projektbezogen, ohne Personaldetails) |
+| `GET /api/projects/{id}/risks` | FR-6 | `[PLAN]` — aktuell über `issues-actions` abgedeckt |
+| `GET /api/projects/{id}/problems` | FR-6 | `[PLAN]` — aktuell über `issues-actions` abgedeckt |
 
 ## MVP-Historisierung `[ASSUMPTION]`
 

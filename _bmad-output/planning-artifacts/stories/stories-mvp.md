@@ -463,12 +463,15 @@
 
 **Akzeptanzkriterien:**
 - Gegeben Projekt, wenn `GET /api/projects/{id}/insights`, dann Liste mit: Aussage, Kennzahlen, Vergleichswert `[OFFEN]`, Zeitraum, Begründung, Typ „deterministisch".
-- Gegeben UI, dann `insight-list` im Fakten-Bereich (nicht KI-Spalte).
 - Gegeben Insight-Regeln, dann Implementierung in `kpi.insights` — Schwellenwerte `[OFFEN]`.
+- Gegeben Codebase, dann bleibt `app-project-insights-section` erhalten (Loading/Error/Empty).
+- **Produktstand:** Die Insight-UI wird auf der Projekt-Detailseite **nicht mehr gerendert**; FR-20 ist aktuell nicht sichtbar im MVP-UI. API und Regel-Engine bleiben für KI/ spätere Nutzung bestehen.
 
-**UX:** insight-list  
+**UX:** insight-list (nicht aktiv auf Detailseite)  
 **Abhängigkeiten:** 3.6, 3.7, 6.1  
-**Tests:** KPI Rule Tests + API Test
+**Tests:** KPI Rule Tests + API Test (`ProjectInsightEngineTest`, `GET /insights`)
+
+**Change Log (2026-07-16):** Management-Insights-UI aus fachlicher/UX-Entscheidung aus der Projekt-Detailseite entfernt.
 
 ---
 
@@ -479,10 +482,10 @@
 **Akzeptanzkriterien:**
 - Gegeben Snapshots, wenn `GET /api/projects/{id}/trends`, dann Deltas für Fortschritt, Budgetverbrauch, Terminprognose, Ampelstatus, Risiken.
 - Gegeben fehlender Vorstand, dann definierter UI-Hinweis — kein erfundener Vergleich.
-- Gegeben UI, dann `report-comparison` unter Insights.
+- Gegeben UI, dann `app-project-report-comparison` als **eigenständiger Faktenbereich** auf der Detailseite (nicht unter Management Insights).
 
-**UX:** report-comparison  
-**Abhängigkeiten:** 3.7, 6.6  
+**UX:** report-comparison (eigenständige Section)  
+**Abhängigkeiten:** 3.7, 6.1  
 **Tests:** API Test mit 2 Snapshot-Seed
 
 ---
@@ -497,8 +500,10 @@
 - Gegeben Projekt, wenn `GET /api/projects/{id}/risks`, dann Liste mit Mindestfeldern FR-6 (Titel, Beschreibung, Wahrscheinlichkeit, Auswirkung, Schweregrad, Status, Verantwortlichkeit, Gegenmaßnahme, Fälligkeit — soweit modelliert).
 - Gegeben Response, dann Anzahl offener/kritischer Risiken aggregierbar für Tabelle und KPIs.
 
+**Implementierungsstand:** Kein separater `/risks`-Endpunkt; offene Risiken werden über `GET /api/projects/{id}/issues-actions` (Typ `RISK`) und KPI-Aggregation bereitgestellt.
+
 **Abhängigkeiten:** 3.6, 3.5  
-**Tests:** API Test
+**Tests:** API Test (`issues-actions`, KPI-Reader)
 
 ---
 
@@ -510,9 +515,11 @@
 - Gegeben Detailseite, dann Risiko-Liste/Karten getrennt von Problemen.
 - Gegeben Eintrag, dann status-badge für Schwere.
 
-**UX:** Punkt 7 (Risiken)  
+**Implementierungsstand:** Kombinierte Section `app-project-issues-actions-section` („Probleme, Risiken & Maßnahmen“) statt separater Risiko-Liste.
+
+**UX:** Punkt 7 (Risiken) — kombiniert mit Problemen  
 **Abhängigkeiten:** 7.1, 6.2  
-**Tests:** Component Test
+**Tests:** Component Test (`project-issues-actions-section.component.spec.ts`)
 
 ---
 
@@ -524,6 +531,8 @@
 - Gegeben Projekt, wenn `GET /api/projects/{id}/problems`, dann Liste mit FR-6 Mindestfeldern.
 - Gegeben Detailseite, dann Problem-Bereich getrennt vom Risiko-Bereich.
 - Gegeben UI, dann kein Maßnahmen-Workflow (Anzeige only).
+
+**Implementierungsstand:** Kein separater `/problems`-Endpunkt; Probleme über `GET /api/projects/{id}/issues-actions` (Typ `PROBLEM`); UI kombiniert in derselben Section.
 
 **Abhängigkeiten:** 3.6, 7.2  
 **Tests:** API + Component Test
@@ -540,7 +549,25 @@
 
 **UX:** UX-DR4, status-badge  
 **Abhängigkeiten:** 4.2  
-**Tests:** A11y Kontrast-Check
+**Tests:** A11y Kontrast-Check, `status-badge.component.spec.ts`
+
+---
+
+### Story 7.5 — Team- und Kapazitätssicht (MVP-Scope-Erweiterung)
+
+**Als** Projektleiter **möchte ich** projektbezogene Rollen- und Kapazitätsübersicht **damit** ich Terminwirkungen aus Ressourcenlücken erkenne.
+
+**Akzeptanzkriterien:**
+- Gegeben Detailseite, dann Section „Team & Kapazität“ mit projektbezogenen Rollen und Skills.
+- Gegeben Rolle, dann Besetzungsgrad in Prozent und Fortschrittsbalken.
+- Gegeben Zusammenfassung, dann fehlende Kapazitäten/FTE, nächste Verfügbarkeit, überlastete Rollen, externe Optionen, Auswirkung auf den Projekttermin.
+- Gegeben Darstellung, dann **keine sensiblen Personaldetails** (keine Namen, Krankheiten o. Ä.).
+- Gegeben API, wenn `GET /api/projects/{id}/capacity`, dann Rollenliste und Kapazitäts-Summary aus Backend/Mock-Seed.
+- Gegeben UI, dann Loading-, Error- und Empty-State; responsive Darstellung.
+
+**UX:** `app-project-team-capacity-section`  
+**Abhängigkeiten:** 3.6, 6.2  
+**Tests:** API Test + Component Test (`project-team-capacity-section.component.spec.ts`)
 
 ---
 
@@ -656,10 +683,12 @@
 - Gegeben Detailseite, dann drei ki-panels mit unabhängigem Laden.
 - Gegeben ein Panel-Fehler, dann andere Panels und Fakten weiter nutzbar.
 
-**UX:** Projekt-Detail Punkt 7 (KI-Bereich, klar abgegrenzt)  
+**Produktstand (2026-07-16):** Backend (`/ai/analysis`, `/ai/questions`) und `app-project-ai-panel` existieren im Codebase; auf der Detailseite wird aktuell **`app-ai-panel-placeholder`** gerendert. Story 9.4 ist **nicht vollständig produktiv aktiv**.
+
+**UX:** Projekt-Detail KI-Bereich (Platzhalter bis Epic 8/9-Aktivierung)  
 **Architektur:** AD-7  
 **Abhängigkeiten:** 9.2, 9.3, 2.4  
-**Tests:** Component Test partial failure
+**Tests:** Component Test (`project-ai-panel.component.spec.ts`); Detailseite nutzt Placeholder (`project-detail-page.component.spec.ts`)
 
 ---
 

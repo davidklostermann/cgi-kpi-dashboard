@@ -44,8 +44,8 @@ NFR-1: Aha-Moment ~30s · NFR-2: Gemini-Key serverseitig · NFR-3: Mock-only · 
 UX-DR1: Layout Haupt 8–9/12 · KI 3–4/12 (Desktop); KI unter Hauptinhalt (Tablet/Mobil)  
 UX-DR2: CGI EDS Farben und Shell (Top/Side Nav, Breadcrumbs)  
 UX-DR3–UX-DR11: kpi-card, status-badge, ki-panel, trend-chart, gantt-timeline, project-table, filter-bar, quick-reply, chat  
-UX-DR16: insight-list (Management Insights, FR-20)  
-UX-DR17: report-comparison (Berichtsstandsvergleich, FR-21)
+UX-DR16: insight-list (Management Insights, FR-20) — API/Komponente vorhanden; aktuell **nicht** auf Projekt-Detailseite gerendert  
+UX-DR17: report-comparison (Berichtsstandsvergleich, FR-21) — eigenständiger Faktenbereich auf der Detailseite
 UX-DR12: Unabhängiges Laden Fakten/KI  
 UX-DR13: WCAG 2.1 AA, sr-only für Visualisierungen  
 UX-DR14: Keine Donut/Tacho-Charts  
@@ -60,7 +60,7 @@ UX-DR15: Caption-Kontrast `{colors.caption}` (#333333)
 | FR-3 | Epic 5 | 5.2, 5.4 |
 | FR-4 | Epic 8 | 8.2, 8.3, 8.4 |
 | FR-5 | Epic 6 | 6.1, 6.2, 6.3, 6.4 |
-| FR-6 | Epic 7 | 7.1, 7.2, 7.4 |
+| FR-6 | Epic 7 | 7.1, 7.2, 7.4, 7.5 |
 | FR-7 | Epic 2, 5, 6 | 2.2, 5.5, 6.5 |
 | FR-8 | Epic 4 | 4.4 |
 | FR-9 | Epic 3, 4, 6 | 3.4, 4.1, 6.1, 6.6 |
@@ -86,8 +86,8 @@ UX-DR15: Caption-Kontrast `{colors.caption}` (#333333)
 | 3 | Mock-Daten und Backend-Grundlage | Domain, Flyway, Seed, KPI-Modul, Domain-Erweiterung, Basis-API | 3.1–3.7 |
 | 4 | Portfolio-KPI-Übersicht | KPI-Berechnung, Karten, Filter | 4.1–4.4 |
 | 5 | Portfolio-Zeitleiste und Projekttabelle | Gantt, Management-Tabelle, Trend, Navigation | 5.1–5.5 |
-| 6 | Projekt-Detailseite | Stammdaten, KPIs, Insights, Trends, Phasen, Budget | 6.1–6.7 |
-| 7 | Risiken, Probleme und Maßnahmen | Risiko/Problem-API und -UI, Status-Badges | 7.1–7.4 |
+| 6 | Projekt-Detailseite | Stammdaten, KPIs, Phasen/Gantt, Issues/Kapazität, Berichtsvergleich (Insights-API ohne Detail-UI) | 6.1–6.7 |
+| 7 | Risiken, Probleme, Maßnahmen und Kapazität | Kombinierte Issues-/Maßnahmen-UI, Kapazitätssicht, Status-Badges | 7.1–7.5 |
 | 8 | KI-Portfolioanalyse | Trendanalyse Backend + Panel | 8.1–8.4 |
 | 9 | KI-Projektanalyse und Q&A | Summary, Prognose, Q&A, Chips | 9.1–9.5 |
 | 10 | Fehlerbehandlung, Barrierefreiheit, Qualität | AD-7, FR-15, WCAG | 10.1–10.4 |
@@ -98,7 +98,7 @@ UX-DR15: Caption-Kontrast `{colors.caption}` (#333333)
 2. **3.1 → 3.7** — Backend + Mock-Daten inkl. Domain-Erweiterung (parallel ab 1.2: **2.1 → 2.4** Shell)  
 3. **4.1 → 4.4** — Portfolio-KPIs  
 4. **5.1 → 5.5** — Zeitleiste + Management-Tabelle  
-5. **6.1 → 6.7** + **7.1 → 7.4** — Projekt-Detail, Insights, Trends, Risiken/Probleme  
+5. **6.1 → 6.7** + **7.1 → 7.5** — Projekt-Detail, Berichtsvergleich, Issues/Kapazität (Management-Insights-API ohne Detail-UI)  
 6. **8.1 → 8.4** — KI Portfolio (nach KPI-Readern)  
 7. **9.1 → 9.5** — KI Projekt (nach ApprovedProjectDataReader)  
 8. **10.1 → 10.4** — Querschnitt A11y/Fehler (forlaufend, Abschluss-Review)
