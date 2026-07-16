@@ -1,0 +1,55 @@
+.report-comparison {
+  margin-bottom: 1.5rem;
+}
+
+.report-comparison h2 {
+  margin: 0 0 0.35rem;
+  color: var(--cgi-primary-darkest);
+}
+
+.report-comparison__hint,
+.report-comparison__missing {
+  margin: 0 0 1rem;
+  color: var(--cgi-gray-3);
+}
+
+.report-comparison__error {
+  padding: 1rem;
+  border: 1px solid var(--cgi-error);
+  border-radius: 0.75rem;
+  background: #ffcdd2;
+}
+
+.report-comparison__missing {
+  padding: 1rem;
+  border: 1px dashed var(--cgi-purple-6);
+  border-radius: 0.75rem;
+  background: var(--cgi-purple-7);
+  color: var(--cgi-primary-darkest);
+}
+
+.report-comparison dl {
+  margin: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));
+  gap: 0.75rem;
+}
+
+.report-comparison div {
+  padding: 0.75rem;
+  border: 1px solid var(--cgi-gray-7);
+  border-radius: 0.75rem;
+  background: var(--cgi-surface);
+}
+
+.report-comparison dt {
+  margin-bottom: 0.25rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--cgi-gray-3);
+}
+
+.report-comparison dd {
+  margin: 0;
+  font-weight: 600;
+}

@@ -1,0 +1,46 @@
+<section class="report-comparison" aria-labelledby="report-comparison-heading">
+  <h2 id="report-comparison-heading">Berichtsstandsvergleich</h2>
+  <p class="report-comparison__hint">Entwicklung seit dem vorherigen Berichtsstand.</p>
+
+  @if (status() === 'loading') {
+    <p aria-live="polite">Vergleich wird geladen …</p>
+  } @else if (status() === 'error') {
+    <div class="report-comparison__error" role="alert">
+      <p>{{ errorMessage() }}</p>
+      <button type="button" (click)="load()">Erneut laden</button>
+    </div>
+  } @else if (trends(); as data) {
+    @if (!data.comparisonAvailable) {
+      <p class="report-comparison__missing" role="status">
+        {{ data.unavailableReason || 'Kein vorheriger Berichtsstand vorhanden — Vergleich nicht möglich.' }}
+      </p>
+    } @else {
+      <dl>
+        <div>
+          <dt>Berichtsstände</dt>
+          <dd>{{ data.previousSnapshotDate }} → {{ data.currentSnapshotDate }}</dd>
+        </div>
+        <div>
+          <dt>Fortschritt Δ</dt>
+          <dd>{{ formatSigned(data.progressDeltaPercent, ' %') }}</dd>
+        </div>
+        <div>
+          <dt>Budgetverbrauch Δ</dt>
+          <dd>{{ formatSigned(data.budgetActualDelta, ' €') }}</dd>
+        </div>
+        <div>
+          <dt>Terminabweichung Δ</dt>
+          <dd>{{ formatSigned(data.scheduleDeviationDeltaDays, ' Tage') }}</dd>
+        </div>
+        <div>
+          <dt>Ampelstatus</dt>
+          <dd>{{ data.previousStatusLabel }} → {{ data.currentStatusLabel }}</dd>
+        </div>
+        <div>
+          <dt>Offene Risiken Δ</dt>
+          <dd>{{ formatSigned(data.openRiskCountDelta) }}</dd>
+        </div>
+      </dl>
+    }
+  }
+</section>
