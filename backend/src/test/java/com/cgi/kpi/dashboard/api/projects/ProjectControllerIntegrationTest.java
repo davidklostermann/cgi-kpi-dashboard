@@ -168,6 +168,35 @@ class ProjectControllerIntegrationTest {
     }
 
     @Test
+    void getProjectIssuesActionsReturnsOpenProblemsAndRisks() throws Exception {
+        mockMvc.perform(get("/api/projects/{id}/issues-actions", KNOWN_PROJECT_ID))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.projectId").value(KNOWN_PROJECT_ID.toString()))
+                .andExpect(jsonPath("$.factsBadge").value("Fakten aus Backend"))
+                .andExpect(jsonPath("$.items", hasSize(greaterThanOrEqualTo(3))))
+                .andExpect(jsonPath("$.items[0].severityLabel").exists())
+                .andExpect(jsonPath("$.items[0].metrics").isArray())
+                .andExpect(jsonPath("$.items[0].actionText").exists())
+                .andExpect(jsonPath("$.aiGenerated").doesNotExist());
+    }
+
+    @Test
+    void getProjectCapacityReturnsRoleCoverageAndSummary() throws Exception {
+        mockMvc.perform(get("/api/projects/{id}/capacity", KNOWN_PROJECT_ID))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.projectId").value(KNOWN_PROJECT_ID.toString()))
+                .andExpect(jsonPath("$.roles", hasSize(4)))
+                .andExpect(jsonPath("$.roles[0].roleName").value("Cloud Engineering"))
+                .andExpect(jsonPath("$.roles[0].coveragePercent").value(33))
+                .andExpect(jsonPath("$.summary.missingFte").value(2.0))
+                .andExpect(jsonPath("$.summary.nextAvailabilityDate").value("2026-08-05"))
+                .andExpect(jsonPath("$.summary.overloadedRoles").value(1))
+                .andExpect(jsonPath("$.summary.externalOptions").value(2))
+                .andExpect(jsonPath("$.summary.impactHeadline").value("Kapazitätslücke mit Terminwirkung"))
+                .andExpect(jsonPath("$.aiGenerated").doesNotExist());
+    }
+
+    @Test
     void getProjectByMalformedUuidReturnsStructuredBadRequest() throws Exception {
         mockMvc.perform(get("/api/projects/not-a-uuid"))
                 .andExpect(status().isBadRequest())

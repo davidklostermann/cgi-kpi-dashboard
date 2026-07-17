@@ -1,0 +1,40 @@
+<aside class="portfolio-ai" aria-label="Portfolio KI-Einschätzung">
+  <span class="portfolio-ai__badge">KI-Einschätzung</span>
+  <h2 class="portfolio-ai__title">Portfolio-Trendanalyse</h2>
+
+  @if (status() === 'loading') {
+    <p class="portfolio-ai__state" aria-live="polite">Trendanalyse wird geladen …</p>
+  } @else if (status() === 'disabled') {
+    <div class="portfolio-ai__error" role="alert">
+      <p>{{ errorMessage() }}</p>
+      <button type="button" (click)="load()">Erneut versuchen</button>
+    </div>
+  } @else if (status() === 'error') {
+    <div class="portfolio-ai__error" role="alert">
+      <p>{{ errorMessage() }}</p>
+      <button type="button" (click)="load()">Erneut versuchen</button>
+    </div>
+  } @else if (analysis(); as data) {
+    @if (!data.text) {
+      <p class="portfolio-ai__state" role="status">Keine Trendanalyse verfügbar.</p>
+    } @else {
+      <p class="portfolio-ai__text">{{ data.text }}</p>
+
+      @if (data.topProjects.length > 0) {
+        <h3 class="portfolio-ai__subtitle">Top-3 Handlungsbedarf</h3>
+        <ol class="portfolio-ai__top">
+          @for (project of data.topProjects; track project.projectId) {
+            <li>
+              <a [routerLink]="['/projects', project.projectId]">{{ project.projectName }}</a>
+              <p>{{ project.reason }}</p>
+            </li>
+          }
+        </ol>
+      } @else {
+        <p class="portfolio-ai__state" role="status">Keine priorisierten Projekte aus freigegebenen Fakten.</p>
+      }
+
+      <p class="portfolio-ai__disclaimer">{{ data.disclaimer }}</p>
+    }
+  }
+</aside>

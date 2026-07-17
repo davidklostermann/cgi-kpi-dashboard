@@ -3,6 +3,10 @@ import { Injectable } from '@angular/core';
 import { ApiClient } from './api-client.service';
 import { ProjectMasterData } from '../../shared/models/project-detail.model';
 import { ProjectInsights, ProjectTrends } from '../../shared/models/project-insights.model';
+import {
+  ProjectCapacity,
+  ProjectIssuesActions,
+} from '../../shared/models/project-issues-capacity.model';
 import { ProjectKpis } from '../../shared/models/project-kpi.model';
 import { ProjectPhases } from '../../shared/models/project-phases.model';
 
@@ -31,5 +35,13 @@ export class ProjectApiService extends ApiClient {
 
   getProjectTrends(projectId: string) {
     return this.get<ProjectTrends>(`/projects/${projectId}/trends`);
+  }
+
+  getProjectIssuesActions(projectId: string) {
+    return this.get<ProjectIssuesActions>(`/projects/${projectId}/issues-actions`);
+  }
+
+  getProjectCapacity(projectId: string) {
+    return this.get<ProjectCapacity>(`/projects/${projectId}/capacity`);
   }
 }

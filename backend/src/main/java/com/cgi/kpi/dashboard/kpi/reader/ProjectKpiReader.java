@@ -3,7 +3,9 @@ package com.cgi.kpi.dashboard.kpi.reader;
 import java.util.Optional;
 import java.util.UUID;
 
+import com.cgi.kpi.dashboard.kpi.dto.ProjectCapacityDto;
 import com.cgi.kpi.dashboard.kpi.dto.ProjectInsightsDto;
+import com.cgi.kpi.dashboard.kpi.dto.ProjectIssuesActionsDto;
 import com.cgi.kpi.dashboard.kpi.dto.ProjectKpiDto;
 import com.cgi.kpi.dashboard.kpi.dto.ProjectMasterDataDto;
 import com.cgi.kpi.dashboard.kpi.dto.ProjectPhasesDto;
@@ -21,4 +23,8 @@ public interface ProjectKpiReader {
     Optional<ProjectInsightsDto> readProjectInsights(UUID projectId);
 
     Optional<ProjectTrendsDto> readProjectTrends(UUID projectId);
+
+    Optional<ProjectIssuesActionsDto> readProjectIssuesActions(UUID projectId);
+
+    Optional<ProjectCapacityDto> readProjectCapacity(UUID projectId);
 }

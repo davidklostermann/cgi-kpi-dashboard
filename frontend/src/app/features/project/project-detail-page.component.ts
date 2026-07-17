@@ -9,10 +9,11 @@ import { BreadcrumbsComponent } from '../../core/navigation/breadcrumbs.componen
 import { StatusBadgeComponent } from '../../shared/components/status-badge.component';
 import { ProjectMasterData } from '../../shared/models/project-detail.model';
 import { ProjectAiPanelComponent } from './project-ai-panel.component';
-import { ProjectInsightsSectionComponent } from './project-insights-section.component';
+import { ProjectIssuesActionsSectionComponent } from './project-issues-actions-section.component';
 import { ProjectKpiSectionComponent } from './project-kpi-section.component';
 import { ProjectPhasesSectionComponent } from './project-phases-section.component';
 import { ProjectReportComparisonComponent } from './project-report-comparison.component';
+import { ProjectTeamCapacitySectionComponent } from './project-team-capacity-section.component';
 
 type LoadStatus = 'loading' | 'success' | 'error';
 
@@ -24,8 +25,9 @@ type LoadStatus = 'loading' | 'success' | 'error';
     FactsAiLayoutComponent,
     StatusBadgeComponent,
     ProjectKpiSectionComponent,
+    ProjectIssuesActionsSectionComponent,
+    ProjectTeamCapacitySectionComponent,
     ProjectPhasesSectionComponent,
-    ProjectInsightsSectionComponent,
     ProjectReportComparisonComponent,
     ProjectAiPanelComponent,
   ],

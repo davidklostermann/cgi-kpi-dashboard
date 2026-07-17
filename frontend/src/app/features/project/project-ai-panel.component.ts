@@ -1,9 +1,9 @@
 import { Component, effect, inject, input, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { HttpErrorResponse } from '@angular/common/http';
 import { take } from 'rxjs';
 
 import { ProjectAiApiService } from '../../core/api/project-ai-api.service';
+import { resolveAiPanelError } from '../../shared/utils/ai-error.util';
 import {
   ProjectAiAnalysis,
   ProjectAiDraft,
@@ -106,13 +106,9 @@ export class ProjectAiPanelComponent {
         },
         error: (error: unknown) => {
           this.analysis.set(null);
-          if (error instanceof HttpErrorResponse && error.status === 503) {
-            this.status.set('disabled');
-            this.errorMessage.set('Projekt-Assistent ist derzeit deaktiviert.');
-            return;
-          }
-          this.status.set('error');
-          this.errorMessage.set(this.resolveError(error, 'Die Analyse konnte nicht geladen werden.'));
+          const resolved = resolveAiPanelError(error, 'Die Analyse konnte nicht geladen werden.');
+          this.status.set(resolved.status);
+          this.errorMessage.set(resolved.message);
         },
       });
   }
@@ -177,7 +173,9 @@ export class ProjectAiPanelComponent {
         },
         error: (error: unknown) => {
           this.chatStatus.set('error');
-          this.chatError.set(this.resolveError(error, 'Die Frage konnte nicht beantwortet werden.'));
+          this.chatError.set(
+            resolveAiPanelError(error, 'Die Frage konnte nicht beantwortet werden.').message,
+          );
         },
       });
   }
@@ -190,15 +188,5 @@ export class ProjectAiPanelComponent {
       dateStyle: 'medium',
       timeStyle: 'short',
     }).format(new Date(value));
-  }
-
-  private resolveError(error: unknown, fallback: string): string {
-    if (error instanceof HttpErrorResponse) {
-      const body = error.error as { message?: string } | null;
-      if (body?.message) {
-        return body.message;
-      }
-    }
-    return fallback;
   }
 }

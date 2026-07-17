@@ -1,0 +1,81 @@
+<section class="capacity-section" aria-labelledby="capacity-section-heading">
+  <div class="capacity-section__header">
+    <div>
+      <h2 id="capacity-section-heading">Team &amp; Kapazität</h2>
+      <p class="capacity-section__subtitle">
+        Projektbezogene Rollen- und Skill-Abdeckung ohne sensible Personaldetails
+      </p>
+    </div>
+    @if (status() === 'success' && data(); as payload) {
+      <span class="capacity-section__badge">{{ payload.factsBadge }}</span>
+    }
+  </div>
+
+  @if (status() === 'loading') {
+    <p class="capacity-section__state" aria-live="polite">Kapazitätsdaten werden geladen …</p>
+  } @else if (status() === 'error') {
+    <div class="capacity-section__error" role="alert">
+      <p>{{ errorMessage() }}</p>
+      <button type="button" (click)="load()">Erneut laden</button>
+    </div>
+  } @else if (data(); as payload) {
+    @if (payload.roles.length === 0 && !payload.summary) {
+      <p class="capacity-section__state" role="status">
+        Keine Kapazitätsdaten für dieses Projekt hinterlegt.
+      </p>
+    } @else {
+      <div class="capacity-section__grid">
+        <ul class="capacity-section__roles" aria-label="Rollenbesetzung">
+          @for (role of payload.roles; track role.id) {
+            <li>
+              <div class="capacity-section__role-head">
+                <span>{{ role.roleName }}</span>
+                <strong aria-label="Besetzungsgrad {{ role.coveragePercent }} Prozent">
+                  {{ role.coveragePercent }}&nbsp;%
+                </strong>
+              </div>
+              <div
+                class="capacity-section__bar"
+                role="progressbar"
+                [attr.aria-valuenow]="role.coveragePercent"
+                aria-valuemin="0"
+                aria-valuemax="100"
+                [attr.aria-label]="role.roleName + ' Besetzungsgrad'"
+              >
+                <span [style.width.%]="role.coveragePercent"></span>
+              </div>
+              <p class="capacity-section__role-meta">
+                {{ formatFte(role.availableFte) }} / {{ formatFte(role.requiredFte) }} FTE verfügbar
+              </p>
+            </li>
+          }
+        </ul>
+
+        @if (payload.summary; as summary) {
+          <aside class="capacity-section__summary" aria-label="Kapazitätslücke">
+            <h3>{{ summary.impactHeadline }}</h3>
+            <p class="capacity-section__summary-detail">{{ summary.impactDetail }}</p>
+            <dl>
+              <div>
+                <dt>Fehlende Rollen</dt>
+                <dd>{{ formatFte(summary.missingFte) }} FTE</dd>
+              </div>
+              <div>
+                <dt>Nächste Verfügbarkeit</dt>
+                <dd>{{ formatDate(summary.nextAvailabilityDate) }}</dd>
+              </div>
+              <div>
+                <dt>Überlastete Rollen</dt>
+                <dd>{{ summary.overloadedRoles }}</dd>
+              </div>
+              <div>
+                <dt>Externe Optionen</dt>
+                <dd>{{ summary.externalOptions }}</dd>
+              </div>
+            </dl>
+          </aside>
+        }
+      </div>
+    }
+  }
+</section>

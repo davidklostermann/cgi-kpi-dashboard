@@ -108,6 +108,15 @@ describe('PortfolioPageComponent', () => {
     httpMock.match('/api/portfolio/timeline').forEach((req) => req.flush(mockTimeline));
     httpMock.match('/api/portfolio/projects').forEach((req) => req.flush(mockTable));
     httpMock.match('/api/portfolio/trends').forEach((req) => req.flush(mockTrends));
+    httpMock.match('/api/portfolio/ai/trend-analysis').forEach((req) =>
+      req.flush({
+        text: 'Trendanalyse',
+        aiGenerated: true,
+        disclaimer: 'Disclaimer',
+        generatedAt: '2026-07-16T12:00:00Z',
+        topProjects: [],
+      }),
+    );
     httpMock.verify();
   });
 
@@ -125,6 +134,13 @@ describe('PortfolioPageComponent', () => {
     httpMock.expectOne('/api/portfolio/timeline').flush(mockTimeline);
     httpMock.expectOne('/api/portfolio/projects').flush(mockTable);
     httpMock.expectOne('/api/portfolio/trends').flush(mockTrends);
+    httpMock.expectOne('/api/portfolio/ai/trend-analysis').flush({
+      text: 'Trendanalyse',
+      aiGenerated: true,
+      disclaimer: 'Disclaimer',
+      generatedAt: '2026-07-16T12:00:00Z',
+      topProjects: [],
+    });
     fixture.detectChanges();
 
     expect(fixture.nativeElement.textContent).toContain('Portfolio');
@@ -137,6 +153,7 @@ describe('PortfolioPageComponent', () => {
     expect(fixture.nativeElement.querySelector('app-portfolio-table-section')).toBeTruthy();
     expect(fixture.nativeElement.querySelector('app-project-table')).toBeTruthy();
     expect(fixture.nativeElement.querySelectorAll('app-kpi-card').length).toBe(5);
+    expect(fixture.nativeElement.querySelector('app-portfolio-ai-panel')).toBeTruthy();
     expect(fixture.nativeElement.textContent).toContain('KI-Einschätzung');
   });
 });

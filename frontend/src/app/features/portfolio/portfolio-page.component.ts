@@ -1,7 +1,7 @@
 import { Component } from '@angular/core';
 
 import { FactsAiLayoutComponent } from '../../core/layout/facts-ai-layout.component';
-import { AiPanelPlaceholderComponent } from '../ai/ai-panel-placeholder.component';
+import { PortfolioAiPanelComponent } from './portfolio-ai-panel.component';
 import { PortfolioGanttSectionComponent } from './portfolio-gantt-section.component';
 import { PortfolioTableSectionComponent } from './portfolio-table-section.component';
 import { PortfolioTrendsSectionComponent } from './portfolio-trends-section.component';
@@ -13,7 +13,7 @@ import { PortfolioKpiSectionComponent } from './portfolio-kpi-section.component'
   selector: 'app-portfolio-page',
   imports: [
     FactsAiLayoutComponent,
-    AiPanelPlaceholderComponent,
+    PortfolioAiPanelComponent,
     PortfolioFilterBarComponent,
     PortfolioKpiSectionComponent,
     PortfolioTrendsSectionComponent,

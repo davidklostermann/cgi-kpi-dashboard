@@ -47,10 +47,18 @@ public class ProjectAiAnalysisService {
                 return cached;
             }
         }
-        ProjectAiAnalysisResponseDto raw = aiModelClient.analyze(context);
-        ProjectAiAnalysisResponseDto validated = aiEvidenceValidator.validateAnalysis(context, raw);
-        cache.put(cacheKey, validated);
-        return validated;
+        try {
+            ProjectAiAnalysisResponseDto raw = aiModelClient.analyze(context);
+            ProjectAiAnalysisResponseDto validated = aiEvidenceValidator.validateAnalysis(context, raw);
+            cache.put(cacheKey, validated);
+            return validated;
+        } catch (com.cgi.kpi.dashboard.ai.client.GeminiTransportException ex) {
+            throw AiProviderExceptionMapper.toApiException(
+                    ex, "Der Projekt-Assistent ist derzeit nicht verfügbar.");
+        } catch (IllegalStateException ex) {
+            throw AiProviderExceptionMapper.toApiException(
+                    ex, "Der Projekt-Assistent ist derzeit nicht verfügbar.");
+        }
     }
 
     public ProjectAiQuestionResponseDto ask(UUID projectId, ProjectAiQuestionRequestDto request) {
@@ -59,8 +67,16 @@ public class ProjectAiAnalysisService {
             throw new ApiException("BAD_REQUEST", "Question must not be empty", HttpStatus.BAD_REQUEST);
         }
         ApprovedProjectContextDto context = loadContext(projectId);
-        ProjectAiQuestionResponseDto raw = aiModelClient.answer(context, request.question().trim());
-        return aiEvidenceValidator.validateQuestion(context, raw);
+        try {
+            ProjectAiQuestionResponseDto raw = aiModelClient.answer(context, request.question().trim());
+            return aiEvidenceValidator.validateQuestion(context, raw);
+        } catch (com.cgi.kpi.dashboard.ai.client.GeminiTransportException ex) {
+            throw AiProviderExceptionMapper.toApiException(
+                    ex, "Der Projekt-Assistent ist derzeit nicht verfügbar.");
+        } catch (IllegalStateException ex) {
+            throw AiProviderExceptionMapper.toApiException(
+                    ex, "Der Projekt-Assistent ist derzeit nicht verfügbar.");
+        }
     }
 
     private ApprovedProjectContextDto loadContext(UUID projectId) {

@@ -1,52 +1,22 @@
 <section class="page">
-
   <header class="page__header">
-
     <h1>Portfolio</h1>
-
     <p>Überblick über Portfolio-Gesundheit und zentrale Kennzahlen.</p>
-
   </header>
-
-
 
   <app-portfolio-filter-bar />
 
-
-
   <app-facts-ai-layout class="page__kpi-row">
-
     <section factsMain class="page__facts">
-
       <app-portfolio-kpi-section />
-
     </section>
 
-
-
-    <app-ai-panel-placeholder
-
-      factsAi
-
-      title="Portfolio-Trendanalyse"
-
-      message="KI-Trendanalyse folgt in Epic 8."
-
-    />
-
+    <app-portfolio-ai-panel factsAi />
   </app-facts-ai-layout>
 
-
-
   <section class="page__visualizations" aria-label="Portfolio-Visualisierungen">
-
     <app-portfolio-trends-section />
-
     <app-portfolio-gantt-section />
-
     <app-portfolio-table-section />
-
   </section>
-
 </section>
-

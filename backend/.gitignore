@@ -8,4 +8,5 @@ target/
 .settings/
 
 .env
+local-secrets.ps1
 *.log

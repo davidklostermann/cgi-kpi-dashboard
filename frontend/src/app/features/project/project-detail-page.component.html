@@ -58,8 +58,9 @@
     <section factsMain class="page__facts">
       <h2 class="visually-hidden">Projektfakten</h2>
       <div id="fact-kpis-wrap"><app-project-kpi-section [projectId]="id()" /></div>
+      <div id="fact-issues-actions"><app-project-issues-actions-section [projectId]="id()" /></div>
+      <div id="fact-team-capacity"><app-project-team-capacity-section [projectId]="id()" /></div>
       <div id="fact-phases"><app-project-phases-section [projectId]="id()" /></div>
-      <div id="fact-insights"><app-project-insights-section [projectId]="id()" /></div>
       <div id="fact-report-comparison"><app-project-report-comparison [projectId]="id()" /></div>
     </section>
 

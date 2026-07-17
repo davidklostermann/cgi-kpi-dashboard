@@ -89,11 +89,6 @@ describe('ProjectDetailPageComponent', () => {
       accessibilitySummary: 'Phasen: keine. Keine überfälligen Meilensteine.',
     });
 
-    httpMock.expectOne('/api/projects/a0000000-0000-4000-8000-000000000001/insights').flush({
-      projectId: 'a0000000-0000-4000-8000-000000000001',
-      insights: [],
-    });
-
     httpMock.expectOne('/api/projects/a0000000-0000-4000-8000-000000000001/trends').flush({
       projectId: 'a0000000-0000-4000-8000-000000000001',
       comparisonAvailable: true,
@@ -108,6 +103,21 @@ describe('ProjectDetailPageComponent', () => {
       currentStatus: 'ON_TRACK',
       currentStatusLabel: 'Auf Kurs',
       openRiskCountDelta: 0,
+    });
+
+    httpMock.expectOne('/api/projects/a0000000-0000-4000-8000-000000000001/issues-actions').flush({
+      projectId: 'a0000000-0000-4000-8000-000000000001',
+      factsBadge: 'Fakten aus Backend',
+      factsAsOf: '2026-07-01T08:00:00Z',
+      items: [],
+    });
+
+    httpMock.expectOne('/api/projects/a0000000-0000-4000-8000-000000000001/capacity').flush({
+      projectId: 'a0000000-0000-4000-8000-000000000001',
+      factsAsOf: '2026-07-10T08:00:00Z',
+      factsBadge: 'Datenstand 10.07.2026',
+      roles: [],
+      summary: null,
     });
 
     httpMock
@@ -125,6 +135,7 @@ describe('ProjectDetailPageComponent', () => {
         aiGenerated: true,
         disclaimer: 'Disclaimer',
       });
+
     fixture.detectChanges();
 
     const text = fixture.nativeElement.textContent;
@@ -135,8 +146,11 @@ describe('ProjectDetailPageComponent', () => {
     expect(text).toContain('Rollout & Betrieb');
     expect(text).toContain('Auf Kurs');
     expect(text).toContain('Zurück zum Portfolio');
+    expect(text).toContain('Testzusammenfassung');
     expect(fixture.nativeElement.querySelector('a.page__back')?.getAttribute('href')).toBe(
       '/portfolio',
     );
+    expect(fixture.nativeElement.querySelector('app-project-ai-panel')).toBeTruthy();
+    expect(fixture.nativeElement.querySelector('app-ai-panel-placeholder')).toBeNull();
   });
 });

@@ -1,0 +1,73 @@
+.portfolio-ai {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.portfolio-ai__badge {
+  display: inline-block;
+  width: fit-content;
+  background: var(--cgi-primary, #5236ab);
+  color: #fff;
+  font-size: 0.65rem;
+  font-weight: 700;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.portfolio-ai__title {
+  margin: 0;
+  color: var(--cgi-primary-darkest);
+  font-size: 1.05rem;
+}
+
+.portfolio-ai__subtitle {
+  margin: 0.25rem 0 0;
+  font-size: 0.9rem;
+  color: var(--cgi-primary-darkest);
+}
+
+.portfolio-ai__text,
+.portfolio-ai__state,
+.portfolio-ai__disclaimer {
+  margin: 0;
+  line-height: 1.45;
+}
+
+.portfolio-ai__state,
+.portfolio-ai__disclaimer {
+  color: var(--cgi-gray-3);
+  font-size: 0.85rem;
+}
+
+.portfolio-ai__error {
+  padding: 0.75rem;
+  border: 1px solid var(--cgi-error);
+  border-radius: 0.5rem;
+  background: #ffcdd2;
+}
+
+.portfolio-ai__top {
+  margin: 0;
+  padding-left: 1.1rem;
+  display: grid;
+  gap: 0.65rem;
+}
+
+.portfolio-ai__top a {
+  font-weight: 700;
+  color: var(--cgi-primary);
+  text-decoration: none;
+}
+
+.portfolio-ai__top a:hover,
+.portfolio-ai__top a:focus-visible {
+  text-decoration: underline;
+}
+
+.portfolio-ai__top p {
+  margin: 0.2rem 0 0;
+  color: var(--cgi-gray-2);
+  font-size: 0.875rem;
+}

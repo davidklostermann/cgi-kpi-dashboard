@@ -115,4 +115,42 @@ describe('ProjectAiPanelComponent', () => {
     fixture.detectChanges();
     expect(fixture.nativeElement.textContent).toContain('Fortschritt = 62 %');
   });
+
+  it('should show disabled message only for AI_DISABLED', () => {
+    const fixture = TestBed.createComponent(ProjectAiPanelComponent);
+    fixture.componentRef.setInput('projectId', 'a0000000-0000-4000-8000-000000000001');
+    fixture.detectChanges();
+
+    httpMock
+      .expectOne('/api/projects/a0000000-0000-4000-8000-000000000001/ai/analysis?refresh=false')
+      .flush(
+        { code: 'AI_DISABLED', message: 'Projekt-Assistent ist deaktiviert.' },
+        { status: 503, statusText: 'Service Unavailable' },
+      );
+    fixture.detectChanges();
+
+    expect(fixture.componentInstance.status()).toBe('disabled');
+    expect(fixture.nativeElement.textContent).toContain('Projekt-Assistent ist deaktiviert.');
+  });
+
+  it('should show provider error for AI_PROVIDER_ERROR', () => {
+    const fixture = TestBed.createComponent(ProjectAiPanelComponent);
+    fixture.componentRef.setInput('projectId', 'a0000000-0000-4000-8000-000000000001');
+    fixture.detectChanges();
+
+    httpMock
+      .expectOne('/api/projects/a0000000-0000-4000-8000-000000000001/ai/analysis?refresh=false')
+      .flush(
+        {
+          code: 'AI_PROVIDER_ERROR',
+          message: 'Gemini-Authentifizierung fehlgeschlagen. API-Key und Berechtigungen prüfen.',
+        },
+        { status: 503, statusText: 'Service Unavailable' },
+      );
+    fixture.detectChanges();
+
+    expect(fixture.componentInstance.status()).toBe('error');
+    expect(fixture.nativeElement.textContent).toContain('Gemini-Authentifizierung fehlgeschlagen');
+    expect(fixture.nativeElement.textContent).toContain('AI_PROVIDER_ERROR');
+  });
 });

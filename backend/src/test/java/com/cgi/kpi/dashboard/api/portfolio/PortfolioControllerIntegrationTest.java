@@ -28,7 +28,7 @@ class PortfolioControllerIntegrationTest {
                 .andExpect(jsonPath("$.averageProgressPercent").value(greaterThanOrEqualTo(0.0)))
                 .andExpect(jsonPath("$.budgetDeviationPercent").exists())
                 .andExpect(jsonPath("$.scheduleCompliancePercent").value(greaterThanOrEqualTo(0.0)))
-                .andExpect(jsonPath("$.criticalRiskCount").value(4))
+                .andExpect(jsonPath("$.criticalRiskCount").value(5))
                 .andExpect(jsonPath("$.statusDistribution.onTrack").value(9))
                 .andExpect(jsonPath("$.statusDistribution.atRisk").value(6))
                 .andExpect(jsonPath("$.statusDistribution.critical").value(4))

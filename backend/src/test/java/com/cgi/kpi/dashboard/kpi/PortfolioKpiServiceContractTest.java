@@ -14,7 +14,7 @@ import java.util.UUID;
 
 import org.junit.jupiter.api.Test;
 
-import com.cgi.kpi.dashboard.kpi.dto.ApprovedProjectDataDto;
+import com.cgi.kpi.dashboard.kpi.dto.ApprovedProjectContextDto;
 import com.cgi.kpi.dashboard.kpi.dto.PortfolioFilterCriteria;
 import com.cgi.kpi.dashboard.kpi.dto.PortfolioKpiSummaryDto;
 import com.cgi.kpi.dashboard.kpi.dto.PortfolioTableDto;
@@ -70,7 +70,7 @@ class PortfolioKpiServiceContractTest {
 
     @Test
     void approvedProjectDataReaderReturnsDtoNotDomainEntity() throws NoSuchMethodException {
-        Method method = ApprovedProjectDataReader.class.getMethod("readApprovedProjectData", UUID.class);
+        Method method = ApprovedProjectDataReader.class.getMethod("readApprovedContext", UUID.class);
 
         assertTrue(Optional.class.isAssignableFrom(method.getReturnType()));
         assertFalse(method.getGenericReturnType().toString().contains(DOMAIN_PACKAGE));
@@ -79,7 +79,7 @@ class PortfolioKpiServiceContractTest {
         assertInstanceOf(ParameterizedType.class, returnType);
         ParameterizedType parameterizedType = (ParameterizedType) returnType;
         assertEquals(Optional.class, parameterizedType.getRawType());
-        assertEquals(ApprovedProjectDataDto.class, parameterizedType.getActualTypeArguments()[0]);
+        assertEquals(ApprovedProjectContextDto.class, parameterizedType.getActualTypeArguments()[0]);
     }
 
     @Test

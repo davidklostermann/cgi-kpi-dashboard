@@ -102,7 +102,17 @@ development_status:
 
   7-5-team-kapazitaet: done
 
-  epic-9: in-progress
+  epic-8: review
+
+  8-1-portfolio-kpi-reader-fuer-ai: review
+
+  8-2-portfolio-trendanalyse-api: review
+
+  8-3-portfolio-ki-panel: review
+
+  8-4-top-3-handlungsbedarf: review
+
+  epic-9: review
 
   9-1-approved-project-data-reader: review
 
@@ -110,6 +120,6 @@ development_status:
 
   9-3-projekt-qa-api: review
 
-  9-4-ki-panels-projekt-detail: in-progress
+  9-4-ki-panels-projekt-detail: review
 
   9-5-quick-reply-chips: review

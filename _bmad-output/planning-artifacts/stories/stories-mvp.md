@@ -683,12 +683,12 @@
 - Gegeben Detailseite, dann drei ki-panels mit unabhängigem Laden.
 - Gegeben ein Panel-Fehler, dann andere Panels und Fakten weiter nutzbar.
 
-**Produktstand (2026-07-16):** Backend (`/ai/analysis`, `/ai/questions`) und `app-project-ai-panel` existieren im Codebase; auf der Detailseite wird aktuell **`app-ai-panel-placeholder`** gerendert. Story 9.4 ist **nicht vollständig produktiv aktiv**.
+**Produktstand (2026-07-16):** Backend (`/ai/analysis`, `/ai/questions`) und `app-project-ai-panel` sind auf der Detailseite **aktiv**. Maßnahmen nur als Vorschläge. Provider `mock` (Default) oder `gemini` via Env.
 
-**UX:** Projekt-Detail KI-Bereich (Platzhalter bis Epic 8/9-Aktivierung)  
+**UX:** Projekt-Detail KI-Bereich  
 **Architektur:** AD-7  
 **Abhängigkeiten:** 9.2, 9.3, 2.4  
-**Tests:** Component Test (`project-ai-panel.component.spec.ts`); Detailseite nutzt Placeholder (`project-detail-page.component.spec.ts`)
+**Tests:** Component Test (`project-ai-panel.component.spec.ts`); Detailseite aktiviert Panel (`project-detail-page.component.spec.ts`)
 
 ---
 

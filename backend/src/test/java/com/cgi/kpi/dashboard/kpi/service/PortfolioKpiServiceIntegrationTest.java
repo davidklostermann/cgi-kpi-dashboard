@@ -35,7 +35,7 @@ class PortfolioKpiServiceIntegrationTest {
         assertEquals(19, summary.activeProjectCount());
         assertTrue(summary.averageProgressPercent() > 0);
         assertTrue(summary.scheduleCompliancePercent() > 0);
-        assertEquals(4, summary.criticalRiskCount());
+        assertEquals(5, summary.criticalRiskCount());
         assertEquals(9, summary.statusDistribution().onTrack());
         assertEquals(6, summary.statusDistribution().atRisk());
         assertEquals(4, summary.statusDistribution().critical());

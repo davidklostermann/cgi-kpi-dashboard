@@ -33,7 +33,11 @@ management:
 
 app:
   ai:
-    enabled: true
-    provider: mock
-    model: local-mock
-    timeout-ms: 5000
+    enabled: ${APP_AI_ENABLED:true}
+    provider: ${APP_AI_PROVIDER:mock}
+    # mock: local-mock | gemini: set APP_AI_MODEL to a valid Gemini model (e.g. gemini-2.5-flash)
+    model: ${APP_AI_MODEL:local-mock}
+    timeout-ms: ${APP_AI_TIMEOUT_MS:8000}
+    # Never commit real keys. Bind only from environment (AD-8 / NFR-2).
+    api-key: ${GEMINI_API_KEY:}
+    gemini-api-base-url: ${GEMINI_API_BASE_URL:https://generativelanguage.googleapis.com}

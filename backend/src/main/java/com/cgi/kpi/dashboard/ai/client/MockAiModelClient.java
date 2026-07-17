@@ -9,11 +9,15 @@ import java.util.Optional;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 
+import com.cgi.kpi.dashboard.ai.dto.PortfolioTrendAnalysisResponseDto;
+import com.cgi.kpi.dashboard.ai.dto.PortfolioTrendAnalysisResponseDto.TopProjectDto;
 import com.cgi.kpi.dashboard.ai.dto.ProjectAiAnalysisResponseDto;
 import com.cgi.kpi.dashboard.ai.dto.ProjectAiAnalysisResponseDto.MissingDataDto;
 import com.cgi.kpi.dashboard.ai.dto.ProjectAiAnalysisResponseDto.PriorityDto;
 import com.cgi.kpi.dashboard.ai.dto.ProjectAiAnalysisResponseDto.SuggestedActionDto;
 import com.cgi.kpi.dashboard.ai.dto.ProjectAiQuestionResponseDto;
+import com.cgi.kpi.dashboard.kpi.dto.ApprovedPortfolioContextDto;
+import com.cgi.kpi.dashboard.kpi.dto.ApprovedPortfolioContextDto.CandidateProjectDto;
 import com.cgi.kpi.dashboard.kpi.dto.ApprovedProjectContextDto;
 import com.cgi.kpi.dashboard.kpi.dto.ApprovedProjectContextDto.ApprovedProjectFactDto;
 
@@ -164,6 +168,63 @@ public class MockAiModelClient implements AiModelClient {
                 false,
                 true,
                 DISCLAIMER);
+    }
+
+    @Override
+    public PortfolioTrendAnalysisResponseDto analyzePortfolio(ApprovedPortfolioContextDto context) {
+        List<CandidateProjectDto> ranked = context.candidateProjects().stream()
+                .sorted((a, b) -> Integer.compare(urgencyScore(b), urgencyScore(a)))
+                .limit(3)
+                .toList();
+
+        List<TopProjectDto> top = ranked.stream()
+                .map(project -> new TopProjectDto(
+                        project.projectId(),
+                        project.projectName(),
+                        buildReason(project),
+                        project.evidenceFactIds()))
+                .toList();
+
+        String text = context.facts().isEmpty()
+                ? "Für das Portfolio liegen derzeit keine freigegebenen aggregierten Kennzahlen vor."
+                : "Auf Basis der freigegebenen Portfolio-KPIs stehen "
+                        + top.size()
+                        + " Projekte im Fokus. Die Einschätzung interpretiert nur vorhandene Fakten und berechnet keine neuen KPIs.";
+
+        return new PortfolioTrendAnalysisResponseDto(text, true, DISCLAIMER, Instant.now(), top);
+    }
+
+    private static int urgencyScore(CandidateProjectDto project) {
+        int score = 0;
+        if ("CRITICAL".equalsIgnoreCase(project.status())) {
+            score += 100;
+        } else if ("AT_RISK".equalsIgnoreCase(project.status())) {
+            score += 60;
+        }
+        if (project.scheduleDeviationDays() != null && project.scheduleDeviationDays() > 0) {
+            score += Math.min(40, project.scheduleDeviationDays());
+        }
+        if (project.budgetDeviationPercent() != null && project.budgetDeviationPercent() > 0) {
+            score += Math.min(30, project.budgetDeviationPercent().intValue());
+        }
+        score += project.criticalIssueCount() * 10;
+        score += project.openRiskCount() * 5;
+        return score;
+    }
+
+    private static String buildReason(CandidateProjectDto project) {
+        List<String> parts = new ArrayList<>();
+        parts.add("Status " + project.statusLabel());
+        if (project.scheduleDeviationDays() != null && project.scheduleDeviationDays() > 0) {
+            parts.add("Terminabweichung " + project.scheduleDeviationDays() + " Tage");
+        }
+        if (project.budgetDeviationPercent() != null && project.budgetDeviationPercent() > 0) {
+            parts.add("Budgetabweichung " + project.budgetDeviationPercent() + " %");
+        }
+        if (project.criticalIssueCount() > 0) {
+            parts.add(project.criticalIssueCount() + " kritische Probleme/Risiken");
+        }
+        return String.join("; ", parts) + ".";
     }
 
     private static Optional<ApprovedProjectFactDto> find(List<ApprovedProjectFactDto> facts, String factId) {

@@ -6,7 +6,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
 import com.cgi.kpi.dashboard.api.error.ApiException;
+import com.cgi.kpi.dashboard.kpi.dto.ProjectCapacityDto;
 import com.cgi.kpi.dashboard.kpi.dto.ProjectInsightsDto;
+import com.cgi.kpi.dashboard.kpi.dto.ProjectIssuesActionsDto;
 import com.cgi.kpi.dashboard.kpi.dto.ProjectKpiDto;
 import com.cgi.kpi.dashboard.kpi.dto.ProjectMasterDataDto;
 import com.cgi.kpi.dashboard.kpi.dto.ProjectPhasesDto;
@@ -45,6 +47,16 @@ public class DefaultProjectKpiService implements ProjectKpiService {
     @Override
     public ProjectTrendsDto getProjectTrends(UUID projectId) {
         return require(projectKpiReader.readProjectTrends(projectId));
+    }
+
+    @Override
+    public ProjectIssuesActionsDto getProjectIssuesActions(UUID projectId) {
+        return require(projectKpiReader.readProjectIssuesActions(projectId));
+    }
+
+    @Override
+    public ProjectCapacityDto getProjectCapacity(UUID projectId) {
+        return require(projectKpiReader.readProjectCapacity(projectId));
     }
 
     private static <T> T require(java.util.Optional<T> value) {
