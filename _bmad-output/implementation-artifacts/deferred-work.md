@@ -23,7 +23,34 @@
 - ~~`EXPECTED_MIGRATION_COUNT = 1` in FlywayMigrationIntegrationTest~~ — behoben in Story 3.3 (V2 Seed).
 - Idempotenz-Test prüft `flyway.migrate()` statt vollständigen App-Neustart — semantisch ausreichend.
 
-## Deferred from: code review of 3-4-kpi-modul-grundstruktur (2026-07-15)
+## Deferred from: code review of 9-project-ai-panel (2026-07-20, Chunk Frontend Projekt-Detail)
+
+- Kein eigener Forecast-Bereich — Produktstand deckt Managementbewertung+Q&A ab; Story 9.2/9.4 Intent offen.
+- Maßnahmen nur `evidenceFactIds`, kein Klartext-Evidence-Feld am Action-DTO — API-Erweiterung nötig.
+- Gantt-Phasensegmente nur Plantermine — Ist/Prognose auf Segmentebene als Follow-up zu Story 6.4.
+- Meilenstein-Blockaden `[OFFEN]` in Spec — Spec-OFFEN.
+
+## Deferred from: code review of 8-portfolio-ki (2026-07-20, Chunk Backend AI)
+
+- `extractJsonPayload` Brace-Counting ohne String-Kontext — JSON mit `{`/`}` in Werten kann fehlschneiden.
+- Fehlende Unit-Tests für `JpaPortfolioReportTrendReader` — Coverage-Follow-up.
+
+## Deferred from: security multi-user planning (2026-07-21)
+
+- Implementierung Epics 11–14 — Planungsartefakte + P0 geschlossen; kein Anwendungscode in diesem Schritt.
+- Produktiv Secret Store / KMS Vendor — OFFEN, **Blocker vor Produktion**.
+- CGI-SSO Timing — OFFEN; Architektur vorbereitet.
+- Project-AI Cache ohne Tenant — Epic 12.3 (isolieren oder disable).
+- Epic 10 + 11–14 in `sprint-status.yaml` als `backlog` nachgetragen (2026-07-21).
+- Story 11.1 aufgeteilt: Bootstrap → 11.2; Security → 11.3; Login → 11.4; Angular → 11.5; Tests → 11.6.
+
+## Deferred from: code review of 8-portfolio-ki + 9-project-ai-panel (2026-07-17)
+
+- Portfolio-Fließtext ohne Evidence-Validierung — narrative KI-Zusammenfassung bewusst ohne Fact-Bindung im MVP.
+- Kein Rate-Limiting/Cache für Portfolio-Trendanalyse — Kostenrisiko, nicht AC-blockierend.
+- Q&A-Antworttext nicht vollständig validiert — Evidence-IDs werden gefiltert, Freitext bleibt Modell-output.
+- Prompt-Injection-Härtung über Längenlimit hinaus — vollständige Sanitisierung als Security-Follow-up.
+
 
 - `PortfolioKpiSummaryDto` ohne Ampelverteilung (FR-1) — Epic 4 geplant.
 - Kein `StubApprovedProjectDataReader`-Bean — Implementierung in späteren Stories (AC3: Interface reicht).

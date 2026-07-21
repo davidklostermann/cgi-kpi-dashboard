@@ -2,6 +2,8 @@
 
 # STATUS DEFINITIONS:
 
+#   backlog: Geplant, noch nicht spezifiziert/bereit zur Implementierung
+
 #   ready-for-dev: Story spezifiziert, bereit zur Implementierung
 
 #   in-progress: Aktiv in Entwicklung
@@ -12,7 +14,7 @@
 
 
 
-last_updated: 2026-07-16
+last_updated: 2026-07-21
 
 development_status:
 
@@ -102,24 +104,57 @@ development_status:
 
   7-5-team-kapazitaet: done
 
-  epic-8: review
+  epic-8: done
 
-  8-1-portfolio-kpi-reader-fuer-ai: review
+  8-1-portfolio-kpi-reader-fuer-ai: done
 
-  8-2-portfolio-trendanalyse-api: review
+  8-2-portfolio-trendanalyse-api: done
 
-  8-3-portfolio-ki-panel: review
+  8-3-portfolio-ki-panel: done
 
-  8-4-top-3-handlungsbedarf: review
+  8-4-top-3-handlungsbedarf: done
 
-  epic-9: review
+  epic-9: done
 
-  9-1-approved-project-data-reader: review
+  9-1-approved-project-data-reader: done
 
-  9-2-summary-forecast-api: review
+  9-2-summary-forecast-api: done
 
-  9-3-projekt-qa-api: review
+  9-3-projekt-qa-api: done
 
-  9-4-ki-panels-projekt-detail: review
+  9-4-ki-panels-projekt-detail: done
 
-  9-5-quick-reply-chips: review
+  9-5-quick-reply-chips: done
+
+  # --- Epic 10 (MVP Qualität/A11y) — backlog, noch keine Implementierung ---
+  epic-10: backlog
+  10-1-unabhaengiges-laden-fakten-ki: backlog
+  10-2-graceful-degradation-ui: backlog
+  10-3-barrierefreiheit-wcag: backlog
+  10-4-screenreader-zusammenfassungen: backlog
+
+  # --- Post-MVP Security (P0 closed 2026-07-21) — backlog ---
+  epic-11: backlog
+  11-1-datenmodell-workspace-user-flyway: backlog
+  11-2-bootstrap-administrator-env: backlog
+  11-3-spring-security-grundkonfiguration: backlog
+  11-4-login-logout-me: backlog
+  11-5-angular-authentifizierung: backlog
+  11-6-session-und-auth-tests: backlog
+
+  epic-12: backlog
+  12-1-workspace-scope-private-settings: backlog
+  12-2-endpoint-policies-ki-admin: backlog
+  12-3-ai-cache-isolation: backlog
+  12-4-fremdzugriffs-isolationstests: backlog
+
+  epic-13: backlog
+  13-1-benutzerverwaltung-api: backlog
+  13-2-benutzerverwaltung-ui: backlog
+  13-3-ai-config-encryption: backlog
+  13-4-admin-ai-test-rotation: backlog
+
+  epic-14: backlog
+  14-1-csrf-cors-cookies-headers: backlog
+  14-2-rate-limiting-audit-ui: backlog
+  14-3-scanning-session-last-runbooks: backlog

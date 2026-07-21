@@ -593,13 +593,14 @@
 **Als** Führungskraft **möchte ich** KI-Trendtext **damit** ich Entwicklungen verstehe.
 
 **Akzeptanzkriterien:**
-- Gegeben Portfolio-Daten, wenn `GET /api/portfolio/ai/trend-analysis`, dann `{ text, aiGenerated: true, disclaimer, topProjects[3] }`.
-- Gegeben Gemini-Ausfall, dann HTTP 503 mit `{ code, message }`.
-- Gegeben Response, dann kein KPI-Fakt ohne Reader-Quelle.
+- Gegeben Portfolio-Daten, wenn `GET /api/portfolio/ai/trend-analysis`, dann typisiertes Insight-Modell `{ insights[], aiGenerated, disclaimer, generatedAt }` (Course Correction 2026-07-17; ersetzt `{ text, topProjects }`).
+- Gegeben Gemini-Ausfall, dann HTTP 503 mit `{ code, message }` — sofern keine deterministischen Muster vorliegen; sonst Fallback auf Detector-Insights.
+- Gegeben Response, dann kein KPI-Fakt ohne Reader-Quelle; Insights ohne ≥2 Projekte/Belege werden verworfen.
+- Aktive Mustertypen initial: `DETERIORATING_TREND`, `REPORTING_PATTERN`.
 
 **Architektur:** AD-5  
 **Abhängigkeiten:** 8.1  
-**Tests:** Mock Gemini Client Test
+**Tests:** Mock Gemini Client Test; Pattern-Detector Unit Tests
 
 ---
 
@@ -609,8 +610,8 @@
 
 **Akzeptanzkriterien:**
 - Gegeben Portfolio-Seite, wenn KI-Panel lädt, dann separater RxJS-Stream, unabhängig von KPI-Karten.
-- Gegeben KI-Text, dann Badge „KI-Einschätzung" und Disclaimer.
-- Gegeben Gemini 503, dann Fehlermeldung + Retry; KPI-Bereich unberührt (FR-15).
+- Gegeben Insights, dann Titel „Portfolio-Muster und systemische Risiken“, max. 3–5 Karten, Belege eingeklappt.
+- Gegeben Gemini 503 / AI-Fehler, dann feste DE-Fehlermeldung + Retry; KPI-Bereich unberührt (FR-15); nie „Failed to fetch“.
 
 **UX:** ki-panel, UX-DR12  
 **Architektur:** AD-7  
@@ -623,12 +624,12 @@
 
 **Als** Führungskraft **möchte ich** Top-3-Projekte **damit** ich Prioritäten setze.
 
-**Akzeptanzkriterien:**
-- Gegeben Trendanalyse, dann genau drei Projekte mit Kurzbegründung.
-- Gegeben Top-3, dann Klick auf Projektname navigiert zu Detail (optional MVP+).
+**Akzeptanzkriterien (Course Correction 2026-07-17):**
+- Narrative Top-3-Liste ist **nicht** mehr das Zielmodell; ersetzt durch typisierte Portfolio-Insight-Karten mit betroffenen Projekten (≥2) und Belegen.
+- Gegeben Insight-Karten, dann Klick auf Projektname navigiert zu Detail.
 
 **Abhängigkeiten:** 8.2, 8.3  
-**Tests:** API Response Structure Test
+**Tests:** API Response Structure Test; Panel filtert Einzelprojekt-Insights
 
 ---
 

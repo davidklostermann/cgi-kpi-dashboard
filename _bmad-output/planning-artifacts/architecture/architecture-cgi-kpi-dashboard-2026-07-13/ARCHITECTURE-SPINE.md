@@ -7,8 +7,9 @@ paradigm: layered-modular-monolith
 scope: MVP-Pilot — internes KI-KPI-Dashboard (Portfolio + Projekt-Detail, Backend-KPIs, Gemini-Analyseschicht, Mock-Daten)
 status: final
 created: 2026-07-13
-updated: 2026-07-15T10:00
+updated: 2026-07-21T11:30
 binds: [FR-1..FR-21]
+# Post-MVP Security binds FR-22..FR-32 → architecture-cgi-kpi-dashboard-security/
 sources:
   - ../prds/prd-cgi-kpi-dashboard-2026-07-13/prd.md
   - ../prds/prd-cgi-kpi-dashboard-2026-07-13/addendum.md
@@ -17,6 +18,7 @@ sources:
 companions: []
 amendments:
   - 2026-07-14: Stack-Pivot React/Vite/Recharts/TanStack → Angular 20 + CGI EDS 19.0.0
+  - 2026-07-21: AD-6 SUPERSEDED, AD-8 PARTIALLY SUPERSEDED — Security Multi-User Spine
 ---
 
 # Architecture Spine — cgi-kpi-dashboard
@@ -76,11 +78,12 @@ Frontend: **Angular 20 SPA** (TypeScript, SCSS), spricht ausschließlich REST mi
   - **Projekt-KI (nested):** `/api/projects/{id}/ai/summary`, `/api/projects/{id}/ai/forecast`, `POST /api/projects/{id}/ai/qa` (FR-11, FR-12, FR-16).
   - Kein portfolio-weites Freitext-Q&A (FR-18). Nested AI-Pfade unter `/api/portfolio/ai/` und `/api/projects/{id}/ai/` sind erlaubt; kein generischer `/api/ai/chat`.
 
-### AD-6 — No authentication in pilot [ADOPTED]
+### AD-6 — No authentication in pilot [SUPERSEDED 2026-07-21]
 
 - **Binds:** FR-19, Pilot-Betrieb
 - **Prevents:** Vorzeitige IAM-Komplexität
 - **Rule:** Kein Auth-Middleware, keine Rollenprüfung im MVP. Annahme: localhost / internes Netz. CORS nur für Dev-Origin (Angular `ng serve`, typisch `:4200`).
+- **Status:** **SUPERSEDED** durch Post-MVP **AD-12** (Session-Auth) und **AD-13** (Rollen/Objekt-AuthZ) — siehe `../architecture-cgi-kpi-dashboard-security/security-decisions.md`. Historischer MVP-Pilot bleibt nachvollziehbar; Regel gilt nicht mehr für die Security-Ausbaustufe.
 
 ### AD-7 — Independent loading: facts vs. AI panels [ADOPTED]
 
@@ -88,11 +91,12 @@ Frontend: **Angular 20 SPA** (TypeScript, SCSS), spricht ausschließlich REST mi
 - **Prevents:** KI-Ausfall blockiert KPI-UI; gemeinsamer Loading-State
 - **Rule:** Frontend nutzt **getrennte RxJS-Streams pro Fakten-Bereich und pro KI-Panel** über typisierte API-Services in `core/api/`. **Keine gemeinsame Parent-Observable/-Signal**, die Error/Invalidation zwischen Fakten und KI koppelt. **Angular Signals** für lokalen UI-Zustand (Loading, Error, Retry pro Panel). KI-Fehler zeigen Panel-Fehler + Retry; Fakten-Streams bleiben aktiv. **Keine globale State-Management-Bibliothek** (kein NgRx) im MVP.
 
-### AD-8 — Secrets server-side only [ADOPTED]
+### AD-8 — Secrets server-side only [PARTIALLY SUPERSEDED 2026-07-21]
 
 - **Binds:** FR-9, PRD Constraints
 - **Prevents:** Gemini-Key im Frontend, Git, Browser
 - **Rule:** `GEMINI_API_KEY` nur als Backend-Umgebungsvariable / lokale `.env` (gitignored). Nie in Frontend-Bundle, `environment.ts` oder Repository.
+- **Status:** **PARTIALLY SUPERSEDED** — „kein Secret im Frontend/Git“ bleibt. Alleinige Persistenz des Provider-Keys in Env wird durch **AD-15/AD-16** (verschlüsselte DB-Config + externer Master-Key) abgelöst; Env bleibt für Master-Key/Bootstrap. Siehe `../architecture-cgi-kpi-dashboard-security/`.
 
 ### AD-9 — Local pilot runtime [ADOPTED]
 
@@ -327,7 +331,7 @@ phases/milestones (+ status, forecast dates, deviation, blocker) `[OFFEN]`
 | Berichtsstand-Snapshots vs. Echtzeit-Historie | MVP: 2 Snapshots `[ASSUMPTION]` |
 | Gemini Prompt-Schema & freigegebene Datenfelder | Prompt-Engineering in Stories |
 | Speicherung von KI-Ausgaben | PRD `[OFFEN]`; MVP default: nicht persistieren |
-| Authentifizierung & Rollen | Nach Pilot; AD-6 bewusst ohne Auth |
+| Authentifizierung & Rollen | **SUPERSEDED als „nur Deferred“** — Post-MVP-Plan: `architecture-cgi-kpi-dashboard-security/`, Epics 11–14 |
 | Docker Compose / Container-Deploy | Bewusst lokal (AD-9) |
 | Spring Boot 4.x Upgrade | 3.5.x Pilot; Upgrade vor Production |
 | CI/CD Pipeline | Nicht MVP-kritisch |

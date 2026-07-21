@@ -2,10 +2,12 @@
 title: "PRD: cgi-kpi-dashboard"
 status: final
 created: 2026-07-13
-updated: 2026-07-15
+updated: 2026-07-21
 sources:
   - ../briefs/brief-cgi-kpi-dashboard-2026-07-13/brief.md
   - ../briefs/brief-cgi-kpi-dashboard-2026-07-13/addendum.md
+post_mvp:
+  - ../prd-cgi-kpi-dashboard-security-multi-user/prd.md
 ---
 
 # PRD: cgi-kpi-dashboard
@@ -18,6 +20,7 @@ Dieses PRD definiert die Produktanforderungen für **cgi-kpi-dashboard** — ein
 
 **Struktur:** Glossary-anchored Begriffe, Features mit global nummerierten FRs, `[ASSUMPTION]`/`[OFFEN]` inline und im Assumptions Index. Technische Implementierungsdetails → PRD-`addendum.md`.
 
+> **Post-MVP (2026-07-21):** Security & Multi-User ist spezifiziert in [`prd-cgi-kpi-dashboard-security-multi-user/prd.md`](../prd-cgi-kpi-dashboard-security-multi-user/prd.md) (FR-22..FR-32, NFR-11..NFR-20). Aussagen hier zu „kein Auth / ohne Rollenverwaltung“ beschreiben den **historischen MVP-Pilot** und sind für die neue Ausbaustufe **SUPERSEDED** — nicht löschen.
 ## 1. Vision
 
 **cgi-kpi-dashboard** ist ein internes Web-Dashboard, das Führungskräften und Projektleitern einen zentralen Überblick über ein Portfolio paralleler KI-Implementierungsprojekte bei externen Kunden gibt. Deterministisch berechnete Kennzahlen (Backend) und klar gekennzeichnete KI-Einschätzungen (Gemini) arbeiten zusammen: KPIs liefern verlässliche Fakten, die KI-Schicht hilft bei Interpretation, Priorisierung und Zusammenfassung — ohne KPIs zu ersetzen oder Entscheidungen zu automatisieren.
@@ -389,7 +392,7 @@ Ein Nutzer kann die **zeitliche Entwicklung** eines Projekts gegenüber dem vorh
 **Feature-specific NFRs:**
 
 - Portfolio-Startseite mit KPI-Karten muss innerhalb von 30 Sekunden den Aha-Moment ermöglichen `[ASSUMPTION: aus Vision]` — konkrete Ladezeit `[OFFEN]`.
-- Authentifizierung und Rollenverwaltung im MVP: `[OFFEN]`.
+- Authentifizierung und Rollenverwaltung im MVP: `[OFFEN]` — **historisch für MVP**; Post-MVP: **SUPERSEDED** durch FR-22..FR-32.
 
 ## 5. Non-Goals (Explicit)
 
@@ -399,7 +402,7 @@ Ein Nutzer kann die **zeitliche Entwicklung** eines Projekts gegenüber dem vorh
 - Portfolio-Freitext-Chatbot (Q&A nur projektbezogen)
 - Automatische Änderung von Projektdaten durch Gemini
 - Automatische verbindliche Projektentscheidungen
-- Vollständige Rollen- und Rechteverwaltung
+- Vollständige Rollen- und Rechteverwaltung — **MVP Non-Goal**; Post-MVP: **SUPERSEDED** durch Security-PRD (USER/ADMIN, Workspace)
 - Kundenportal für externe Auftraggeber
 - Live-Monitoring produktiver KI-Systeme
 - Automatische Anbindung aller Kundensysteme
@@ -420,7 +423,7 @@ Siehe §5 Non-Goals. Zusätzlich deferred:
 
 - Reale Datenquellen-Anbindung → nach erfolgreichem Pilot
 - Bestätigte KPI-Definitionen mit fachlichem Sign-off → Pilot-Ergebnis
-- Vollständige Auth/Rollen-Lösung → `[OFFEN]`, vermutlich vereinfachter Pilot-Zugang
+- Vollständige Auth/Rollen-Lösung → MVP deferred; **Post-MVP geplant** (`prd-cgi-kpi-dashboard-security-multi-user`) — historische `[OFFEN]`-Annahme für Pilot bleibt dokumentiert
 
 ## 7. Success Metrics
 
@@ -461,7 +464,7 @@ Der Pilot prüft die Produkthypothese. Konkrete Zielwerte und Messmethoden: `[OF
 14. Wie wird die Anwendung auf einem Arbeitsrechner demonstriert?
 15. Art und Umfang der Pilot-Evaluation?
 16. Top-3-Auswahl in der Portfolio-Trendanalyse: rein KI oder mit deterministischer Vorfilterung?
-17. Authentifizierung und Zugangskontrolle im MVP?
+17. Authentifizierung und Zugangskontrolle im MVP? → **MVP: ohne Auth (AD-6)**; **Post-MVP: spezifiziert** (FR-22..32) — offene Detailfragen siehe Security-PRD Open Decisions
 18. Maximale Länge / Format der Portfolio-Trendanalyse?
 19. Ob die Produkthypothese zur heutigen Reporting-Situation zutrifft (Pilot-Validierung)?
 20. MVP-Historisierung: reichen zwei Berichtsstand-Snapshots pro Projekt aus?
