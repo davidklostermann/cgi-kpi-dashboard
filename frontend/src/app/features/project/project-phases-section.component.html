@@ -1,7 +1,7 @@
 <section class="project-phases-section" aria-labelledby="project-phases-heading">
-  <h2 id="project-phases-heading">Phasen &amp; Meilensteine</h2>
+  <h2 id="project-phases-heading">Projektzeitplan &amp; Meilensteine</h2>
   <p class="project-phases-section__hint">
-    Terminplan mit Planterminen. Blockaden sind noch nicht modelliert [OFFEN].
+    Relevanter Zeitraum mit Heute-Linie, aktueller Phase sowie Plan- und Forecast-Ende.
   </p>
 
   @if (status() === 'loading') {
@@ -13,19 +13,58 @@
     </div>
   } @else if (phases(); as data) {
     <p class="visually-hidden">{{ data.accessibilitySummary }}</p>
-    <app-gantt-timeline [projects]="ganttProjects()" />
+    <app-gantt-timeline [projects]="ganttProjects()" variant="project" />
 
-    <ul class="project-phases-section__milestones" aria-label="Meilensteine">
-      @for (milestone of data.milestones; track milestone.name) {
-        <li [class.project-phases-section__milestone--overdue]="milestone.overdue">
-          <strong>{{ milestone.name }}</strong>
-          — {{ milestone.statusLabel }}
-          (Plan: {{ milestone.plannedDueDate }})
-          @if (milestone.deviationDays != null) {
-            , Abweichung {{ milestone.deviationDays }} Tage
-          }
-        </li>
-      }
-    </ul>
+    @if (data.milestones.length > 0) {
+      <h3 class="project-phases-section__milestones-heading" id="project-milestones-heading">
+        Meilensteine
+      </h3>
+      <ul
+        class="project-phases-section__milestones"
+        aria-labelledby="project-milestones-heading"
+      >
+        @for (milestone of sortedMilestones(data.milestones); track milestone.name + '-' + milestone.plannedDueDate + '-' + $index) {
+          <li
+            class="milestone-card"
+            [class.milestone-card--overdue]="isOverdue(milestone)"
+            [class.milestone-card--done]="isDone(milestone.status)"
+          >
+            <div class="milestone-card__top">
+              <p class="milestone-card__name">{{ milestone.name }}</p>
+              <span class="milestone-card__status">{{ milestone.statusLabel }}</span>
+            </div>
+            <dl class="milestone-card__facts">
+              <div>
+                <dt>Plantermin</dt>
+                <dd>{{ formatDate(milestone.plannedDueDate) }}</dd>
+              </div>
+              @if (milestone.actualOrForecastDate) {
+                <div>
+                  <dt>Ist / Prognose</dt>
+                  <dd>{{ formatDate(milestone.actualOrForecastDate) }}</dd>
+                </div>
+                @if (milestone.deviationDays != null) {
+                  <div>
+                    <dt>Abweichung</dt>
+                    <dd>
+                      @if (milestone.deviationDays === 0) {
+                        Keine
+                      } @else {
+                        {{ formatDeviation(milestone.deviationDays) }}
+                      }
+                    </dd>
+                  </div>
+                }
+              } @else if (milestone.overdue && milestone.overdueDays != null) {
+                <div>
+                  <dt>Überfälligkeit</dt>
+                  <dd>{{ formatOverdueDays(milestone.overdueDays) }}</dd>
+                </div>
+              }
+            </dl>
+          </li>
+        }
+      </ul>
+    }
   }
 </section>

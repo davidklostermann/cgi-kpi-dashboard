@@ -10,14 +10,13 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 
 import com.cgi.kpi.dashboard.ai.dto.PortfolioTrendAnalysisResponseDto;
-import com.cgi.kpi.dashboard.ai.dto.PortfolioTrendAnalysisResponseDto.TopProjectDto;
 import com.cgi.kpi.dashboard.ai.dto.ProjectAiAnalysisResponseDto;
+import com.cgi.kpi.dashboard.ai.dto.ProjectAiAnalysisResponseDto.EvidenceItemDto;
 import com.cgi.kpi.dashboard.ai.dto.ProjectAiAnalysisResponseDto.MissingDataDto;
 import com.cgi.kpi.dashboard.ai.dto.ProjectAiAnalysisResponseDto.PriorityDto;
 import com.cgi.kpi.dashboard.ai.dto.ProjectAiAnalysisResponseDto.SuggestedActionDto;
 import com.cgi.kpi.dashboard.ai.dto.ProjectAiQuestionResponseDto;
 import com.cgi.kpi.dashboard.kpi.dto.ApprovedPortfolioContextDto;
-import com.cgi.kpi.dashboard.kpi.dto.ApprovedPortfolioContextDto.CandidateProjectDto;
 import com.cgi.kpi.dashboard.kpi.dto.ApprovedProjectContextDto;
 import com.cgi.kpi.dashboard.kpi.dto.ApprovedProjectContextDto.ApprovedProjectFactDto;
 
@@ -38,62 +37,51 @@ public class MockAiModelClient implements AiModelClient {
         Optional<ApprovedProjectFactDto> progress = find(facts, "kpi.progressPercent");
         Optional<ApprovedProjectFactDto> deviation = find(facts, "kpi.scheduleDeviationDays");
         Optional<ApprovedProjectFactDto> budgetDev = find(facts, "budget.forecastDeviation");
+        Optional<ApprovedProjectFactDto> budgetActual = find(facts, "budget.actual");
+        Optional<ApprovedProjectFactDto> budgetPlanned = find(facts, "budget.planned");
         Optional<ApprovedProjectFactDto> risks = find(facts, "kpi.risks.openCount");
         Optional<ApprovedProjectFactDto> problems = find(facts, "kpi.problems.openCount");
 
         List<PriorityDto> priorities = new ArrayList<>();
         int rank = 1;
-        if (deviation.isPresent() && asInt(deviation.get().value()) > 0) {
-            priorities.add(new PriorityDto(
+        if (deviation.isPresent() && asInt(deviation.get().value()) > 0 && progress.isPresent()) {
+            priorities.add(priority(
                     rank++,
-                    "Terminabweichung adressieren",
-                    "Die freigegebene Terminabweichung beträgt " + deviation.get().displayValue() + ".",
-                    List.of(deviation.get().factId())));
+                    "Terminabweichung erfordert Gegensteuerung",
+                    "Der Liefertermin gerät unter Druck und gebundenes Budget bleibt länger gebunden.",
+                    "Gegensteuerung und Termincommitment im Steering freigeben.",
+                    List.of(deviation.get(), progress.get())));
         }
-        if (budgetDev.isPresent() && asDouble(budgetDev.get().value()) > 0) {
-            priorities.add(new PriorityDto(
+        if (budgetDev.isPresent() && asDouble(budgetDev.get().value()) > 0
+                && budgetActual.isPresent() && budgetPlanned.isPresent()) {
+            priorities.add(priority(
                     rank++,
                     "Budgetabweichung prüfen",
-                    "Die freigegebene Budgetabweichung liegt bei " + budgetDev.get().displayValue() + ".",
-                    List.of(budgetDev.get().factId())));
+                    "Zusätzliche Mittelbindung oder Scope-Anpassung wird wahrscheinlicher.",
+                    "Forecast freigeben oder Scope/Budget neu festlegen.",
+                    List.of(budgetActual.get(), budgetPlanned.get(), budgetDev.get())));
         }
-        if (risks.isPresent() && asInt(risks.get().value()) > 0) {
-            priorities.add(new PriorityDto(
+        if (risks.isPresent() && asInt(risks.get().value()) > 0 && problems.isPresent()) {
+            priorities.add(priority(
                     rank++,
-                    "Offene Risiken steuern",
-                    "Es liegen " + risks.get().displayValue() + " offene Risiken vor.",
-                    List.of(risks.get().factId())));
+                    "Offene Risiken und Probleme steuern",
+                    "Operative Steuerungslast steigt und kann den Status weiter belasten.",
+                    "Prioritäten und Owner für die offenen Items bestätigen.",
+                    List.of(risks.get(), problems.get())));
         }
-        if (problems.isPresent() && asInt(problems.get().value()) > 0) {
-            priorities.add(new PriorityDto(
-                    rank++,
-                    "Offene Probleme priorisieren",
-                    "Es liegen " + problems.get().displayValue() + " offene Probleme vor.",
-                    List.of(problems.get().factId())));
-        }
-        if (priorities.isEmpty() && progress.isPresent()) {
-            priorities.add(new PriorityDto(
+        if (priorities.isEmpty() && progress.isPresent() && status.isPresent()) {
+            priorities.add(priority(
                     1,
                     "Projektstatus beobachten",
-                    "Aktueller Fortschritt " + progress.get().displayValue()
-                            + ", Status " + status.map(ApprovedProjectFactDto::displayValue).orElse("unbekannt") + ".",
-                    List.of(progress.get().factId(), status.map(ApprovedProjectFactDto::factId).orElse("project.status"))));
+                    "Derzeit kein akuter Steuerungsbedarf aus den belegten Fakten.",
+                    "Keine Sofortentscheidung; nächsten Berichtsstand prüfen.",
+                    List.of(progress.get(), status.get())));
+        }
+        if (priorities.size() > 3) {
+            priorities = priorities.subList(0, 3);
         }
 
-        List<SuggestedActionDto> actions = new ArrayList<>();
-        if (!priorities.isEmpty()) {
-            PriorityDto top = priorities.get(0);
-            actions.add(new SuggestedActionDto(
-                    "Steering-Vorbereitung für: " + top.title(),
-                    top.reason(),
-                    find(facts, "project.lead").map(ApprovedProjectFactDto::displayValue).orElse("Projektleitung"),
-                    null,
-                    "KPI",
-                    top.evidenceFactIds().isEmpty() ? null : top.evidenceFactIds().get(0),
-                    "Transparente Entscheidungsgrundlage für das nächste Steering",
-                    top.evidenceFactIds(),
-                    true));
-        }
+        List<SuggestedActionDto> actions = List.of();
 
         List<String> sources = facts.stream()
                 .map(ApprovedProjectFactDto::category)
@@ -101,11 +89,14 @@ public class MockAiModelClient implements AiModelClient {
                 .sorted()
                 .toList();
 
-        String summary = "Projekt „" + context.projectName() + "“: Status "
-                + status.map(ApprovedProjectFactDto::displayValue).orElse("unbekannt")
-                + ", Fortschritt "
-                + progress.map(ApprovedProjectFactDto::displayValue).orElse("n/a")
-                + ". Die Einschätzung basiert ausschließlich auf freigegebenen Fakten; fehlende Bereiche sind ausgewiesen.";
+        PriorityDto top = priorities.isEmpty() ? null : priorities.get(0);
+        String summary = top == null
+                ? "Warum auffällig: In den freigegebenen Daten liegen keine belastbaren Abweichungen vor. "
+                        + "Auswirkung: Derzeit kein akuter Steuerungsbedarf. "
+                        + "Nötige Entscheidung: Keine Sofortentscheidung; nächsten Berichtsstand prüfen."
+                : "Warum auffällig: " + top.title() + ". "
+                        + "Auswirkung: " + shorten(top.managementImplication()) + " "
+                        + "Nötige Entscheidung: " + top.requiredDecision();
 
         List<MissingDataDto> missing = context.missingData().stream()
                 .map(item -> new MissingDataDto(item.area(), item.description()))
@@ -172,59 +163,38 @@ public class MockAiModelClient implements AiModelClient {
 
     @Override
     public PortfolioTrendAnalysisResponseDto analyzePortfolio(ApprovedPortfolioContextDto context) {
-        List<CandidateProjectDto> ranked = context.candidateProjects().stream()
-                .sorted((a, b) -> Integer.compare(urgencyScore(b), urgencyScore(a)))
-                .limit(3)
-                .toList();
-
-        List<TopProjectDto> top = ranked.stream()
-                .map(project -> new TopProjectDto(
-                        project.projectId(),
-                        project.projectName(),
-                        buildReason(project),
-                        project.evidenceFactIds()))
-                .toList();
-
-        String text = context.facts().isEmpty()
-                ? "Für das Portfolio liegen derzeit keine freigegebenen aggregierten Kennzahlen vor."
-                : "Auf Basis der freigegebenen Portfolio-KPIs stehen "
-                        + top.size()
-                        + " Projekte im Fokus. Die Einschätzung interpretiert nur vorhandene Fakten und berechnet keine neuen KPIs.";
-
-        return new PortfolioTrendAnalysisResponseDto(text, true, DISCLAIMER, Instant.now(), top);
+        // Pattern insights are filled by PortfolioPatternDetector in the service layer (step 4b).
+        // Mock returns an empty insight list so the DTO contract stays consistent without fabricated patterns.
+        return new PortfolioTrendAnalysisResponseDto(
+                List.of(),
+                true,
+                DISCLAIMER,
+                Instant.now());
     }
 
-    private static int urgencyScore(CandidateProjectDto project) {
-        int score = 0;
-        if ("CRITICAL".equalsIgnoreCase(project.status())) {
-            score += 100;
-        } else if ("AT_RISK".equalsIgnoreCase(project.status())) {
-            score += 60;
-        }
-        if (project.scheduleDeviationDays() != null && project.scheduleDeviationDays() > 0) {
-            score += Math.min(40, project.scheduleDeviationDays());
-        }
-        if (project.budgetDeviationPercent() != null && project.budgetDeviationPercent() > 0) {
-            score += Math.min(30, project.budgetDeviationPercent().intValue());
-        }
-        score += project.criticalIssueCount() * 10;
-        score += project.openRiskCount() * 5;
-        return score;
+    private static PriorityDto priority(
+            int rank,
+            String title,
+            String implication,
+            String decision,
+            List<ApprovedProjectFactDto> evidenceFacts) {
+        List<EvidenceItemDto> evidence = evidenceFacts.stream()
+                .map(fact -> new EvidenceItemDto(fact.label(), fact.displayValue(), fact.factId()))
+                .toList();
+        List<String> factIds = evidenceFacts.stream().map(ApprovedProjectFactDto::factId).toList();
+        return new PriorityDto(rank, title, implication, decision, evidence, factIds);
     }
 
-    private static String buildReason(CandidateProjectDto project) {
-        List<String> parts = new ArrayList<>();
-        parts.add("Status " + project.statusLabel());
-        if (project.scheduleDeviationDays() != null && project.scheduleDeviationDays() > 0) {
-            parts.add("Terminabweichung " + project.scheduleDeviationDays() + " Tage");
+    private static String shorten(String text) {
+        if (text == null || text.isBlank()) {
+            return "";
         }
-        if (project.budgetDeviationPercent() != null && project.budgetDeviationPercent() > 0) {
-            parts.add("Budgetabweichung " + project.budgetDeviationPercent() + " %");
+        String trimmed = text.trim();
+        int max = 160;
+        if (trimmed.length() <= max) {
+            return trimmed.endsWith(".") ? trimmed : trimmed + ".";
         }
-        if (project.criticalIssueCount() > 0) {
-            parts.add(project.criticalIssueCount() + " kritische Probleme/Risiken");
-        }
-        return String.join("; ", parts) + ".";
+        return trimmed.substring(0, max).trim() + "…";
     }
 
     private static Optional<ApprovedProjectFactDto> find(List<ApprovedProjectFactDto> facts, String factId) {

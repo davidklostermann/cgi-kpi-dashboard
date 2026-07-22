@@ -78,7 +78,7 @@ export class ProjectDetailPageComponent {
 
   formatDate(value: string | null): string {
     if (!value) {
-      return 'Nicht verfügbar';
+      return 'Nicht in den Projektdaten hinterlegt';
     }
     return new Intl.DateTimeFormat('de-DE').format(new Date(value));
   }

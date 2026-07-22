@@ -39,6 +39,7 @@ import com.cgi.kpi.dashboard.kpi.service.ProjectIssuesCapacityAssembler;
 import com.cgi.kpi.dashboard.kpi.service.ProjectKpiCalculator;
 import com.cgi.kpi.dashboard.kpi.service.ProjectPhasesAssembler;
 import com.cgi.kpi.dashboard.kpi.service.ProjectTrendAssembler;
+import com.cgi.kpi.dashboard.security.user.CurrentUserService;
 
 @Component
 public class JpaProjectKpiReader implements ProjectKpiReader {
@@ -57,6 +58,7 @@ public class JpaProjectKpiReader implements ProjectKpiReader {
     private final ProjectInsightEngine projectInsightEngine;
     private final ProjectTrendAssembler projectTrendAssembler;
     private final ProjectIssuesCapacityAssembler projectIssuesCapacityAssembler;
+    private final CurrentUserService currentUserService;
 
     public JpaProjectKpiReader(
             ProjectRepository projectRepository,
@@ -72,7 +74,8 @@ public class JpaProjectKpiReader implements ProjectKpiReader {
             ProjectPhasesAssembler projectPhasesAssembler,
             ProjectInsightEngine projectInsightEngine,
             ProjectTrendAssembler projectTrendAssembler,
-            ProjectIssuesCapacityAssembler projectIssuesCapacityAssembler) {
+            ProjectIssuesCapacityAssembler projectIssuesCapacityAssembler,
+            CurrentUserService currentUserService) {
         this.projectRepository = projectRepository;
         this.projectBudgetRepository = projectBudgetRepository;
         this.projectPhaseRepository = projectPhaseRepository;
@@ -87,11 +90,12 @@ public class JpaProjectKpiReader implements ProjectKpiReader {
         this.projectInsightEngine = projectInsightEngine;
         this.projectTrendAssembler = projectTrendAssembler;
         this.projectIssuesCapacityAssembler = projectIssuesCapacityAssembler;
+        this.currentUserService = currentUserService;
     }
 
     @Override
     public Optional<ProjectKpiDto> readProjectKpis(UUID projectId) {
-        Optional<Project> projectOpt = projectRepository.findById(projectId);
+        Optional<Project> projectOpt = projectRepository.findByIdAndWorkspaceId(projectId, currentUserService.requireWorkspaceId());
         if (projectOpt.isEmpty()) {
             return Optional.empty();
         }
@@ -107,7 +111,7 @@ public class JpaProjectKpiReader implements ProjectKpiReader {
 
     @Override
     public Optional<ProjectMasterDataDto> readProjectMasterData(UUID projectId) {
-        Optional<Project> projectOpt = projectRepository.findById(projectId);
+        Optional<Project> projectOpt = projectRepository.findByIdAndWorkspaceId(projectId, currentUserService.requireWorkspaceId());
         if (projectOpt.isEmpty()) {
             return Optional.empty();
         }
@@ -131,7 +135,7 @@ public class JpaProjectKpiReader implements ProjectKpiReader {
 
     @Override
     public Optional<ProjectPhasesDto> readProjectPhases(UUID projectId) {
-        Optional<Project> projectOpt = projectRepository.findById(projectId);
+        Optional<Project> projectOpt = projectRepository.findByIdAndWorkspaceId(projectId, currentUserService.requireWorkspaceId());
         if (projectOpt.isEmpty()) {
             return Optional.empty();
         }
@@ -142,7 +146,7 @@ public class JpaProjectKpiReader implements ProjectKpiReader {
 
     @Override
     public Optional<ProjectInsightsDto> readProjectInsights(UUID projectId) {
-        Optional<Project> projectOpt = projectRepository.findById(projectId);
+        Optional<Project> projectOpt = projectRepository.findByIdAndWorkspaceId(projectId, currentUserService.requireWorkspaceId());
         if (projectOpt.isEmpty()) {
             return Optional.empty();
         }
@@ -160,7 +164,7 @@ public class JpaProjectKpiReader implements ProjectKpiReader {
 
     @Override
     public Optional<ProjectTrendsDto> readProjectTrends(UUID projectId) {
-        if (projectRepository.findById(projectId).isEmpty()) {
+        if (projectRepository.findByIdAndWorkspaceId(projectId, currentUserService.requireWorkspaceId()).isEmpty()) {
             return Optional.empty();
         }
         return Optional.of(projectTrendAssembler.assemble(projectId, findSnapshots(projectId)));
@@ -168,7 +172,7 @@ public class JpaProjectKpiReader implements ProjectKpiReader {
 
     @Override
     public Optional<ProjectIssuesActionsDto> readProjectIssuesActions(UUID projectId) {
-        Optional<Project> projectOpt = projectRepository.findById(projectId);
+        Optional<Project> projectOpt = projectRepository.findByIdAndWorkspaceId(projectId, currentUserService.requireWorkspaceId());
         if (projectOpt.isEmpty()) {
             return Optional.empty();
         }
@@ -179,7 +183,7 @@ public class JpaProjectKpiReader implements ProjectKpiReader {
 
     @Override
     public Optional<ProjectCapacityDto> readProjectCapacity(UUID projectId) {
-        Optional<Project> projectOpt = projectRepository.findById(projectId);
+        Optional<Project> projectOpt = projectRepository.findByIdAndWorkspaceId(projectId, currentUserService.requireWorkspaceId());
         if (projectOpt.isEmpty()) {
             return Optional.empty();
         }

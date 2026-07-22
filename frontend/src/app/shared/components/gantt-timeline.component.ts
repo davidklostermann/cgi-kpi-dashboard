@@ -9,6 +9,8 @@ export function syncScrollTops(source: HTMLElement, target: HTMLElement): void {
   }
 }
 
+export type GanttVariant = 'portfolio' | 'project';
+
 export interface GanttAxisMonth {
   key: string;
   monthLabel: string;
@@ -22,7 +24,7 @@ export interface GanttAxisYear {
 }
 
 export interface GanttHandoverMarker {
-  kind: 'current' | 'plan';
+  kind: 'plan' | 'forecast' | 'current';
   label: string;
   detailLabel: string | null;
   offsetPercent: number;
@@ -31,25 +33,29 @@ export interface GanttHandoverMarker {
   delayed: boolean;
 }
 
+export interface GanttPhaseSegment {
+  leftPercent: number;
+  widthPercent: number;
+  name: string;
+  phaseType: string;
+  current: boolean;
+}
+
 export interface GanttRowLayout {
   project: PortfolioTimelineProject;
   barLeftPercent: number;
   barWidthPercent: number;
   overrunLeftPercent: number | null;
   overrunWidthPercent: number | null;
-  phaseSegments: {
-    leftPercent: number;
-    widthPercent: number;
-    name: string;
-    phaseType: string;
-  }[];
+  phaseSegments: GanttPhaseSegment[];
   handoverMarkers: GanttHandoverMarker[];
 }
 
 const MS_PER_DAY = 86_400_000;
-const MONTH_COL_REM = 5.5;
+const MONTH_COL_REM_PORTFOLIO = 5.5;
+const MONTH_COL_REM_PROJECT = 4.25;
 
-/** Portfolio Gantt timeline — CGI-konforme HTML/CSS presentation (FR-3 / Story 5.2). */
+/** Portfolio/Project Gantt timeline — CGI-konforme HTML/CSS presentation (FR-3 / Story 5.2 / 6.4). */
 @Component({
   selector: 'app-gantt-timeline',
   imports: [],
@@ -58,8 +64,16 @@ const MONTH_COL_REM = 5.5;
 })
 export class GanttTimelineComponent {
   readonly projects = input.required<PortfolioTimelineProject[]>();
+  /** `project` = kompakter Einzelprojekt-Zeitplan ohne Portfolio-Überschriften. */
+  readonly variant = input<GanttVariant>('portfolio');
 
   private readonly today = startOfDay(new Date());
+
+  readonly isProjectView = computed(() => this.variant() === 'project');
+
+  readonly monthColRem = computed(() =>
+    this.isProjectView() ? MONTH_COL_REM_PROJECT : MONTH_COL_REM_PORTFOLIO,
+  );
 
   readonly range = computed(() => {
     const projects = this.projects();
@@ -94,6 +108,15 @@ export class GanttTimelineComponent {
 
     const earliest = new Date(startMs);
     const latest = new Date(endMs);
+
+    // Projektansicht: engerer Zeitraum, weniger horizontaler Leerraum
+    if (this.isProjectView()) {
+      return {
+        start: firstDayOfMonth(earliest),
+        end: lastDayOfMonth(latest),
+      };
+    }
+
     return {
       start: firstDayOfMonth(shiftMonth(earliest, -1)),
       end: lastDayOfMonth(shiftMonth(latest, 1)),
@@ -120,17 +143,18 @@ export class GanttTimelineComponent {
   });
 
   readonly axisYears = computed<GanttAxisYear[]>(() => {
+    const col = this.monthColRem();
     const groups: GanttAxisYear[] = [];
     for (const month of this.axisMonths()) {
       const current = groups[groups.length - 1];
       if (current?.yearLabel === month.yearLabel) {
         current.monthCount += 1;
-        current.widthRem = current.monthCount * MONTH_COL_REM;
+        current.widthRem = current.monthCount * col;
       } else {
         groups.push({
           yearLabel: month.yearLabel,
           monthCount: 1,
-          widthRem: MONTH_COL_REM,
+          widthRem: col,
         });
       }
     }
@@ -138,7 +162,7 @@ export class GanttTimelineComponent {
   });
 
   readonly trackWidthRem = computed(
-    () => this.axisMonths().length * MONTH_COL_REM,
+    () => this.axisMonths().length * this.monthColRem(),
   );
 
   readonly todayVisible = computed(() => {
@@ -160,6 +184,20 @@ export class GanttTimelineComponent {
           parseIso(project.plannedEndDate),
           parseIso(currentEnd),
         );
+        if (this.isProjectView()) {
+          if (delayDays > 0) {
+            return (
+              `${project.name}: ${project.statusLabel}, ` +
+              `Planende ${this.formatDate(project.plannedEndDate)}, ` +
+              `Forecast-Ende ${this.formatDate(currentEnd)}, ` +
+              `${delayDays} Tage Verzug`
+            );
+          }
+          return (
+            `${project.name}: ${project.statusLabel}, ` +
+            `Planende ${this.formatDate(project.plannedEndDate)}`
+          );
+        }
         if (delayDays > 0) {
           return (
             `${project.name}: ${project.statusLabel}, ` +
@@ -204,6 +242,10 @@ export class GanttTimelineComponent {
     const plannedEndPercent = this.dateToTrackPercent(
       parseIso(project.plannedEndDate),
     );
+    const forecastEnd = project.forecastEndDate ?? project.actualEndDate ?? null;
+    const forecastEndPercent = forecastEnd
+      ? this.dateToTrackPercent(parseIso(forecastEnd))
+      : null;
     const delayDays = daysBetween(
       parseIso(project.plannedEndDate),
       parseIso(currentEndDate),
@@ -216,38 +258,79 @@ export class GanttTimelineComponent {
       : null;
 
     const handoverMarkers: GanttHandoverMarker[] = [];
-    if (delayed) {
+
+    if (this.isProjectView()) {
       handoverMarkers.push({
         kind: 'plan',
-        label: 'Plan',
+        label: 'Planende',
         detailLabel: this.formatDate(project.plannedEndDate),
         offsetPercent: plannedEndPercent,
         delayLabel: null,
-        tooltip: `Geplante Kundenübergabe: ${this.formatDate(project.plannedEndDate)}`,
-        delayed: true,
+        tooltip: `Planende: ${this.formatDate(project.plannedEndDate)}`,
+        delayed: false,
+      });
+      if (forecastEnd && forecastEnd !== project.plannedEndDate) {
+        handoverMarkers.push({
+          kind: 'forecast',
+          label: 'Forecast-Ende',
+          detailLabel: this.formatDate(forecastEnd),
+          offsetPercent: forecastEndPercent!,
+          delayLabel: delayed ? `+${delayDays} Tage` : null,
+          tooltip: delayed
+            ? `Forecast-Ende: ${this.formatDate(forecastEnd)}, ${delayDays} Tage nach Plan`
+            : `Forecast-Ende: ${this.formatDate(forecastEnd)}`,
+          delayed,
+        });
+      } else {
+        handoverMarkers.push({
+          kind: 'forecast',
+          label: 'Forecast-Ende',
+          detailLabel: this.formatDate(currentEndDate),
+          offsetPercent: currentEndPercent,
+          delayLabel: null,
+          tooltip: `Forecast-Ende: ${this.formatDate(currentEndDate)} (entspricht Plan)`,
+          delayed: false,
+        });
+      }
+    } else {
+      if (delayed) {
+        handoverMarkers.push({
+          kind: 'plan',
+          label: 'Plan',
+          detailLabel: this.formatDate(project.plannedEndDate),
+          offsetPercent: plannedEndPercent,
+          delayLabel: null,
+          tooltip: `Geplante Kundenübergabe: ${this.formatDate(project.plannedEndDate)}`,
+          delayed: true,
+        });
+      }
+
+      handoverMarkers.push({
+        kind: 'current',
+        label: 'Kundenübergabe',
+        detailLabel: delayed
+          ? `Prognose ${this.formatDate(currentEndDate)}`
+          : this.formatDate(currentEndDate),
+        offsetPercent: currentEndPercent,
+        delayLabel: delayed ? `+${delayDays} Tage` : null,
+        tooltip: delayed
+          ? `Kundenübergabe: Prognose ${this.formatDate(currentEndDate)}, ${delayDays} Tage nach Plan`
+          : `Kundenübergabe: ${this.formatDate(currentEndDate)}`,
+        delayed,
       });
     }
 
-    handoverMarkers.push({
-      kind: 'current',
-      label: 'Kundenübergabe',
-      detailLabel: delayed
-        ? `Prognose ${this.formatDate(currentEndDate)}`
-        : this.formatDate(currentEndDate),
-      offsetPercent: currentEndPercent,
-      delayLabel: delayed ? `+${delayDays} Tage` : null,
-      tooltip: delayed
-        ? `Kundenübergabe: Prognose ${this.formatDate(currentEndDate)}, ${delayDays} Tage nach Plan`
-        : `Kundenübergabe: ${this.formatDate(currentEndDate)}`,
-      delayed,
-    });
-
     const phaseSegments = project.phases.map((phase) => {
-      const phaseStart = this.dateToTrackPercent(parseIso(phase.startDate));
-      const phaseEnd = this.dateToTrackPercent(parseIso(phase.endDate));
+      const phaseStartDate = parseIso(phase.startDate);
+      const phaseEndDate = parseIso(phase.endDate);
+      const phaseStart = this.dateToTrackPercent(phaseStartDate);
+      const phaseEnd = this.dateToTrackPercent(phaseEndDate);
+      const current =
+        this.today >= phaseStartDate && this.today <= phaseEndDate;
       return {
         name: phase.name,
         phaseType: phase.phaseType,
+        current,
         leftPercent: clamp(
           ((phaseStart - barLeftPercent) / barWidthPercent) * 100,
         ),

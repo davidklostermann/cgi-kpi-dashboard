@@ -4,6 +4,7 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
@@ -16,6 +17,9 @@ import jakarta.persistence.Table;
 @Entity
 @Table(name = "projects")
 public class Project extends UuidEntity {
+
+    @Column(name = "workspace_id", nullable = false, columnDefinition = "uuid")
+    private UUID workspaceId;
 
     @Column(nullable = false, length = 200)
     private String name;
@@ -70,6 +74,14 @@ public class Project extends UuidEntity {
 
     @OneToOne(mappedBy = "project", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     private ProjectBudget budget;
+
+    public UUID getWorkspaceId() {
+        return workspaceId;
+    }
+
+    public void setWorkspaceId(UUID workspaceId) {
+        this.workspaceId = workspaceId;
+    }
 
     public String getName() {
         return name;

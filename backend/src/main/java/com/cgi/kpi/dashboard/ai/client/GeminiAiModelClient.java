@@ -9,8 +9,10 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 
 import com.cgi.kpi.dashboard.ai.dto.PortfolioTrendAnalysisResponseDto;
-import com.cgi.kpi.dashboard.ai.dto.PortfolioTrendAnalysisResponseDto.TopProjectDto;
+import com.cgi.kpi.dashboard.ai.dto.PortfolioTrendAnalysisResponseDto.EvidenceDto;
+import com.cgi.kpi.dashboard.ai.dto.PortfolioTrendAnalysisResponseDto.PortfolioInsightDto;
 import com.cgi.kpi.dashboard.ai.dto.ProjectAiAnalysisResponseDto;
+import com.cgi.kpi.dashboard.ai.dto.ProjectAiAnalysisResponseDto.EvidenceItemDto;
 import com.cgi.kpi.dashboard.ai.dto.ProjectAiAnalysisResponseDto.MissingDataDto;
 import com.cgi.kpi.dashboard.ai.dto.ProjectAiAnalysisResponseDto.PriorityDto;
 import com.cgi.kpi.dashboard.ai.dto.ProjectAiAnalysisResponseDto.SuggestedActionDto;
@@ -44,12 +46,18 @@ public class GeminiAiModelClient implements AiModelClient {
     @Override
     public ProjectAiAnalysisResponseDto analyze(ApprovedProjectContextDto context) {
         String prompt = """
-                Du bist ein Projekt-Assistent. Nutze ausschließlich die folgenden freigegebenen Fakten.
-                Erfinde keine Kennzahlen. Antworte nur als JSON mit Feldern:
-                summary (string), priorities (array of {rank,title,reason,evidenceFactIds}),
-                suggestedActions (array of {title,reason,suggestedOwner,evidenceFactIds,expectedEffect}),
+                Du bist ein Projekt-Assistent für Führungskräfte. Nutze ausschließlich die freigegebenen Fakten.
+                Erfinde keine Kennzahlen. Wiederhole keine sichtbaren KPI-Listen. Überschreibe niemals den Ampelstatus.
+                Antworte nur als JSON mit Feldern:
+                summary (string, max. 3 Sätze: Managementbewertung mit Warum / wichtigste Auswirkung / nötige Entscheidung),
+                priorities (array, max. 3, of {
+                  rank, title, managementImplication, requiredDecision,
+                  evidence: [{label, value, sourceField}], evidenceFactIds
+                }),
+                suggestedActions (meist leeres array — nur bei konkreter, belegter Handlung; keine generischen Maßnahmenlisten),
                 missingData (array of {area,description}).
-                evidenceFactIds müssen aus der Fact-Liste stammen.
+                Jede Priorität braucht mindestens 2 verständliche Belege als Klartext (z. B. label="Terminabweichung", value="46 Tage").
+                sourceField und evidenceFactIds müssen aus der Fact-Liste stammen. Aussagen ohne Belege weglassen.
 
                 Projekt: %s
                 Fakten:
@@ -59,10 +67,19 @@ public class GeminiAiModelClient implements AiModelClient {
         JsonNode root = parseJson(transport.generateJson(prompt));
         List<PriorityDto> priorities = new ArrayList<>();
         for (JsonNode node : root.path("priorities")) {
+            List<EvidenceItemDto> evidence = new ArrayList<>();
+            for (JsonNode ev : node.path("evidence")) {
+                evidence.add(new EvidenceItemDto(
+                        text(ev, "label"),
+                        text(ev, "value"),
+                        textOrNull(ev, "sourceField")));
+            }
             priorities.add(new PriorityDto(
                     node.path("rank").asInt(priorities.size() + 1),
                     text(node, "title"),
-                    text(node, "reason"),
+                    text(node, "managementImplication"),
+                    text(node, "requiredDecision"),
+                    List.copyOf(evidence),
                     stringList(node.path("evidenceFactIds"))));
         }
         List<SuggestedActionDto> actions = new ArrayList<>();
@@ -160,11 +177,19 @@ public class GeminiAiModelClient implements AiModelClient {
         }
 
         String prompt = """
-                Erstelle eine Portfolio-Trendanalyse. Nutze nur die freigegebenen Fakten.
-                Erfinde keine KPI-Werte. Antworte als JSON:
-                { "text": string, "topProjects": [ { "projectId": uuid, "projectName": string,
-                  "reason": string, "evidenceFactIds": string[] } ] }
-                Genau bis zu drei topProjects, priorisiert nach Handlungsbedarf.
+                Formuliere ausschließlich projektübergreifende Portfolio-Muster. Erfinde keine Ursachen.
+                Nur Typen DETERIORATING_TREND oder REPORTING_PATTERN. Jeder Insight braucht ≥2 Projekte und ≥2 Belege.
+                Antworte als JSON:
+                { "insights": [ {
+                    "id": string, "type": string, "title": string, "finding": string,
+                    "managementImplication": string, "recommendedAction": string|null,
+                    "affectedProjectIds": uuid[], "affectedProjectNames": string[],
+                    "evidence": [{ "label": string, "value": string, "projectId": uuid|null,
+                      "reportDate": "YYYY-MM-DD"|null, "sourceField": string|null }],
+                    "confidence": "HIGH"|"MEDIUM"|"LOW",
+                    "dataQuality": "COMPLETE"|"PARTIAL"|"INSUFFICIENT"
+                } ] }
+                Wenn keine belastbaren Muster: insights=[].
 
                 Portfolio-Fakten:
                 %s
@@ -173,45 +198,97 @@ public class GeminiAiModelClient implements AiModelClient {
                 """.formatted(portfolioFactsAsText(context.facts()), candidates);
 
         JsonNode root = parseJson(transport.generateJson(prompt));
-        List<TopProjectDto> top = new ArrayList<>();
-        for (JsonNode node : root.path("topProjects")) {
-            UUID id;
-            try {
-                id = UUID.fromString(text(node, "projectId"));
-            } catch (Exception ex) {
-                continue;
+        List<PortfolioInsightDto> insights = new ArrayList<>();
+        for (JsonNode node : root.path("insights")) {
+            List<UUID> projectIds = new ArrayList<>();
+            for (JsonNode idNode : node.path("affectedProjectIds")) {
+                try {
+                    projectIds.add(UUID.fromString(idNode.asText()));
+                } catch (Exception ignored) {
+                    // skip invalid
+                }
             }
-            top.add(new TopProjectDto(
-                    id,
-                    text(node, "projectName"),
-                    text(node, "reason"),
-                    stringList(node.path("evidenceFactIds"))));
-            if (top.size() == 3) {
+            List<EvidenceDto> evidence = new ArrayList<>();
+            for (JsonNode ev : node.path("evidence")) {
+                UUID projectId = null;
+                String projectIdText = textOrNull(ev, "projectId");
+                if (projectIdText != null) {
+                    try {
+                        projectId = UUID.fromString(projectIdText);
+                    } catch (Exception ignored) {
+                        projectId = null;
+                    }
+                }
+                java.time.LocalDate reportDate = null;
+                String reportDateText = textOrNull(ev, "reportDate");
+                if (reportDateText != null) {
+                    try {
+                        reportDate = java.time.LocalDate.parse(reportDateText);
+                    } catch (Exception ignored) {
+                        reportDate = null;
+                    }
+                }
+                evidence.add(new EvidenceDto(
+                        text(ev, "label"),
+                        text(ev, "value"),
+                        projectId,
+                        reportDate,
+                        textOrNull(ev, "sourceField")));
+            }
+            insights.add(new PortfolioInsightDto(
+                    text(node, "id"),
+                    text(node, "type"),
+                    text(node, "title"),
+                    text(node, "finding"),
+                    text(node, "managementImplication"),
+                    textOrNull(node, "recommendedAction"),
+                    List.copyOf(projectIds),
+                    stringList(node.path("affectedProjectNames")),
+                    List.copyOf(evidence),
+                    text(node, "confidence"),
+                    text(node, "dataQuality"),
+                    Instant.now()));
+            if (insights.size() == 5) {
                 break;
             }
         }
         return new PortfolioTrendAnalysisResponseDto(
-                text(root, "text"),
+                List.copyOf(insights),
                 true,
                 DISCLAIMER,
-                Instant.now(),
-                List.copyOf(top));
+                Instant.now());
     }
 
     private JsonNode parseJson(String raw) {
         try {
-            String cleaned = raw.trim();
-            if (cleaned.startsWith("```")) {
-                int start = cleaned.indexOf('{');
-                int end = cleaned.lastIndexOf('}');
-                if (start >= 0 && end > start) {
-                    cleaned = cleaned.substring(start, end + 1);
-                }
-            }
-            return objectMapper.readTree(cleaned);
+            return objectMapper.readTree(extractJsonPayload(raw));
         } catch (Exception ex) {
             throw new GeminiTransportException("Gemini lieferte ungültiges JSON.", ex);
         }
+    }
+
+    static String extractJsonPayload(String raw) {
+        String cleaned = raw.trim();
+        if (!cleaned.startsWith("```")) {
+            return cleaned;
+        }
+        int start = cleaned.indexOf('{');
+        if (start < 0) {
+            return cleaned;
+        }
+        int depth = 0;
+        for (int index = start; index < cleaned.length(); index++) {
+            char current = cleaned.charAt(index);
+            if (current == '{') {
+                depth++;
+            } else if (current == '}') {
+                depth--;
+                if (depth == 0) {
+                    return cleaned.substring(start, index + 1);
+                }
+            }
+        }
+        return cleaned.substring(start);
     }
 
     private static String factsAsText(List<ApprovedProjectFactDto> facts) {

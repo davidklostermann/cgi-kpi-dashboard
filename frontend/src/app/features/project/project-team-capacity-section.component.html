@@ -1,29 +1,36 @@
-<section class="capacity-section" aria-labelledby="capacity-section-heading">
-  <div class="capacity-section__header">
-    <div>
-      <h2 id="capacity-section-heading">Team &amp; Kapazität</h2>
-      <p class="capacity-section__subtitle">
-        Projektbezogene Rollen- und Skill-Abdeckung ohne sensible Personaldetails
-      </p>
+@if (status() === 'loading') {
+  <p class="capacity-section__state" aria-live="polite">Kapazitätsdaten werden geladen …</p>
+} @else if (status() === 'error') {
+  <section class="capacity-section" aria-labelledby="capacity-section-heading">
+    <div class="capacity-section__header">
+      <div>
+        <h2 id="capacity-section-heading">Team &amp; Kapazität</h2>
+      </div>
     </div>
-    @if (status() === 'success' && data(); as payload) {
-      <span class="capacity-section__badge">{{ payload.factsBadge }}</span>
-    }
-  </div>
-
-  @if (status() === 'loading') {
-    <p class="capacity-section__state" aria-live="polite">Kapazitätsdaten werden geladen …</p>
-  } @else if (status() === 'error') {
     <div class="capacity-section__error" role="alert">
       <p>{{ errorMessage() }}</p>
       <button type="button" (click)="load()">Erneut laden</button>
     </div>
-  } @else if (data(); as payload) {
-    @if (payload.roles.length === 0 && !payload.summary) {
+  </section>
+} @else {
+  <section class="capacity-section" aria-labelledby="capacity-section-heading">
+    <div class="capacity-section__header">
+      <div>
+        <h2 id="capacity-section-heading">Team &amp; Kapazität</h2>
+        <p class="capacity-section__subtitle">
+          Projektbezogene Rollen- und Skill-Abdeckung ohne sensible Personaldetails
+        </p>
+      </div>
+      @if (data(); as payload) {
+        <span class="capacity-section__badge">{{ payload.factsBadge }}</span>
+      }
+    </div>
+
+    @if (!hasRoles()) {
       <p class="capacity-section__state" role="status">
         Keine Kapazitätsdaten für dieses Projekt hinterlegt.
       </p>
-    } @else {
+    } @else if (data(); as payload) {
       <div class="capacity-section__grid">
         <ul class="capacity-section__roles" aria-label="Rollenbesetzung">
           @for (role of payload.roles; track role.id) {
@@ -46,6 +53,9 @@
               </div>
               <p class="capacity-section__role-meta">
                 {{ formatFte(role.availableFte) }} / {{ formatFte(role.requiredFte) }} FTE verfügbar
+                @if (role.coveragePercent < 100 && role.availableFte < role.requiredFte) {
+                  · Unterdeckung {{ formatFte(role.requiredFte - role.availableFte) }} FTE
+                }
               </p>
             </li>
           }
@@ -57,7 +67,7 @@
             <p class="capacity-section__summary-detail">{{ summary.impactDetail }}</p>
             <dl>
               <div>
-                <dt>Fehlende Rollen</dt>
+                <dt>Fehlende Kapazität</dt>
                 <dd>{{ formatFte(summary.missingFte) }} FTE</dd>
               </div>
               <div>
@@ -65,7 +75,7 @@
                 <dd>{{ formatDate(summary.nextAvailabilityDate) }}</dd>
               </div>
               <div>
-                <dt>Überlastete Rollen</dt>
+                <dt>Kritische / überlastete Rollen</dt>
                 <dd>{{ summary.overloadedRoles }}</dd>
               </div>
               <div>
@@ -77,5 +87,5 @@
         }
       </div>
     }
-  }
-</section>
+  </section>
+}

@@ -17,7 +17,7 @@ describe('ProjectReportComparisonComponent', () => {
 
   afterEach(() => httpMock.verify());
 
-  it('should render deltas when comparison is available (Story 6.7)', () => {
+  it('should render comparison cards with text assessment (Story 6.7)', () => {
     const fixture = TestBed.createComponent(ProjectReportComparisonComponent);
     fixture.componentRef.setInput('projectId', 'a0000000-0000-4000-8000-000000000001');
     fixture.detectChanges();
@@ -41,8 +41,21 @@ describe('ProjectReportComparisonComponent', () => {
 
     const text = fixture.nativeElement.textContent as string;
     expect(text).toContain('Berichtsstandsvergleich');
-    expect(text).toContain('2026-06-01');
-    expect(text).toContain('+5 %');
+    expect(text).toContain('1.6.2026');
+    expect(text).toContain('1.7.2026');
+    expect(text).toContain('Fortschritt');
+    expect(text).toContain('+5 Prozentpunkte');
+    expect(text).toContain('Verbesserung');
+    expect(text).toContain('Ist-Kosten');
+    expect(text).toContain('+12.000 €');
+    expect(text).toContain('Kosten gestiegen');
+    expect(text).toContain('Termin');
+    expect(text).toContain('Unverändert');
+    expect(text).toContain('Risiken');
+    expect(text).toContain('−1 offene Risiken');
+    expect(fixture.nativeElement.querySelectorAll('.report-comparison__card').length).toBe(5);
+    expect(fixture.nativeElement.querySelector('.report-comparison__card--improved')).toBeTruthy();
+    expect(fixture.nativeElement.querySelector('.report-comparison__card--worsened')).toBeTruthy();
   });
 
   it('should show defined hint when previous snapshot is missing (Story 6.7)', () => {

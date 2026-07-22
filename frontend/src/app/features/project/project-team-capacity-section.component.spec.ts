@@ -92,7 +92,7 @@ describe('ProjectTeamCapacitySectionComponent', () => {
     expect(fixture.nativeElement.textContent).toContain('Kapazität nicht verfügbar');
   });
 
-  it('should show empty state when no capacity data exists', () => {
+  it('should show empty state when no role capacity rows exist', () => {
     const fixture = TestBed.createComponent(ProjectTeamCapacitySectionComponent);
     fixture.componentRef.setInput('projectId', projectId);
     fixture.detectChanges();
@@ -106,8 +106,8 @@ describe('ProjectTeamCapacitySectionComponent', () => {
     });
     fixture.detectChanges();
 
-    expect(fixture.nativeElement.textContent).toContain(
-      'Keine Kapazitätsdaten für dieses Projekt hinterlegt.',
-    );
+    const text = fixture.nativeElement.textContent as string;
+    expect(text).toContain('Team & Kapazität');
+    expect(text).toContain('Keine Kapazitätsdaten für dieses Projekt hinterlegt.');
   });
 });

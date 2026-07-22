@@ -20,28 +20,94 @@
     @if (payload.items.length === 0) {
       <p class="issues-section__state" role="status">Keine offenen Probleme oder Risiken für dieses Projekt.</p>
     } @else {
+      @if (escalationItems(payload.items); as decisions) {
+        @if (decisions.length > 0) {
+          <aside class="issues-section__decisions" aria-labelledby="required-decisions-heading">
+            <h3 id="required-decisions-heading">{{ decisionsHeading(decisions.length) }}</h3>
+            <ul>
+              @for (item of decisions; track item.id) {
+                <li>
+                  <p class="issues-section__decision-title">{{ item.title }}</p>
+                  <dl>
+                    <div>
+                      <dt>Entscheidung</dt>
+                      <dd>{{ decisionText(item) }}</dd>
+                    </div>
+                    <div>
+                      <dt>Entscheider / Rolle</dt>
+                      <dd>{{ decisionOwner(item) }}</dd>
+                    </div>
+                    <div>
+                      <dt>Frist</dt>
+                      <dd>{{ decisionDue(item) }}</dd>
+                    </div>
+                    <div>
+                      <dt>Auswirkung bei Nichtentscheidung</dt>
+                      <dd>{{ decisionImpact(item) }}</dd>
+                    </div>
+                  </dl>
+                </li>
+              }
+            </ul>
+          </aside>
+        }
+      }
+
       <ul class="issues-section__list">
         @for (item of payload.items; track item.id) {
           <li class="issue-card" [class]="'issue-card--' + severityTone(item.severity)">
             <div class="issue-card__top">
               <p class="issue-card__meta">
                 <span class="visually-hidden">Typ und Kategorie:</span>
-                {{ item.itemType }} · {{ item.category }}
+                {{ item.itemTypeLabel }} · {{ item.category }}
               </p>
               <span
                 class="issue-card__severity"
-                [attr.aria-label]="'Schweregrad: ' + item.severityLabel"
+                [attr.aria-label]="'Priorität: ' + (item.priority || item.severityLabel || 'nicht hinterlegt')"
               >
-                {{ item.severityLabel }}
+                {{ item.priority || item.severityLabel || 'nicht hinterlegt' }}
               </span>
             </div>
 
             <h3 class="issue-card__title">{{ item.title }}</h3>
-            <p class="issue-card__description">{{ item.description }}</p>
 
-            @if (item.metrics.length > 0) {
-              <dl class="issue-card__metrics">
-                @for (metric of item.metrics; track metric.label) {
+            <dl class="issue-card__facts">
+              <div>
+                <dt>Ursache</dt>
+                <dd>{{ item.cause?.trim() || 'nicht hinterlegt' }}</dd>
+              </div>
+              @if (item.impact) {
+                <div>
+                  <dt>Auswirkung</dt>
+                  <dd>{{ item.impact }}</dd>
+                </div>
+              }
+              <div>
+                <dt>Priorität</dt>
+                <dd>{{ item.priority || item.severityLabel || 'nicht hinterlegt' }}</dd>
+              </div>
+              <div>
+                <dt>Owner</dt>
+                <dd>{{ item.owner || 'Nicht zugeordnet' }}</dd>
+              </div>
+              <div>
+                <dt>Fälligkeit</dt>
+                <dd>
+                  {{ formatDate(item.dueDate) }}
+                  @if (item.overdueLabel) {
+                    <span class="issue-card__overdue"> · {{ item.overdueLabel }}</span>
+                  }
+                </dd>
+              </div>
+              <div>
+                <dt>Eskalationsbedarf</dt>
+                <dd>{{ item.escalationNeeded ? 'Ja' : 'Nein' }}</dd>
+              </div>
+            </dl>
+
+            @if (item.metrics?.length) {
+              <dl class="issue-card__metrics" aria-label="Kennzahlen">
+                @for (metric of item.metrics; track metric.label + metric.value) {
                   <div>
                     <dt>{{ metric.label }}</dt>
                     <dd>{{ metric.value }}</dd>
@@ -50,21 +116,10 @@
               </dl>
             }
 
-            <dl class="issue-card__ownership">
-              <div>
-                <dt>Owner</dt>
-                <dd>{{ item.owner || 'Nicht zugeordnet' }}</dd>
-              </div>
-              <div>
-                <dt>Fälligkeit</dt>
-                <dd>{{ formatDate(item.dueDate) }}</dd>
-              </div>
-            </dl>
-
-            @if (item.actionText) {
+            @if (item.nextAction) {
               <div class="issue-card__action">
-                <span class="issue-card__action-label">{{ item.actionLabel }}</span>
-                <p>{{ item.actionText }}</p>
+                <span class="issue-card__action-label">Nächste Aktion</span>
+                <p>{{ item.nextAction }}</p>
               </div>
             }
           </li>

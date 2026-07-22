@@ -17,10 +17,18 @@ public record ProjectAiAnalysisResponseDto(
         boolean aiGenerated,
         String disclaimer) {
 
+    public record EvidenceItemDto(
+            String label,
+            String value,
+            String sourceField) {
+    }
+
     public record PriorityDto(
             int rank,
             String title,
-            String reason,
+            String managementImplication,
+            String requiredDecision,
+            List<EvidenceItemDto> evidence,
             List<String> evidenceFactIds) {
     }
 

@@ -1,5 +1,36 @@
 .project-phases-section {
   margin-bottom: 1.5rem;
+
+  // Projekt-Gantt: kompakter, ohne Portfolio-Namensspalte
+  ::ng-deep .gantt-timeline--project {
+    .gantt-timeline__frame {
+      max-height: none;
+    }
+
+    .gantt-timeline__canvas {
+      min-width: 0;
+    }
+
+    .gantt-timeline__row,
+    .gantt-timeline__track {
+      height: 5.25rem;
+    }
+
+    .gantt-timeline__bar,
+    .gantt-timeline__overrun {
+      top: 2.35rem;
+    }
+
+    .gantt-timeline__handover--plan .gantt-timeline__handover-line {
+      border-left-color: var(--cgi-purple-1);
+    }
+
+    .gantt-timeline__handover--plan .gantt-timeline__handover-detail {
+      display: block;
+      top: auto;
+      bottom: 1.15rem;
+    }
+  }
 }
 
 .project-phases-section h2 {
@@ -10,6 +41,7 @@
 .project-phases-section__hint {
   margin: 0 0 1rem;
   color: var(--cgi-gray-3);
+  font-size: 0.875rem;
 }
 
 .project-phases-section__error {
@@ -19,15 +51,101 @@
   background: #ffcdd2;
 }
 
-.project-phases-section__milestones {
-  margin: 1rem 0 0;
-  padding-left: 1.25rem;
-  color: var(--cgi-gray-2);
+.project-phases-section__milestones-heading {
+  margin: 1.25rem 0 0.65rem;
+  color: var(--cgi-primary-darkest);
+  font-size: 1rem;
+  font-weight: 700;
 }
 
-.project-phases-section__milestone--overdue {
-  color: var(--cgi-red-3);
+.project-phases-section__milestones {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
+  gap: 0.75rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.milestone-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+  padding: 0.85rem 1rem;
+  border: 1px solid var(--cgi-gray-6);
+  border-left-width: 4px;
+  border-left-color: var(--cgi-purple-4);
+  border-radius: 0.5rem;
+  background: var(--cgi-surface);
+  box-shadow: 0 1px 3px rgb(32 10 88 / 7%);
+}
+
+.milestone-card--overdue {
+  border-left-color: var(--cgi-orange-3, #e65100);
+  background: color-mix(in srgb, var(--cgi-orange-3, #e65100) 6%, #fff);
+}
+
+.milestone-card--done {
+  border-left-color: var(--cgi-green-3, #2e7d32);
+}
+
+.milestone-card__top {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.35rem 0.75rem;
+}
+
+.milestone-card__name {
+  margin: 0;
+  color: var(--cgi-primary-darkest);
+  font-size: 0.9rem;
+  font-weight: 700;
+  line-height: 1.3;
+}
+
+.milestone-card__status {
+  display: inline-block;
+  padding: 0.15rem 0.45rem;
+  border-radius: 0.25rem;
+  background: var(--cgi-purple-7);
+  color: var(--cgi-primary-darkest);
+  font-size: 0.6875rem;
+  font-weight: 700;
+  line-height: 1.3;
+}
+
+.milestone-card--overdue .milestone-card__status {
+  background: color-mix(in srgb, var(--cgi-orange-3, #e65100) 16%, #fff);
+  color: var(--cgi-orange-3, #e65100);
+}
+
+.milestone-card--done .milestone-card__status {
+  background: color-mix(in srgb, var(--cgi-green-3, #2e7d32) 14%, #fff);
+  color: var(--cgi-green-3, #2e7d32);
+}
+
+.milestone-card__facts {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.5rem;
+  margin: 0;
+}
+
+.milestone-card__facts dt {
+  margin: 0 0 0.15rem;
+  color: var(--cgi-gray-3);
+  font-size: 0.6875rem;
+  font-weight: 700;
+}
+
+.milestone-card__facts dd {
+  margin: 0;
+  color: var(--cgi-gray-1);
+  font-size: 0.8125rem;
   font-weight: 600;
+  font-variant-numeric: tabular-nums;
 }
 
 .visually-hidden {
@@ -40,4 +158,14 @@
   clip: rect(0, 0, 0, 0);
   white-space: nowrap;
   border: 0;
+}
+
+@media (max-width: 520px) {
+  .project-phases-section__milestones {
+    grid-template-columns: 1fr;
+  }
+
+  .milestone-card__facts {
+    grid-template-columns: 1fr;
+  }
 }

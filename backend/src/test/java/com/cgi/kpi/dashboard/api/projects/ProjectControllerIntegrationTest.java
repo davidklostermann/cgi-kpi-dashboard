@@ -12,12 +12,14 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import com.cgi.kpi.dashboard.security.user.WithDashboardUser;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 
 @SpringBootTest
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
+@WithDashboardUser(role = "ADMIN")
 class ProjectControllerIntegrationTest {
 
     private static final UUID KNOWN_PROJECT_ID = UUID.fromString("a0000000-0000-4000-8000-000000000001");
@@ -177,6 +179,9 @@ class ProjectControllerIntegrationTest {
                 .andExpect(jsonPath("$.items[0].severityLabel").exists())
                 .andExpect(jsonPath("$.items[0].metrics").isArray())
                 .andExpect(jsonPath("$.items[0].actionText").exists())
+                .andExpect(jsonPath("$.items[0].cause").exists())
+                .andExpect(jsonPath("$.items[0].priority").exists())
+                .andExpect(jsonPath("$.items[0].escalationNeeded").exists())
                 .andExpect(jsonPath("$.aiGenerated").doesNotExist());
     }
 

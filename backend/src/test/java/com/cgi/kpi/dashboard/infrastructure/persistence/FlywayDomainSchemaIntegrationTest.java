@@ -26,7 +26,13 @@ class FlywayDomainSchemaIntegrationTest {
             "RISKS",
             "PROJECT_BUDGETS",
             "PROBLEMS",
-            "PROJECT_REPORT_SNAPSHOTS");
+            "PROJECT_REPORT_SNAPSHOTS",
+            "PROJECT_ROLE_CAPACITIES",
+            "PROJECT_CAPACITY_SUMMARIES",
+            "WORKSPACE",
+            "APP_USER",
+            "WORKSPACE_MEMBERSHIP",
+            "USER_UI_PREFERENCES");
 
     @Autowired
     private DataSource dataSource;

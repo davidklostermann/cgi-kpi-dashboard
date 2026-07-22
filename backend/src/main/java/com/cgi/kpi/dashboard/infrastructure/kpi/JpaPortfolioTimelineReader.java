@@ -28,6 +28,7 @@ import com.cgi.kpi.dashboard.kpi.dto.PortfolioKpiRiskInput;
 import com.cgi.kpi.dashboard.kpi.dto.PortfolioTimelineDto;
 import com.cgi.kpi.dashboard.kpi.reader.PortfolioTimelineReader;
 import com.cgi.kpi.dashboard.kpi.service.PortfolioProjectFilter;
+import com.cgi.kpi.dashboard.security.user.CurrentUserService;
 import com.cgi.kpi.dashboard.kpi.service.PortfolioTimelineAssembler;
 
 /**
@@ -44,6 +45,7 @@ public class JpaPortfolioTimelineReader implements PortfolioTimelineReader {
     private final MilestoneRepository milestoneRepository;
     private final RiskRepository riskRepository;
     private final PortfolioProjectFilter portfolioProjectFilter;
+    private final CurrentUserService currentUserService;
     private final PortfolioTimelineAssembler portfolioTimelineAssembler;
 
     public JpaPortfolioTimelineReader(
@@ -53,6 +55,7 @@ public class JpaPortfolioTimelineReader implements PortfolioTimelineReader {
             MilestoneRepository milestoneRepository,
             RiskRepository riskRepository,
             PortfolioProjectFilter portfolioProjectFilter,
+            CurrentUserService currentUserService,
             PortfolioTimelineAssembler portfolioTimelineAssembler) {
         this.projectRepository = projectRepository;
         this.projectBudgetRepository = projectBudgetRepository;
@@ -60,6 +63,7 @@ public class JpaPortfolioTimelineReader implements PortfolioTimelineReader {
         this.milestoneRepository = milestoneRepository;
         this.riskRepository = riskRepository;
         this.portfolioProjectFilter = portfolioProjectFilter;
+        this.currentUserService = currentUserService;
         this.portfolioTimelineAssembler = portfolioTimelineAssembler;
     }
 
@@ -67,15 +71,20 @@ public class JpaPortfolioTimelineReader implements PortfolioTimelineReader {
     public PortfolioTimelineDto readTimeline(PortfolioFilterCriteria criteria) {
         PortfolioFilterCriteria effectiveCriteria = criteria != null ? criteria : PortfolioFilterCriteria.empty();
 
-        List<Project> projects = projectRepository.findAll();
+        List<Project> projects = projectRepository.findAllByWorkspaceId(currentUserService.requireWorkspaceId());
+        Set<UUID> workspaceProjectIds = projects.stream().map(Project::getId).collect(Collectors.toSet());
         Map<UUID, ProjectBudget> budgetsByProjectId = projectBudgetRepository.findAll().stream()
+                .filter(b -> workspaceProjectIds.contains(b.getProject().getId()))
                 .collect(Collectors.toMap(b -> b.getProject().getId(), b -> b));
         Map<UUID, List<ProjectPhase>> phasesByProjectId = projectPhaseRepository.findAll().stream()
+                .filter(phase -> workspaceProjectIds.contains(phase.getProject().getId()))
                 .collect(Collectors.groupingBy(phase -> phase.getProject().getId()));
         Map<UUID, List<Milestone>> milestonesByProjectId = milestoneRepository.findAll().stream()
+                .filter(milestone -> workspaceProjectIds.contains(milestone.getProject().getId()))
                 .collect(Collectors.groupingBy(milestone -> milestone.getProject().getId()));
 
         List<PortfolioKpiRiskInput> riskInputs = riskRepository.findAll().stream()
+                .filter(risk -> workspaceProjectIds.contains(risk.getProject().getId()))
                 .map(risk -> new PortfolioKpiRiskInput(
                         risk.getProject().getId(),
                         risk.getSeverity(),

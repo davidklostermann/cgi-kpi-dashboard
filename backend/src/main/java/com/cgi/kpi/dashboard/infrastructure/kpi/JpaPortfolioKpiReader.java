@@ -29,6 +29,7 @@ import com.cgi.kpi.dashboard.kpi.dto.PortfolioKpiSummaryDto;
 import com.cgi.kpi.dashboard.kpi.reader.PortfolioKpiReader;
 import com.cgi.kpi.dashboard.kpi.service.PortfolioKpiCalculator;
 import com.cgi.kpi.dashboard.kpi.service.PortfolioProjectFilter;
+import com.cgi.kpi.dashboard.security.user.CurrentUserService;
 
 /**
  * Loads portfolio data from persistence and delegates KPI calculation to {@code kpi.*}.
@@ -44,6 +45,7 @@ public class JpaPortfolioKpiReader implements PortfolioKpiReader {
     private final RiskRepository riskRepository;
     private final PortfolioKpiCalculator portfolioKpiCalculator;
     private final PortfolioProjectFilter portfolioProjectFilter;
+    private final CurrentUserService currentUserService;
 
     public JpaPortfolioKpiReader(
             ProjectRepository projectRepository,
@@ -51,25 +53,31 @@ public class JpaPortfolioKpiReader implements PortfolioKpiReader {
             ProjectPhaseRepository projectPhaseRepository,
             RiskRepository riskRepository,
             PortfolioKpiCalculator portfolioKpiCalculator,
-            PortfolioProjectFilter portfolioProjectFilter) {
+            PortfolioProjectFilter portfolioProjectFilter,
+            CurrentUserService currentUserService) {
         this.projectRepository = projectRepository;
         this.projectBudgetRepository = projectBudgetRepository;
         this.projectPhaseRepository = projectPhaseRepository;
         this.riskRepository = riskRepository;
         this.portfolioKpiCalculator = portfolioKpiCalculator;
         this.portfolioProjectFilter = portfolioProjectFilter;
+        this.currentUserService = currentUserService;
     }
 
     @Override
     public PortfolioKpiSummaryDto readPortfolioSummary(PortfolioFilterCriteria criteria) {
         PortfolioFilterCriteria effectiveCriteria = criteria != null ? criteria : PortfolioFilterCriteria.empty();
 
-        List<Project> projects = projectRepository.findAll();
+        List<Project> projects = projectRepository.findAllByWorkspaceId(currentUserService.requireWorkspaceId());
+        Set<UUID> workspaceProjectIds = projects.stream().map(Project::getId).collect(Collectors.toSet());
         Map<UUID, ProjectBudget> budgetsByProjectId = projectBudgetRepository.findAll().stream()
+                .filter(budget -> workspaceProjectIds.contains(budget.getProject().getId()))
                 .collect(Collectors.toMap(b -> b.getProject().getId(), b -> b));
         Map<UUID, List<ProjectPhase>> phasesByProjectId = projectPhaseRepository.findAll().stream()
+                .filter(phase -> workspaceProjectIds.contains(phase.getProject().getId()))
                 .collect(Collectors.groupingBy(phase -> phase.getProject().getId()));
         List<PortfolioKpiRiskInput> riskInputs = riskRepository.findAll().stream()
+                .filter(risk -> workspaceProjectIds.contains(risk.getProject().getId()))
                 .map(this::toRiskInput)
                 .toList();
 
@@ -95,8 +103,10 @@ public class JpaPortfolioKpiReader implements PortfolioKpiReader {
 
     @Override
     public PortfolioFilterOptionsDto readFilterOptions() {
-        List<Project> projects = projectRepository.findAll();
+        List<Project> projects = projectRepository.findAllByWorkspaceId(currentUserService.requireWorkspaceId());
+        Set<UUID> workspaceProjectIds = projects.stream().map(Project::getId).collect(Collectors.toSet());
         Map<UUID, List<ProjectPhase>> phasesByProjectId = projectPhaseRepository.findAll().stream()
+                .filter(phase -> workspaceProjectIds.contains(phase.getProject().getId()))
                 .collect(Collectors.groupingBy(phase -> phase.getProject().getId()));
 
         List<String> customers = projects.stream()

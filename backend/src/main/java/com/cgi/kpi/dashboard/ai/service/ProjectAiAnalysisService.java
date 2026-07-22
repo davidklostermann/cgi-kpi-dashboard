@@ -1,14 +1,14 @@
 package com.cgi.kpi.dashboard.ai.service;
 
-import java.util.Map;
 import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
+import com.cgi.kpi.dashboard.ai.cache.ProjectAiAnalysisCache;
 import com.cgi.kpi.dashboard.ai.client.AiModelClient;
 import com.cgi.kpi.dashboard.ai.config.AiProperties;
+import com.cgi.kpi.dashboard.ai.config.AiProviderConfigVersionProvider;
 import com.cgi.kpi.dashboard.ai.dto.ProjectAiAnalysisResponseDto;
 import com.cgi.kpi.dashboard.ai.dto.ProjectAiQuestionRequestDto;
 import com.cgi.kpi.dashboard.ai.dto.ProjectAiQuestionResponseDto;
@@ -16,31 +16,48 @@ import com.cgi.kpi.dashboard.ai.validation.AiEvidenceValidator;
 import com.cgi.kpi.dashboard.api.error.ApiException;
 import com.cgi.kpi.dashboard.kpi.dto.ApprovedProjectContextDto;
 import com.cgi.kpi.dashboard.kpi.reader.ApprovedProjectDataReader;
+import com.cgi.kpi.dashboard.security.user.CurrentUserService;
 
 @Service
 public class ProjectAiAnalysisService {
+
+    static final int MAX_QUESTION_LENGTH = 2000;
 
     private final ApprovedProjectDataReader approvedProjectDataReader;
     private final AiModelClient aiModelClient;
     private final AiEvidenceValidator aiEvidenceValidator;
     private final AiProperties aiProperties;
-    private final Map<String, ProjectAiAnalysisResponseDto> cache = new ConcurrentHashMap<>();
+    private final CurrentUserService currentUserService;
+    private final ProjectAiAnalysisCache cache;
+    private final AiProviderConfigVersionProvider configVersionProvider;
 
     public ProjectAiAnalysisService(
             ApprovedProjectDataReader approvedProjectDataReader,
             AiModelClient aiModelClient,
             AiEvidenceValidator aiEvidenceValidator,
-            AiProperties aiProperties) {
+            AiProperties aiProperties,
+            CurrentUserService currentUserService,
+            ProjectAiAnalysisCache cache,
+            AiProviderConfigVersionProvider configVersionProvider) {
         this.approvedProjectDataReader = approvedProjectDataReader;
         this.aiModelClient = aiModelClient;
         this.aiEvidenceValidator = aiEvidenceValidator;
         this.aiProperties = aiProperties;
+        this.currentUserService = currentUserService;
+        this.cache = cache;
+        this.configVersionProvider = configVersionProvider;
     }
 
     public ProjectAiAnalysisResponseDto analyze(UUID projectId, boolean refresh) {
+        currentUserService.requireAdmin();
         ensureEnabled();
+        UUID workspaceId = currentUserService.requireWorkspaceId();
         ApprovedProjectContextDto context = loadContext(projectId);
-        String cacheKey = projectId + "|" + context.factsAsOf();
+        String cacheKey = ProjectAiAnalysisCache.buildKey(
+                workspaceId,
+                projectId,
+                context.factsAsOf(),
+                configVersionProvider.currentVersion());
         if (!refresh) {
             ProjectAiAnalysisResponseDto cached = cache.get(cacheKey);
             if (cached != null) {
@@ -62,13 +79,21 @@ public class ProjectAiAnalysisService {
     }
 
     public ProjectAiQuestionResponseDto ask(UUID projectId, ProjectAiQuestionRequestDto request) {
+        currentUserService.requireAdmin();
         ensureEnabled();
         if (request == null || request.question() == null || request.question().isBlank()) {
             throw new ApiException("BAD_REQUEST", "Question must not be empty", HttpStatus.BAD_REQUEST);
         }
+        String question = request.question().trim();
+        if (question.length() > MAX_QUESTION_LENGTH) {
+            throw new ApiException(
+                    "BAD_REQUEST",
+                    "Question exceeds maximum length of " + MAX_QUESTION_LENGTH + " characters",
+                    HttpStatus.BAD_REQUEST);
+        }
         ApprovedProjectContextDto context = loadContext(projectId);
         try {
-            ProjectAiQuestionResponseDto raw = aiModelClient.answer(context, request.question().trim());
+            ProjectAiQuestionResponseDto raw = aiModelClient.answer(context, question);
             return aiEvidenceValidator.validateQuestion(context, raw);
         } catch (com.cgi.kpi.dashboard.ai.client.GeminiTransportException ex) {
             throw AiProviderExceptionMapper.toApiException(

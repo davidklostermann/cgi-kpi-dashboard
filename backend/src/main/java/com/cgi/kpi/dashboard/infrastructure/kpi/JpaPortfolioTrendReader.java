@@ -28,6 +28,7 @@ import com.cgi.kpi.dashboard.kpi.dto.PortfolioKpiRiskInput;
 import com.cgi.kpi.dashboard.kpi.dto.PortfolioTrendDto;
 import com.cgi.kpi.dashboard.kpi.reader.PortfolioTrendReader;
 import com.cgi.kpi.dashboard.kpi.service.PortfolioProjectFilter;
+import com.cgi.kpi.dashboard.security.user.CurrentUserService;
 import com.cgi.kpi.dashboard.kpi.service.PortfolioTrendAssembler;
 
 @Component
@@ -41,6 +42,7 @@ public class JpaPortfolioTrendReader implements PortfolioTrendReader {
     private final ProjectReportSnapshotRepository projectReportSnapshotRepository;
     private final RiskRepository riskRepository;
     private final PortfolioProjectFilter portfolioProjectFilter;
+    private final CurrentUserService currentUserService;
     private final PortfolioTrendAssembler portfolioTrendAssembler;
 
     public JpaPortfolioTrendReader(
@@ -50,6 +52,7 @@ public class JpaPortfolioTrendReader implements PortfolioTrendReader {
             ProjectReportSnapshotRepository projectReportSnapshotRepository,
             RiskRepository riskRepository,
             PortfolioProjectFilter portfolioProjectFilter,
+            CurrentUserService currentUserService,
             PortfolioTrendAssembler portfolioTrendAssembler) {
         this.projectRepository = projectRepository;
         this.projectBudgetRepository = projectBudgetRepository;
@@ -57,6 +60,7 @@ public class JpaPortfolioTrendReader implements PortfolioTrendReader {
         this.projectReportSnapshotRepository = projectReportSnapshotRepository;
         this.riskRepository = riskRepository;
         this.portfolioProjectFilter = portfolioProjectFilter;
+        this.currentUserService = currentUserService;
         this.portfolioTrendAssembler = portfolioTrendAssembler;
     }
 
@@ -64,15 +68,20 @@ public class JpaPortfolioTrendReader implements PortfolioTrendReader {
     public PortfolioTrendDto readTrends(PortfolioFilterCriteria criteria) {
         PortfolioFilterCriteria effectiveCriteria = criteria != null ? criteria : PortfolioFilterCriteria.empty();
 
-        List<Project> projects = projectRepository.findAll();
+        List<Project> projects = projectRepository.findAllByWorkspaceId(currentUserService.requireWorkspaceId());
+        Set<UUID> workspaceProjectIds = projects.stream().map(Project::getId).collect(Collectors.toSet());
         Map<UUID, ProjectBudget> budgetsByProjectId = projectBudgetRepository.findAll().stream()
+                .filter(b -> workspaceProjectIds.contains(b.getProject().getId()))
                 .collect(Collectors.toMap(b -> b.getProject().getId(), b -> b));
         Map<UUID, List<ProjectPhase>> phasesByProjectId = projectPhaseRepository.findAll().stream()
+                .filter(phase -> workspaceProjectIds.contains(phase.getProject().getId()))
                 .collect(Collectors.groupingBy(phase -> phase.getProject().getId()));
         Map<UUID, List<ProjectReportSnapshot>> snapshotsByProjectId = projectReportSnapshotRepository.findAll().stream()
+                .filter(snapshot -> workspaceProjectIds.contains(snapshot.getProject().getId()))
                 .collect(Collectors.groupingBy(snapshot -> snapshot.getProject().getId()));
 
         List<PortfolioKpiRiskInput> riskInputs = riskRepository.findAll().stream()
+                .filter(risk -> workspaceProjectIds.contains(risk.getProject().getId()))
                 .map(risk -> new PortfolioKpiRiskInput(
                         risk.getProject().getId(),
                         risk.getSeverity(),

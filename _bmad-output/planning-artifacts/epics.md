@@ -189,7 +189,8 @@ Planungsartefakte: `prds/prd-cgi-kpi-dashboard-security-multi-user/`, `architect
 
 **AD-6 / NFR-8 SUPERSEDED.** Security-ADs: **AD-12..AD-18** (AD-11 = CGI EDS).  
 **P0-Entscheidungen geschlossen 2026-07-21** (Workspace, Bootstrap-Env, Session, KI-ADMIN, Cache, Master-Key Dev).  
-Sprint-Tracking: Epic 10 + 11–14 in `sprint-status.yaml` als `backlog`. Nächster Workflow: `bmad-sprint-planning` (Status verifizieren/Story-Keys sync) dann `bmad-create-story` für **11.1**.
+Sprint-Tracking: `sprint-status.yaml` aktualisiert via Sprint Planning (2026-07-21) — Epics 1–9 `done`, 10–14 `backlog`, Retrospectives `optional`.  
+Nächster Workflow: `bmad-create-story` für **11-1-datenmodell-workspace-user-flyway**.
 
 ## Offene Fragen
 

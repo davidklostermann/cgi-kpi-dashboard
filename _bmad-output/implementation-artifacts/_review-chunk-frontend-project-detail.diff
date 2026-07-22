@@ -1,0 +1,2939 @@
+﻿diff --git a/frontend/src/app/features/project/project-ai-panel.component.html b/frontend/src/app/features/project/project-ai-panel.component.html
+index bd31bae..d5377bb 100644
+--- a/frontend/src/app/features/project/project-ai-panel.component.html
++++ b/frontend/src/app/features/project/project-ai-panel.component.html
+@@ -55,33 +55,52 @@
+     @if (activeTab() === 'overview') {
+       <div role="tabpanel" aria-labelledby="tab-overview" class="project-ai-panel__panel">
+         <article class="project-ai-panel__summary">
+-          <h3>Management-Zusammenfassung</h3>
++          <h3>Managementbewertung</h3>
+           <p>{{ data.summary }}</p>
+         </article>
+ 
+-        <div class="project-ai-panel__sources">
+-          <strong>Faktenquellen:</strong>
+-          {{ data.availableSources.join(', ') || 'keine' }}
+-        </div>
+-
+-        <h3>Priorisierte Aufmerksamkeitspunkte</h3>
+-        <ol class="project-ai-panel__priorities">
+-          @for (priority of data.priorities; track priority.rank) {
+-            <li>
+-              <p class="project-ai-panel__rank">#{{ priority.rank }}</p>
+-              <h4>{{ priority.title }}</h4>
+-              <p>{{ priority.reason }}</p>
+-              <div class="project-ai-panel__evidence">
+-                <span>Belege:</span>
+-                @for (factId of priority.evidenceFactIds; track factId) {
+-                  <button type="button" class="project-ai-panel__chip" (click)="jumpToFact(factId)">
+-                    {{ factId }}
+-                  </button>
+-                }
+-              </div>
+-            </li>
++        <h3>Priorisierte Erkenntnisse</h3>
++        @if (displayablePriorities(data.priorities); as priorities) {
++          @if (priorities.length === 0) {
++            <p class="project-ai-panel__hint" role="status">
++              Keine ausreichend belegten Erkenntnisse aus den freigegebenen Projektdaten.
++            </p>
++          } @else {
++            <ol class="project-ai-panel__priorities">
++              @for (priority of priorities; track priority.rank) {
++                <li>
++                  <p class="project-ai-panel__rank">#{{ priority.rank }}</p>
++                  <h4>{{ priority.title }}</h4>
++                  <dl class="project-ai-panel__priority-facts">
++                    <div>
++                      <dt>Wichtigste Auswirkung</dt>
++                      <dd>{{ priority.managementImplication }}</dd>
++                    </div>
++                    <div>
++                      <dt>N├Âtige Entscheidung oder Handlung</dt>
++                      <dd>{{ priority.requiredDecision }}</dd>
++                    </div>
++                  </dl>
++                  <ul class="project-ai-panel__evidence-list">
++                    @for (item of priority.evidence; track item.label + item.value) {
++                      <li>{{ formatEvidence(item) }}</li>
++                    }
++                  </ul>
++                  <details class="project-ai-panel__tech-detail">
++                    <summary>Technische Feldnamen</summary>
++                    <div class="project-ai-panel__evidence">
++                      @for (factId of priority.evidenceFactIds; track factId) {
++                        <button type="button" class="project-ai-panel__chip" (click)="jumpToFact(factId)">
++                          {{ factId }}
++                        </button>
++                      }
++                    </div>
++                  </details>
++                </li>
++              }
++            </ol>
+           }
+-        </ol>
++        }
+ 
+         @if (data.missingData.length > 0) {
+           <div class="project-ai-panel__missing">
+@@ -102,39 +121,52 @@
+ 
+     @if (activeTab() === 'actions') {
+       <div role="tabpanel" aria-labelledby="tab-actions" class="project-ai-panel__panel">
+-        <p class="project-ai-panel__hint">Ma├ƒnahmen sind KI-Vorschl├ñge. Es erfolgt keine automatische Ausf├╝hrung.</p>
+-        <ul class="project-ai-panel__actions">
+-          @for (action of data.suggestedActions; track action.title) {
+-            <li>
+-              <span class="project-ai-panel__proposal-badge">KI-Vorschlag</span>
+-              <h4>{{ action.title }}</h4>
+-              <p>{{ action.reason }}</p>
+-              <dl>
+-                <div>
+-                  <dt>Owner</dt>
+-                  <dd>{{ action.suggestedOwner || 'nicht ableitbar' }}</dd>
+-                </div>
+-                <div>
+-                  <dt>Zieltermin</dt>
+-                  <dd>{{ action.suggestedDueDate || 'nicht ableitbar' }}</dd>
+-                </div>
+-                <div>
+-                  <dt>Erwartete Wirkung</dt>
+-                  <dd>{{ action.expectedEffect || 'nicht ableitbar' }}</dd>
+-                </div>
+-              </dl>
+-              <div class="project-ai-panel__evidence">
+-                <span>Belege:</span>
+-                @for (factId of action.evidenceFactIds; track factId) {
+-                  <button type="button" class="project-ai-panel__chip" (click)="jumpToFact(factId)">
+-                    {{ factId }}
+-                  </button>
+-                }
+-              </div>
+-              <button type="button" (click)="prepareDraft(action)">Als Entwurf vorbereiten</button>
+-            </li>
++        <p class="project-ai-panel__hint">
++          Nur konkrete, belegte Handlungsvorschl├ñge. Generische Ma├ƒnahmenlisten werden nicht angezeigt.
++          N├Âtige Entscheidungen stehen im ├£berblick.
++        </p>
++        @if (displayableActions(data.suggestedActions); as actions) {
++          @if (actions.length === 0) {
++            <p class="project-ai-panel__empty" role="status">
++              Keine konkreten Ma├ƒnahmenvorschl├ñge ÔÇö die n├Âtigen Entscheidungen sind im ├£berblick genannt.
++            </p>
++          } @else {
++            <ul class="project-ai-panel__actions">
++              @for (action of actions; track action.title) {
++                <li>
++                  <span class="project-ai-panel__proposal-badge">KI-Vorschlag</span>
++                  <h4>{{ action.title }}</h4>
++                  <p>{{ action.reason }}</p>
++                  <dl>
++                    <div>
++                      <dt>Owner</dt>
++                      <dd>{{ formatOptionalField(action.suggestedOwner) }}</dd>
++                    </div>
++                    <div>
++                      <dt>Zieltermin</dt>
++                      <dd>{{ formatOptionalField(action.suggestedDueDate) }}</dd>
++                    </div>
++                    <div>
++                      <dt>Erwartete Wirkung</dt>
++                      <dd>{{ formatOptionalField(action.expectedEffect) }}</dd>
++                    </div>
++                  </dl>
++                  <details class="project-ai-panel__tech-detail">
++                    <summary>Technische Feldnamen</summary>
++                    <div class="project-ai-panel__evidence">
++                      @for (factId of action.evidenceFactIds; track factId) {
++                        <button type="button" class="project-ai-panel__chip" (click)="jumpToFact(factId)">
++                          {{ factId }}
++                        </button>
++                      }
++                    </div>
++                  </details>
++                  <button type="button" (click)="prepareDraft(action)">Als Entwurf vorbereiten</button>
++                </li>
++              }
++            </ul>
+           }
+-        </ul>
++        }
+ 
+         @if (draft(); as currentDraft) {
+           <form class="project-ai-panel__draft" aria-label="Bearbeitbarer Ma├ƒnahmenentwurf">
+@@ -177,20 +209,23 @@
+               <strong>{{ message.role === 'user' ? 'Sie' : 'Assistent' }}:</strong>
+               {{ message.text }}
+               @if (message.evidenceFactIds?.length) {
+-                <span class="project-ai-panel__evidence">
+-                  @for (factId of message.evidenceFactIds; track factId) {
+-                    <button type="button" class="project-ai-panel__chip" (click)="jumpToFact(factId)">
+-                      {{ factId }}
+-                    </button>
+-                  }
+-                </span>
++                <details class="project-ai-panel__tech-detail">
++                  <summary>Technische Feldnamen</summary>
++                  <span class="project-ai-panel__evidence">
++                    @for (factId of message.evidenceFactIds; track factId) {
++                      <button type="button" class="project-ai-panel__chip" (click)="jumpToFact(factId)">
++                        {{ factId }}
++                      </button>
++                    }
++                  </span>
++                </details>
+               }
+             </p>
+           }
+           @if (chatStatus() === 'sending') {
+             <p>Antwort wird erzeugt ÔÇª</p>
+           }
+-          @if (chatStatus() === 'error') {
++          @if (chatStatus() === 'error' || chatStatus() === 'disabled') {
+             <p class="project-ai-panel__chat-error" role="alert">{{ chatError() }}</p>
+           }
+         </div>
+@@ -208,7 +243,5 @@
+         </form>
+       </div>
+     }
+-
+-    <p class="project-ai-panel__disclaimer">{{ data.disclaimer }}</p>
+   }
+ </section>
+diff --git a/frontend/src/app/features/project/project-ai-panel.component.scss b/frontend/src/app/features/project/project-ai-panel.component.scss
+index 443093d..5b57f96 100644
+--- a/frontend/src/app/features/project/project-ai-panel.component.scss
++++ b/frontend/src/app/features/project/project-ai-panel.component.scss
+@@ -26,8 +26,8 @@
+ 
+ .project-ai-panel__meta,
+ .project-ai-panel__hint,
+-.project-ai-panel__sources,
+-.project-ai-panel__disclaimer {
++.project-ai-panel__empty,
++.project-ai-panel__sources {
+   margin: 0;
+   color: var(--cgi-gray-3);
+   font-size: 0.75rem;
+@@ -103,6 +103,45 @@
+   margin-top: 0.5rem;
+ }
+ 
++.project-ai-panel__priority-facts {
++  margin: 0.5rem 0;
++  display: grid;
++  gap: 0.45rem;
++}
++
++.project-ai-panel__priority-facts dt {
++  margin: 0;
++  font-size: 0.7rem;
++  font-weight: 700;
++  color: var(--cgi-gray-3);
++}
++
++.project-ai-panel__priority-facts dd {
++  margin: 0.1rem 0 0;
++  color: var(--cgi-gray-1);
++  line-height: 1.4;
++  font-size: 0.85rem;
++}
++
++.project-ai-panel__evidence-list {
++  margin: 0.35rem 0 0.5rem;
++  padding-left: 1.1rem;
++  color: var(--cgi-gray-1);
++  font-size: 0.85rem;
++  line-height: 1.4;
++}
++
++.project-ai-panel__tech-detail {
++  margin-top: 0.35rem;
++  font-size: 0.75rem;
++  color: var(--cgi-gray-3);
++}
++
++.project-ai-panel__tech-detail summary {
++  cursor: pointer;
++  font-weight: 600;
++}
++
+ .project-ai-panel__chip {
+   border: 1px solid var(--cgi-purple-6);
+   background: var(--cgi-purple-7);
+@@ -171,10 +210,14 @@
+   font-weight: 600;
+ }
+ 
+-.project-ai-panel__disclaimer {
+-  margin-top: 0.5rem;
+-  padding-top: 0.5rem;
+-  border-top: 1px solid var(--cgi-purple-6);
++.project-ai-panel__tech-detail {
++  margin-top: 0.35rem;
++}
++
++.project-ai-panel__tech-detail summary {
++  cursor: pointer;
++  color: var(--cgi-gray-3);
++  font-size: 0.7rem;
+ }
+ 
+ .visually-hidden {
+diff --git a/frontend/src/app/features/project/project-ai-panel.component.spec.ts b/frontend/src/app/features/project/project-ai-panel.component.spec.ts
+index 7669851..679fa9c 100644
+--- a/frontend/src/app/features/project/project-ai-panel.component.spec.ts
++++ b/frontend/src/app/features/project/project-ai-panel.component.spec.ts
+@@ -13,19 +13,32 @@ describe('ProjectAiPanelComponent', () => {
+     generatedAt: '2026-07-16T12:00:00Z',
+     status: 'SUCCESS',
+     availableSources: ['KPI', 'BUDGET'],
+-    summary: 'Zusammenfassung aus freigegebenen Fakten.',
++    summary: 'Warum auff├ñllig: Terminabweichung. Auswirkung: Lieferdruck. N├Âtige Entscheidung: Gegensteuerung freigeben.',
+     priorities: [
+       {
+         rank: 1,
+         title: 'Terminabweichung adressieren',
+-        reason: 'Abweichung belegt.',
+-        evidenceFactIds: ['kpi.scheduleDeviationDays'],
++        managementImplication: 'Liefertermin ger├ñt unter Druck.',
++        requiredDecision: 'Gegensteuerung im Steering freigeben.',
++        evidence: [
++          { label: 'Terminabweichung', value: '14 Tage', sourceField: 'kpi.scheduleDeviationDays' },
++          { label: 'Fortschritt', value: '62 %', sourceField: 'kpi.progressPercent' },
++        ],
++        evidenceFactIds: ['kpi.scheduleDeviationDays', 'kpi.progressPercent'],
++      },
++      {
++        rank: 2,
++        title: 'Ohne Belege ÔÇö darf nicht erscheinen',
++        managementImplication: 'n/a',
++        requiredDecision: 'n/a',
++        evidence: [{ label: 'Nur einer', value: '1', sourceField: 'kpi.progressPercent' }],
++        evidenceFactIds: ['kpi.progressPercent'],
+       },
+     ],
+     suggestedActions: [
+       {
+-        title: 'Steering vorbereiten',
+-        reason: 'Entscheidungsgrundlage schaffen.',
++        title: 'Steering-Vorbereitung f├╝r: Terminabweichung',
++        reason: 'Generische Liste.',
+         suggestedOwner: 'Projektleitung',
+         suggestedDueDate: null,
+         addressesType: 'KPI',
+@@ -34,6 +47,28 @@ describe('ProjectAiPanelComponent', () => {
+         evidenceFactIds: ['kpi.scheduleDeviationDays'],
+         isProposal: true,
+       },
++      {
++        title: 'Externe Verst├ñrkung freigeben',
++        reason: 'Kapazit├ñtsl├╝cke belegt den Terminverzug.',
++        suggestedOwner: 'Steering Committee',
++        suggestedDueDate: null,
++        addressesType: 'PROBLEM',
++        addressesId: null,
++        expectedEffect: 'Terminabweichung reduzieren',
++        evidenceFactIds: ['kpi.scheduleDeviationDays', 'kpi.progressPercent'],
++        isProposal: true,
++      },
++      {
++        title: 'Leere Ma├ƒnahme',
++        reason: '',
++        suggestedOwner: null,
++        suggestedDueDate: null,
++        addressesType: null,
++        addressesId: null,
++        expectedEffect: null,
++        evidenceFactIds: [],
++        isProposal: true,
++      },
+     ],
+     missingData: [{ area: 'QUALITY', description: 'Testdaten fehlen.' }],
+     aiGenerated: true,
+@@ -50,7 +85,7 @@ describe('ProjectAiPanelComponent', () => {
+ 
+   afterEach(() => httpMock.verify());
+ 
+-  it('should render summary, priorities and evidence chips (Story 9.4)', () => {
++  it('should require evidence for AI insights and hide technical field names by default', () => {
+     const fixture = TestBed.createComponent(ProjectAiPanelComponent);
+     fixture.componentRef.setInput('projectId', 'a0000000-0000-4000-8000-000000000001');
+     fixture.detectChanges();
+@@ -62,13 +97,21 @@ describe('ProjectAiPanelComponent', () => {
+ 
+     const text = fixture.nativeElement.textContent as string;
+     expect(text).toContain('Projekt-Assistent');
+-    expect(text).toContain('Zusammenfassung aus freigegebenen Fakten.');
++    expect(text).toContain('Managementbewertung');
+     expect(text).toContain('Terminabweichung adressieren');
+-    expect(text).toContain('kpi.scheduleDeviationDays');
++    expect(text).toContain('Terminabweichung: 14 Tage');
++    expect(text).toContain('Fortschritt: 62 %');
++    expect(text).toContain('Wichtigste Auswirkung');
++    expect(text).toContain('N├Âtige Entscheidung oder Handlung');
++    expect(text).toContain('Technische Feldnamen');
++    expect(text).not.toContain('Ohne Belege ÔÇö darf nicht erscheinen');
++    // Technische IDs sind nur im zugeklappten details ÔÇö nicht prominent im ├£berblickstext
++    const openDetails = fixture.nativeElement.querySelectorAll('details[open]');
++    expect(openDetails.length).toBe(0);
+     expect(text).toContain('Fehlende Daten');
+   });
+ 
+-  it('should switch tabs and prepare editable draft without backend save', () => {
++  it('should hide empty and generic AI action cards', () => {
+     const fixture = TestBed.createComponent(ProjectAiPanelComponent);
+     fixture.componentRef.setInput('projectId', 'a0000000-0000-4000-8000-000000000001');
+     fixture.detectChanges();
+@@ -80,9 +123,26 @@ describe('ProjectAiPanelComponent', () => {
+     const component = fixture.componentInstance;
+     component.selectTab('actions');
+     fixture.detectChanges();
+-    expect(fixture.nativeElement.textContent).toContain('KI-Vorschlag');
+ 
+-    component.prepareDraft(analysis.suggestedActions[0]);
++    const text = fixture.nativeElement.textContent as string;
++    expect(text).not.toContain('Steering-Vorbereitung f├╝r:');
++    expect(text).not.toContain('Leere Ma├ƒnahme');
++    expect(text).toContain('Externe Verst├ñrkung freigeben');
++    expect(text).toContain('Nicht in den Projektdaten hinterlegt');
++  });
++
++  it('should prepare editable draft without backend save for concrete actions', () => {
++    const fixture = TestBed.createComponent(ProjectAiPanelComponent);
++    fixture.componentRef.setInput('projectId', 'a0000000-0000-4000-8000-000000000001');
++    fixture.detectChanges();
++    httpMock
++      .expectOne('/api/projects/a0000000-0000-4000-8000-000000000001/ai/analysis?refresh=false')
++      .flush(analysis);
++    fixture.detectChanges();
++
++    const component = fixture.componentInstance;
++    component.selectTab('actions');
++    component.prepareDraft(analysis.suggestedActions[1]);
+     fixture.detectChanges();
+     expect(fixture.nativeElement.textContent).toContain('Entwurf (nur lokal, nicht gespeichert)');
+     expect(httpMock.match(() => true).length).toBe(0);
+@@ -153,4 +213,29 @@ describe('ProjectAiPanelComponent', () => {
+     expect(fixture.nativeElement.textContent).toContain('Gemini-Authentifizierung fehlgeschlagen');
+     expect(fixture.nativeElement.textContent).toContain('AI_PROVIDER_ERROR');
+   });
++
++  it('should show disabled chat message for AI_DISABLED', () => {
++    const fixture = TestBed.createComponent(ProjectAiPanelComponent);
++    fixture.componentRef.setInput('projectId', 'a0000000-0000-4000-8000-000000000001');
++    fixture.detectChanges();
++    httpMock
++      .expectOne('/api/projects/a0000000-0000-4000-8000-000000000001/ai/analysis?refresh=false')
++      .flush(analysis);
++    fixture.detectChanges();
++
++    fixture.componentInstance.selectTab('questions');
++    fixture.componentInstance.sendQuestion('Wie ist der Fortschritt?');
++    fixture.detectChanges();
++
++    httpMock
++      .expectOne('/api/projects/a0000000-0000-4000-8000-000000000001/ai/questions')
++      .flush(
++        { code: 'AI_DISABLED', message: 'Projekt-Assistent ist deaktiviert.' },
++        { status: 503, statusText: 'Service Unavailable' },
++      );
++    fixture.detectChanges();
++
++    expect(fixture.componentInstance.chatStatus()).toBe('disabled');
++    expect(fixture.nativeElement.textContent).toContain('Projekt-Assistent ist deaktiviert.');
++  });
+ });
+diff --git a/frontend/src/app/features/project/project-ai-panel.component.ts b/frontend/src/app/features/project/project-ai-panel.component.ts
+index 61294f5..16b1518 100644
+--- a/frontend/src/app/features/project/project-ai-panel.component.ts
++++ b/frontend/src/app/features/project/project-ai-panel.component.ts
+@@ -7,6 +7,7 @@ import { resolveAiPanelError } from '../../shared/utils/ai-error.util';
+ import {
+   ProjectAiAnalysis,
+   ProjectAiDraft,
++  ProjectAiPriority,
+   ProjectAiQuestionResponse,
+   ProjectAiSuggestedAction,
+ } from '../../shared/models/project-ai.model';
+@@ -54,9 +55,11 @@ export class ProjectAiPanelComponent {
+ 
+   readonly chatMessages = signal<ChatMessage[]>([]);
+   readonly chatInput = signal('');
+-  readonly chatStatus = signal<'idle' | 'sending' | 'error'>('idle');
++  readonly chatStatus = signal<'idle' | 'sending' | 'error' | 'disabled'>('idle');
+   readonly chatError = signal<string | null>(null);
+ 
++  private analysisGeneration = 0;
++
+   readonly suggestedQuestions = [
+     'Wie ist der aktuelle Fortschritt?',
+     'Gibt es eine Terminabweichung?',
+@@ -66,6 +69,11 @@ export class ProjectAiPanelComponent {
+   constructor() {
+     effect(() => {
+       this.projectId();
++      this.analysisGeneration++;
++      this.chatMessages.set([]);
++      this.chatStatus.set('idle');
++      this.chatError.set(null);
++      this.draft.set(null);
+       this.loadAnalysis(false);
+     });
+   }
+@@ -74,6 +82,64 @@ export class ProjectAiPanelComponent {
+     this.activeTab.set(tab);
+   }
+ 
++  /** Insights without at least two readable evidence items are not shown. */
++  displayablePriorities(priorities: ProjectAiPriority[]): ProjectAiPriority[] {
++    return (priorities ?? [])
++      .filter((priority) => this.hasReadableEvidence(priority))
++      .slice(0, 3);
++  }
++
++  /**
++   * Keine generischen/leeren Ma├ƒnahmenkarten ÔÇö nur belegte, konkrete Vorschl├ñge.
++   * Generische Steering-Listen werden bewusst ausgeblendet; Entscheidungen stehen im ├£berblick.
++   */
++  displayableActions(actions: ProjectAiSuggestedAction[]): ProjectAiSuggestedAction[] {
++    return (actions ?? []).filter((action) => this.isConcreteAction(action));
++  }
++
++  formatEvidence(item: { label: string; value: string }): string {
++    return `${item.label}: ${item.value}`;
++  }
++
++  formatOptionalField(value: string | null | undefined): string {
++    if (!value || !value.trim()) {
++      return 'Nicht in den Projektdaten hinterlegt';
++    }
++    return value.trim();
++  }
++
++  private hasReadableEvidence(priority: ProjectAiPriority): boolean {
++    const evidence = priority.evidence ?? [];
++    if (evidence.length < 2) {
++      return false;
++    }
++    return evidence.every(
++      (item) => !!item.label?.trim() && !!item.value?.trim() && !this.looksLikeTechField(item.label),
++    );
++  }
++
++  private isConcreteAction(action: ProjectAiSuggestedAction): boolean {
++    if (!action.title?.trim() || !action.reason?.trim()) {
++      return false;
++    }
++    if ((action.evidenceFactIds?.length ?? 0) === 0) {
++      return false;
++    }
++    const title = action.title.toLowerCase();
++    // Generische Ma├ƒnahmenlisten / KPI-Wiederholungen ausblenden
++    if (title.startsWith('steering-vorbereitung') || title.startsWith('steering vorbereiten')) {
++      return false;
++    }
++    if (title.includes('allgemeine ma├ƒnahme') || title.includes('generische')) {
++      return false;
++    }
++    return true;
++  }
++
++  private looksLikeTechField(label: string): boolean {
++    return /^[a-z0-9]+(\.[a-z0-9]+)+$/i.test(label.trim());
++  }
++
+   onTabKeydown(event: KeyboardEvent): void {
+     const tabs: PanelTab[] = ['overview', 'actions', 'questions'];
+     const index = tabs.indexOf(this.activeTab());
+@@ -94,17 +160,25 @@ export class ProjectAiPanelComponent {
+   }
+ 
+   loadAnalysis(refresh: boolean): void {
++    const projectId = this.projectId();
++    const generation = ++this.analysisGeneration;
+     this.status.set('loading');
+     this.errorMessage.set(null);
+     this.projectAiApi
+-      .getAnalysis(this.projectId(), refresh)
++      .getAnalysis(projectId, refresh)
+       .pipe(take(1))
+       .subscribe({
+         next: (analysis) => {
++          if (generation !== this.analysisGeneration || projectId !== this.projectId()) {
++            return;
++          }
+           this.analysis.set(analysis);
+           this.status.set('success');
+         },
+         error: (error: unknown) => {
++          if (generation !== this.analysisGeneration || projectId !== this.projectId()) {
++            return;
++          }
+           this.analysis.set(null);
+           const resolved = resolveAiPanelError(error, 'Die Analyse konnte nicht geladen werden.');
+           this.status.set(resolved.status);
+@@ -135,7 +209,7 @@ export class ProjectAiPanelComponent {
+   prepareDraft(action: ProjectAiSuggestedAction): void {
+     this.draft.set({
+       title: action.title,
+-      body: `${action.reason}\n\nErwartete Wirkung: ${action.expectedEffect ?? 'nicht ableitbar'}`,
++      body: `${action.reason}\n\nErwartete Wirkung: ${this.formatOptionalField(action.expectedEffect)}`,
+       owner: action.suggestedOwner ?? '',
+       dueDate: action.suggestedDueDate ?? '',
+     });
+@@ -156,11 +230,15 @@ export class ProjectAiPanelComponent {
+     this.chatStatus.set('sending');
+     this.chatError.set(null);
+ 
++    const projectId = this.projectId();
+     this.projectAiApi
+-      .askQuestion(this.projectId(), text)
++      .askQuestion(projectId, text)
+       .pipe(take(1))
+       .subscribe({
+         next: (response: ProjectAiQuestionResponse) => {
++          if (projectId !== this.projectId()) {
++            return;
++          }
+           this.chatMessages.update((messages) => [
+             ...messages,
+             {
+@@ -172,10 +250,12 @@ export class ProjectAiPanelComponent {
+           this.chatStatus.set('idle');
+         },
+         error: (error: unknown) => {
+-          this.chatStatus.set('error');
+-          this.chatError.set(
+-            resolveAiPanelError(error, 'Die Frage konnte nicht beantwortet werden.').message,
+-          );
++          if (projectId !== this.projectId()) {
++            return;
++          }
++          const resolved = resolveAiPanelError(error, 'Die Frage konnte nicht beantwortet werden.');
++          this.chatStatus.set(resolved.status === 'disabled' ? 'disabled' : 'error');
++          this.chatError.set(resolved.message);
+         },
+       });
+   }
+diff --git a/frontend/src/app/features/project/project-detail-page.component.html b/frontend/src/app/features/project/project-detail-page.component.html
+index 88f6501..314e0cc 100644
+--- a/frontend/src/app/features/project/project-detail-page.component.html
++++ b/frontend/src/app/features/project/project-detail-page.component.html
+@@ -15,7 +15,7 @@
+     } @else if (masterData(); as project) {
+       <div id="fact-master" class="page__title-row">
+         <div>
+-          <p class="page__eyebrow">Projekt {{ project.id }}</p>
++          <p class="page__eyebrow">Projektdetail</p>
+           <h1>{{ project.name }}</h1>
+         </div>
+         <app-status-badge [status]="project.status" [label]="project.statusLabel" />
+@@ -59,9 +59,9 @@
+       <h2 class="visually-hidden">Projektfakten</h2>
+       <div id="fact-kpis-wrap"><app-project-kpi-section [projectId]="id()" /></div>
+       <div id="fact-issues-actions"><app-project-issues-actions-section [projectId]="id()" /></div>
++      <div id="fact-report-comparison"><app-project-report-comparison [projectId]="id()" /></div>
+       <div id="fact-team-capacity"><app-project-team-capacity-section [projectId]="id()" /></div>
+       <div id="fact-phases"><app-project-phases-section [projectId]="id()" /></div>
+-      <div id="fact-report-comparison"><app-project-report-comparison [projectId]="id()" /></div>
+     </section>
+ 
+     <app-project-ai-panel factsAi [projectId]="id()" />
+diff --git a/frontend/src/app/features/project/project-detail-page.component.ts b/frontend/src/app/features/project/project-detail-page.component.ts
+index 54c5d83..a272b18 100644
+--- a/frontend/src/app/features/project/project-detail-page.component.ts
++++ b/frontend/src/app/features/project/project-detail-page.component.ts
+@@ -78,7 +78,7 @@ export class ProjectDetailPageComponent {
+ 
+   formatDate(value: string | null): string {
+     if (!value) {
+-      return 'Nicht verf├╝gbar';
++      return 'Nicht in den Projektdaten hinterlegt';
+     }
+     return new Intl.DateTimeFormat('de-DE').format(new Date(value));
+   }
+diff --git a/frontend/src/app/features/project/project-insights-section.component.html b/frontend/src/app/features/project/project-insights-section.component.html
+index a75a1fe..a4c6446 100644
+--- a/frontend/src/app/features/project/project-insights-section.component.html
++++ b/frontend/src/app/features/project/project-insights-section.component.html
+@@ -24,7 +24,7 @@
+               </div>
+               <div>
+                 <dt>Vergleichswert</dt>
+-                <dd>{{ insight.comparisonValue || 'Nicht definiert [OFFEN]' }}</dd>
++                <dd>{{ insight.comparisonValue || 'Nicht in den Projektdaten hinterlegt' }}</dd>
+               </div>
+               <div>
+                 <dt>Zeitraum</dt>
+diff --git a/frontend/src/app/features/project/project-insights-section.component.spec.ts b/frontend/src/app/features/project/project-insights-section.component.spec.ts
+index a0d3b6d..e9c9aef 100644
+--- a/frontend/src/app/features/project/project-insights-section.component.spec.ts
++++ b/frontend/src/app/features/project/project-insights-section.component.spec.ts
+@@ -29,7 +29,7 @@ describe('ProjectInsightsSectionComponent', () => {
+           code: 'PROGRESS_BEHIND_TIME',
+           statement: 'Fortschritt liegt hinter dem erwarteten Zeitverbrauch.',
+           metrics: 'Fortschritt vs. Zeitverbrauch',
+-          comparisonValue: 'Schwelle ÔêÆ20 Prozentpunkte [OFFEN]',
++          comparisonValue: 'Schwelle ÔêÆ20 Prozentpunkte',
+           period: 'Aktueller Berichtsstand vs. Plan',
+           rationale: 'Der Ist-Fortschritt liegt unter dem erwarteten Fortschritt.',
+           type: 'deterministisch',
+diff --git a/frontend/src/app/features/project/project-issues-actions-section.component.html b/frontend/src/app/features/project/project-issues-actions-section.component.html
+index 3f0a0c3..ee4f621 100644
+--- a/frontend/src/app/features/project/project-issues-actions-section.component.html
++++ b/frontend/src/app/features/project/project-issues-actions-section.component.html
+@@ -20,51 +20,95 @@
+     @if (payload.items.length === 0) {
+       <p class="issues-section__state" role="status">Keine offenen Probleme oder Risiken f├╝r dieses Projekt.</p>
+     } @else {
++      @if (escalationItems(payload.items); as decisions) {
++        @if (decisions.length > 0) {
++          <aside class="issues-section__decisions" aria-labelledby="required-decisions-heading">
++            <h3 id="required-decisions-heading">Ben├Âtigte Entscheidung</h3>
++            <ul>
++              @for (item of decisions; track item.id) {
++                <li>
++                  <p class="issues-section__decision-title">{{ item.title }}</p>
++                  <dl>
++                    <div>
++                      <dt>Entscheidung</dt>
++                      <dd>{{ decisionText(item) }}</dd>
++                    </div>
++                    <div>
++                      <dt>Entscheider / Rolle</dt>
++                      <dd>{{ decisionOwner(item) }}</dd>
++                    </div>
++                    <div>
++                      <dt>Frist</dt>
++                      <dd>{{ decisionDue(item) }}</dd>
++                    </div>
++                    <div>
++                      <dt>Auswirkung bei Nichtentscheidung</dt>
++                      <dd>{{ decisionImpact(item) }}</dd>
++                    </div>
++                  </dl>
++                </li>
++              }
++            </ul>
++          </aside>
++        }
++      }
++
+       <ul class="issues-section__list">
+         @for (item of payload.items; track item.id) {
+           <li class="issue-card" [class]="'issue-card--' + severityTone(item.severity)">
+             <div class="issue-card__top">
+               <p class="issue-card__meta">
+                 <span class="visually-hidden">Typ und Kategorie:</span>
+-                {{ item.itemType }} ┬À {{ item.category }}
++                {{ item.itemTypeLabel }} ┬À {{ item.category }}
+               </p>
+               <span
+                 class="issue-card__severity"
+-                [attr.aria-label]="'Schweregrad: ' + item.severityLabel"
++                [attr.aria-label]="'Priorit├ñt: ' + item.priority"
+               >
+-                {{ item.severityLabel }}
++                {{ item.priority }}
+               </span>
+             </div>
+ 
+             <h3 class="issue-card__title">{{ item.title }}</h3>
+-            <p class="issue-card__description">{{ item.description }}</p>
+ 
+-            @if (item.metrics.length > 0) {
+-              <dl class="issue-card__metrics">
+-                @for (metric of item.metrics; track metric.label) {
+-                  <div>
+-                    <dt>{{ metric.label }}</dt>
+-                    <dd>{{ metric.value }}</dd>
+-                  </div>
+-                }
+-              </dl>
+-            }
+-
+-            <dl class="issue-card__ownership">
++            <dl class="issue-card__facts">
++              <div>
++                <dt>Ursache</dt>
++                <dd>{{ item.cause }}</dd>
++              </div>
++              @if (item.impact) {
++                <div>
++                  <dt>Auswirkung</dt>
++                  <dd>{{ item.impact }}</dd>
++                </div>
++              }
++              <div>
++                <dt>Priorit├ñt</dt>
++                <dd>{{ item.priority }}</dd>
++              </div>
+               <div>
+                 <dt>Owner</dt>
+                 <dd>{{ item.owner || 'Nicht zugeordnet' }}</dd>
+               </div>
+               <div>
+                 <dt>F├ñlligkeit</dt>
+-                <dd>{{ formatDate(item.dueDate) }}</dd>
++                <dd>
++                  {{ formatDate(item.dueDate) }}
++                  @if (item.overdueLabel) {
++                    <span class="issue-card__overdue"> ┬À {{ item.overdueLabel }}</span>
++                  }
++                </dd>
++              </div>
++              <div>
++                <dt>Eskalationsbedarf</dt>
++                <dd>{{ item.escalationNeeded ? 'Ja' : 'Nein' }}</dd>
+               </div>
+             </dl>
+ 
+-            @if (item.actionText) {
++            @if (item.nextAction) {
+               <div class="issue-card__action">
+-                <span class="issue-card__action-label">{{ item.actionLabel }}</span>
+-                <p>{{ item.actionText }}</p>
++                <span class="issue-card__action-label">N├ñchste Aktion</span>
++                <p>{{ item.nextAction }}</p>
+               </div>
+             }
+           </li>
+diff --git a/frontend/src/app/features/project/project-issues-actions-section.component.scss b/frontend/src/app/features/project/project-issues-actions-section.component.scss
+index 013a3b6..1393f45 100644
+--- a/frontend/src/app/features/project/project-issues-actions-section.component.scss
++++ b/frontend/src/app/features/project/project-issues-actions-section.component.scss
+@@ -196,3 +196,76 @@
+   color: var(--cgi-primary-darkest);
+   line-height: 1.4;
+ }
++
++.issue-card__facts {
++  margin: 0 0 0.85rem;
++  display: grid;
++  grid-template-columns: 1fr;
++  gap: 0.55rem;
++}
++
++.issue-card__facts dt {
++  margin: 0;
++  font-size: 0.72rem;
++  font-weight: 700;
++  color: var(--cgi-gray-3);
++}
++
++.issue-card__facts dd {
++  margin: 0.15rem 0 0;
++  color: var(--cgi-gray-1);
++  line-height: 1.4;
++}
++
++.issue-card__overdue {
++  color: var(--cgi-red-1);
++  font-weight: 700;
++}
++
++.issues-section__decisions {
++  margin: 0 0 1rem;
++  padding: 1rem;
++  border: 1px solid var(--cgi-gray-7);
++  border-left: 4px solid var(--cgi-red-3);
++  border-radius: 0.75rem;
++  background: var(--cgi-neutral-0, #fff);
++}
++
++.issues-section__decisions h3 {
++  margin: 0 0 0.75rem;
++  color: var(--cgi-primary-darkest);
++  font-size: 1rem;
++}
++
++.issues-section__decisions ul {
++  margin: 0;
++  padding: 0;
++  list-style: none;
++  display: grid;
++  gap: 0.85rem;
++}
++
++.issues-section__decision-title {
++  margin: 0 0 0.5rem;
++  font-weight: 700;
++  color: var(--cgi-gray-1);
++}
++
++.issues-section__decisions dl {
++  margin: 0;
++  display: grid;
++  gap: 0.45rem;
++}
++
++.issues-section__decisions dt {
++  margin: 0;
++  font-size: 0.72rem;
++  font-weight: 700;
++  color: var(--cgi-gray-3);
++}
++
++.issues-section__decisions dd {
++  margin: 0.1rem 0 0;
++  color: var(--cgi-gray-1);
++  line-height: 1.4;
++}
+diff --git a/frontend/src/app/features/project/project-issues-actions-section.component.spec.ts b/frontend/src/app/features/project/project-issues-actions-section.component.spec.ts
+index 4d54a0b..475fc02 100644
+--- a/frontend/src/app/features/project/project-issues-actions-section.component.spec.ts
++++ b/frontend/src/app/features/project/project-issues-actions-section.component.spec.ts
+@@ -18,39 +18,54 @@ describe('ProjectIssuesActionsSectionComponent', () => {
+ 
+   afterEach(() => httpMock.verify());
+ 
++  function flushItems(items: unknown[]): void {
++    httpMock.expectOne(`/api/projects/${projectId}/issues-actions`).flush({
++      projectId,
++      factsBadge: 'Fakten aus Backend',
++      factsAsOf: '2026-07-01T08:00:00Z',
++      items,
++    });
++  }
++
+   it('should render issue cards from the API', () => {
+     const fixture = TestBed.createComponent(ProjectIssuesActionsSectionComponent);
+     fixture.componentRef.setInput('projectId', projectId);
+     fixture.detectChanges();
+ 
+-    httpMock.expectOne(`/api/projects/${projectId}/issues-actions`).flush({
+-      projectId,
+-      factsBadge: 'Fakten aus Backend',
+-      factsAsOf: '2026-07-01T08:00:00Z',
+-      items: [
+-        {
+-          id: 'f0000000-0000-4000-8000-000000000010',
+-          itemType: 'PROBLEM',
+-          itemTypeLabel: 'Problem',
+-          category: 'RESSOURCEN',
+-          title: 'Cloud-Engineering-Kapazit├ñt unterdeckt',
+-          description: 'Bedarf und verf├╝gbare Kapazit├ñt weichen ab.',
+-          severity: 'CRITICAL',
+-          severityLabel: 'Kritisch',
+-          metrics: [
+-            { label: 'Bedarf', value: '3,0 FTE' },
+-            { label: 'Verf├╝gbar', value: '1,0 FTE' },
+-            { label: 'L├╝cke', value: '2,0 FTE' },
+-            { label: 'Auswirkung', value: '+18 Tage' },
+-          ],
+-          owner: 'Projektleitung',
+-          dueDate: '2026-08-05',
+-          actionKind: 'COUNTERMEASURE',
+-          actionLabel: 'Laufende Ma├ƒnahme',
+-          actionText: 'Externe Verst├ñrkung vorbereiten.',
++    flushItems([
++      {
++        id: 'f0000000-0000-4000-8000-000000000010',
++        itemType: 'PROBLEM',
++        itemTypeLabel: 'Problem',
++        category: 'RESSOURCEN',
++        title: 'Cloud-Engineering-Kapazit├ñt unterdeckt',
++        cause: 'Bedarf und verf├╝gbare Kapazit├ñt weichen ab.',
++        impact: 'Auswirkung: +18 Tage',
++        severity: 'CRITICAL',
++        severityLabel: 'Kritisch',
++        priority: 'Kritisch',
++        metrics: [
++          { label: 'Bedarf', value: '3,0 FTE' },
++          { label: 'Verf├╝gbar', value: '1,0 FTE' },
++          { label: 'L├╝cke', value: '2,0 FTE' },
++          { label: 'Auswirkung', value: '+18 Tage' },
++        ],
++        owner: 'Projektleitung',
++        dueDate: '2026-06-24',
++        overdueDays: 7,
++        overdueLabel: '├£berf├ñllig seit 7 Tagen',
++        nextAction: 'Externe Verst├ñrkung vorbereiten und Steering-Entscheidung einholen.',
++        escalationNeeded: true,
++        actionKind: 'COUNTERMEASURE',
++        actionLabel: 'Laufende Ma├ƒnahme',
++        actionText: 'Externe Verst├ñrkung vorbereiten und Steering-Entscheidung einholen.',
++        requiredDecision: {
++          decideWho: 'Projektleitung',
++          decideBy: '2026-06-24',
++          impactIfDeferred: 'Bei Nichtentscheidung bleibt die Auswirkung bestehen: Auswirkung: +18 Tage',
+         },
+-      ],
+-    });
++      },
++    ]);
+     fixture.detectChanges();
+ 
+     const text = fixture.nativeElement.textContent as string;
+@@ -58,8 +73,90 @@ describe('ProjectIssuesActionsSectionComponent', () => {
+     expect(text).toContain('Fakten aus Backend');
+     expect(text).toContain('Cloud-Engineering-Kapazit├ñt unterdeckt');
+     expect(text).toContain('Kritisch');
+-    expect(text).toContain('3,0 FTE');
+-    expect(text).toContain('Laufende Ma├ƒnahme');
++    expect(text).toContain('├£berf├ñllig seit 7 Tagen');
++    expect(text).toContain('Ben├Âtigte Entscheidung');
++    expect(text).toContain('N├ñchste Aktion');
++  });
++
++  it('should show decision block when escalation is required', () => {
++    const fixture = TestBed.createComponent(ProjectIssuesActionsSectionComponent);
++    fixture.componentRef.setInput('projectId', projectId);
++    fixture.detectChanges();
++
++    flushItems([
++      {
++        id: 'f0000000-0000-4000-8000-000000000011',
++        itemType: 'PROBLEM',
++        itemTypeLabel: 'Problem',
++        category: 'TERMIN',
++        title: 'Meilenstein gef├ñhrdet',
++        cause: 'Abh├ñngigkeit offen.',
++        impact: null,
++        severity: 'CRITICAL',
++        severityLabel: 'Kritisch',
++        priority: 'Kritisch',
++        metrics: [],
++        owner: null,
++        dueDate: null,
++        overdueDays: null,
++        overdueLabel: null,
++        nextAction: null,
++        escalationNeeded: true,
++        actionKind: 'COUNTERMEASURE',
++        actionLabel: 'Laufende Ma├ƒnahme',
++        actionText: null,
++        requiredDecision: null,
++      },
++    ]);
++    fixture.detectChanges();
++
++    const text = fixture.nativeElement.textContent as string;
++    expect(text).toContain('Ben├Âtigte Entscheidung');
++    expect(text).toContain('Meilenstein gef├ñhrdet');
++    expect(text).toContain('Entscheidung');
++    expect(text).toContain('Entscheider / Rolle');
++    expect(text).toContain('nicht hinterlegt');
++  });
++
++  it('should hide decision block when escalation is not required', () => {
++    const fixture = TestBed.createComponent(ProjectIssuesActionsSectionComponent);
++    fixture.componentRef.setInput('projectId', projectId);
++    fixture.detectChanges();
++
++    flushItems([
++      {
++        id: 'f0000000-0000-4000-8000-000000000012',
++        itemType: 'RISK',
++        itemTypeLabel: 'Risiko',
++        category: 'QUALITY',
++        title: 'Testabdeckung beobachten',
++        cause: 'Leichte Abweichung.',
++        impact: 'Gering',
++        severity: 'MEDIUM',
++        severityLabel: 'Mittel',
++        priority: 'Mittel',
++        metrics: [],
++        owner: 'QA Lead',
++        dueDate: '2026-08-01',
++        overdueDays: null,
++        overdueLabel: null,
++        nextAction: 'Regressionstests planen',
++        escalationNeeded: false,
++        actionKind: 'MITIGATION',
++        actionLabel: 'Vorbereitung / Gegensteuerung',
++        actionText: 'Regressionstests planen',
++        requiredDecision: {
++          decideWho: 'QA Lead',
++          decideBy: '2026-08-01',
++          impactIfDeferred: 'Qualit├ñt kann sinken',
++        },
++      },
++    ]);
++    fixture.detectChanges();
++
++    const text = fixture.nativeElement.textContent as string;
++    expect(text).toContain('Testabdeckung beobachten');
++    expect(text).not.toContain('Ben├Âtigte Entscheidung');
+   });
+ 
+   it('should show loading state before the response arrives', () => {
+@@ -68,12 +165,7 @@ describe('ProjectIssuesActionsSectionComponent', () => {
+     fixture.detectChanges();
+ 
+     expect(fixture.nativeElement.textContent).toContain('Probleme und Risiken werden geladen');
+-    httpMock.expectOne(`/api/projects/${projectId}/issues-actions`).flush({
+-      projectId,
+-      factsBadge: 'Fakten aus Backend',
+-      factsAsOf: '2026-07-01T08:00:00Z',
+-      items: [],
+-    });
++    flushItems([]);
+   });
+ 
+   it('should show error state when the API fails', () => {
+@@ -95,12 +187,7 @@ describe('ProjectIssuesActionsSectionComponent', () => {
+     fixture.componentRef.setInput('projectId', projectId);
+     fixture.detectChanges();
+ 
+-    httpMock.expectOne(`/api/projects/${projectId}/issues-actions`).flush({
+-      projectId,
+-      factsBadge: 'Fakten aus Backend',
+-      factsAsOf: '2026-07-01T08:00:00Z',
+-      items: [],
+-    });
++    flushItems([]);
+     fixture.detectChanges();
+ 
+     expect(fixture.nativeElement.textContent).toContain(
+diff --git a/frontend/src/app/features/project/project-issues-actions-section.component.ts b/frontend/src/app/features/project/project-issues-actions-section.component.ts
+index 8881c43..b7117d9 100644
+--- a/frontend/src/app/features/project/project-issues-actions-section.component.ts
++++ b/frontend/src/app/features/project/project-issues-actions-section.component.ts
+@@ -3,7 +3,10 @@ import { HttpErrorResponse } from '@angular/common/http';
+ import { take } from 'rxjs';
+ 
+ import { ProjectApiService } from '../../core/api/project-api.service';
+-import { ProjectIssuesActions } from '../../shared/models/project-issues-capacity.model';
++import {
++  IssueActionItem,
++  ProjectIssuesActions,
++} from '../../shared/models/project-issues-capacity.model';
+ 
+ type LoadStatus = 'loading' | 'success' | 'error';
+ 
+@@ -43,9 +46,37 @@ export class ProjectIssuesActionsSectionComponent {
+       });
+   }
+ 
+-  formatDate(value: string | null): string {
++  /** Entscheidungsblock nur bei Eskalationsbedarf (`escalationNeeded`). */
++  escalationItems(items: IssueActionItem[]): IssueActionItem[] {
++    return items.filter((item) => item.escalationNeeded);
++  }
++
++  decisionText(item: IssueActionItem): string {
++    const fromAction = item.nextAction?.trim() || item.actionText?.trim();
++    if (fromAction) {
++      return fromAction;
++    }
++    return 'nicht hinterlegt';
++  }
++
++  decisionOwner(item: IssueActionItem): string {
++    const who = item.requiredDecision?.decideWho?.trim() || item.owner?.trim();
++    return who || 'nicht hinterlegt';
++  }
++
++  decisionDue(item: IssueActionItem): string {
++    const due = item.requiredDecision?.decideBy ?? item.dueDate;
++    return this.formatDate(due);
++  }
++
++  decisionImpact(item: IssueActionItem): string {
++    const impact = item.requiredDecision?.impactIfDeferred?.trim();
++    return impact || 'nicht hinterlegt';
++  }
++
++  formatDate(value: string | null | undefined): string {
+     if (!value) {
+-      return 'Nicht gesetzt';
++      return 'nicht hinterlegt';
+     }
+     return new Intl.DateTimeFormat('de-DE').format(new Date(value));
+   }
+diff --git a/frontend/src/app/features/project/project-phases-section.component.html b/frontend/src/app/features/project/project-phases-section.component.html
+index f566a26..3c0cb83 100644
+--- a/frontend/src/app/features/project/project-phases-section.component.html
++++ b/frontend/src/app/features/project/project-phases-section.component.html
+@@ -1,7 +1,7 @@
+ <section class="project-phases-section" aria-labelledby="project-phases-heading">
+-  <h2 id="project-phases-heading">Phasen &amp; Meilensteine</h2>
++  <h2 id="project-phases-heading">Projektzeitplan &amp; Meilensteine</h2>
+   <p class="project-phases-section__hint">
+-    Terminplan mit Planterminen. Blockaden sind noch nicht modelliert [OFFEN].
++    Relevanter Zeitraum mit Heute-Linie, aktueller Phase sowie Plan- und Forecast-Ende.
+   </p>
+ 
+   @if (status() === 'loading') {
+@@ -13,19 +13,47 @@
+     </div>
+   } @else if (phases(); as data) {
+     <p class="visually-hidden">{{ data.accessibilitySummary }}</p>
+-    <app-gantt-timeline [projects]="ganttProjects()" />
++    <app-gantt-timeline [projects]="ganttProjects()" variant="project" />
+ 
+-    <ul class="project-phases-section__milestones" aria-label="Meilensteine">
+-      @for (milestone of data.milestones; track milestone.name) {
+-        <li [class.project-phases-section__milestone--overdue]="milestone.overdue">
+-          <strong>{{ milestone.name }}</strong>
+-          ÔÇö {{ milestone.statusLabel }}
+-          (Plan: {{ milestone.plannedDueDate }})
+-          @if (milestone.deviationDays != null) {
+-            , Abweichung {{ milestone.deviationDays }} Tage
+-          }
+-        </li>
+-      }
+-    </ul>
++    @if (data.milestones.length > 0) {
++      <h3 class="project-phases-section__milestones-heading" id="project-milestones-heading">
++        Meilensteine
++      </h3>
++      <ul
++        class="project-phases-section__milestones"
++        aria-labelledby="project-milestones-heading"
++      >
++        @for (milestone of sortedMilestones(data.milestones); track milestone.name) {
++          <li
++            class="milestone-card"
++            [class.milestone-card--overdue]="milestone.overdue"
++            [class.milestone-card--done]="isDone(milestone.status)"
++          >
++            <div class="milestone-card__top">
++              <p class="milestone-card__name">{{ milestone.name }}</p>
++              <span class="milestone-card__status">{{ milestone.statusLabel }}</span>
++            </div>
++            <dl class="milestone-card__facts">
++              <div>
++                <dt>Plantermin</dt>
++                <dd>{{ formatDate(milestone.plannedDueDate) }}</dd>
++              </div>
++              <div>
++                <dt>Abweichung</dt>
++                <dd>
++                  @if (milestone.deviationDays == null) {
++                    Nicht hinterlegt
++                  } @else if (milestone.deviationDays === 0) {
++                    Keine
++                  } @else {
++                    {{ formatDeviation(milestone.deviationDays) }}
++                  }
++                </dd>
++              </div>
++            </dl>
++          </li>
++        }
++      </ul>
++    }
+   }
+ </section>
+diff --git a/frontend/src/app/features/project/project-phases-section.component.scss b/frontend/src/app/features/project/project-phases-section.component.scss
+index 17143a1..485c856 100644
+--- a/frontend/src/app/features/project/project-phases-section.component.scss
++++ b/frontend/src/app/features/project/project-phases-section.component.scss
+@@ -1,5 +1,36 @@
+ .project-phases-section {
+   margin-bottom: 1.5rem;
++
++  // Projekt-Gantt: kompakter, ohne Portfolio-Namensspalte
++  ::ng-deep .gantt-timeline--project {
++    .gantt-timeline__frame {
++      max-height: none;
++    }
++
++    .gantt-timeline__canvas {
++      min-width: 0;
++    }
++
++    .gantt-timeline__row,
++    .gantt-timeline__track {
++      height: 5.25rem;
++    }
++
++    .gantt-timeline__bar,
++    .gantt-timeline__overrun {
++      top: 2.35rem;
++    }
++
++    .gantt-timeline__handover--plan .gantt-timeline__handover-line {
++      border-left-color: var(--cgi-purple-1);
++    }
++
++    .gantt-timeline__handover--plan .gantt-timeline__handover-detail {
++      display: block;
++      top: auto;
++      bottom: 1.15rem;
++    }
++  }
+ }
+ 
+ .project-phases-section h2 {
+@@ -10,6 +41,7 @@
+ .project-phases-section__hint {
+   margin: 0 0 1rem;
+   color: var(--cgi-gray-3);
++  font-size: 0.875rem;
+ }
+ 
+ .project-phases-section__error {
+@@ -19,15 +51,101 @@
+   background: #ffcdd2;
+ }
+ 
++.project-phases-section__milestones-heading {
++  margin: 1.25rem 0 0.65rem;
++  color: var(--cgi-primary-darkest);
++  font-size: 1rem;
++  font-weight: 700;
++}
++
+ .project-phases-section__milestones {
+-  margin: 1rem 0 0;
+-  padding-left: 1.25rem;
+-  color: var(--cgi-gray-2);
++  display: grid;
++  grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
++  gap: 0.75rem;
++  margin: 0;
++  padding: 0;
++  list-style: none;
++}
++
++.milestone-card {
++  display: flex;
++  flex-direction: column;
++  gap: 0.55rem;
++  padding: 0.85rem 1rem;
++  border: 1px solid var(--cgi-gray-6);
++  border-left-width: 4px;
++  border-left-color: var(--cgi-purple-4);
++  border-radius: 0.5rem;
++  background: var(--cgi-surface);
++  box-shadow: 0 1px 3px rgb(32 10 88 / 7%);
++}
++
++.milestone-card--overdue {
++  border-left-color: var(--cgi-orange-3, #e65100);
++  background: color-mix(in srgb, var(--cgi-orange-3, #e65100) 6%, #fff);
++}
++
++.milestone-card--done {
++  border-left-color: var(--cgi-green-3, #2e7d32);
++}
++
++.milestone-card__top {
++  display: flex;
++  flex-wrap: wrap;
++  align-items: flex-start;
++  justify-content: space-between;
++  gap: 0.35rem 0.75rem;
+ }
+ 
+-.project-phases-section__milestone--overdue {
+-  color: var(--cgi-red-3);
++.milestone-card__name {
++  margin: 0;
++  color: var(--cgi-primary-darkest);
++  font-size: 0.9rem;
++  font-weight: 700;
++  line-height: 1.3;
++}
++
++.milestone-card__status {
++  display: inline-block;
++  padding: 0.15rem 0.45rem;
++  border-radius: 0.25rem;
++  background: var(--cgi-purple-7);
++  color: var(--cgi-primary-darkest);
++  font-size: 0.6875rem;
++  font-weight: 700;
++  line-height: 1.3;
++}
++
++.milestone-card--overdue .milestone-card__status {
++  background: color-mix(in srgb, var(--cgi-orange-3, #e65100) 16%, #fff);
++  color: var(--cgi-orange-3, #e65100);
++}
++
++.milestone-card--done .milestone-card__status {
++  background: color-mix(in srgb, var(--cgi-green-3, #2e7d32) 14%, #fff);
++  color: var(--cgi-green-3, #2e7d32);
++}
++
++.milestone-card__facts {
++  display: grid;
++  grid-template-columns: 1fr 1fr;
++  gap: 0.5rem;
++  margin: 0;
++}
++
++.milestone-card__facts dt {
++  margin: 0 0 0.15rem;
++  color: var(--cgi-gray-3);
++  font-size: 0.6875rem;
++  font-weight: 700;
++}
++
++.milestone-card__facts dd {
++  margin: 0;
++  color: var(--cgi-gray-1);
++  font-size: 0.8125rem;
+   font-weight: 600;
++  font-variant-numeric: tabular-nums;
+ }
+ 
+ .visually-hidden {
+@@ -41,3 +159,13 @@
+   white-space: nowrap;
+   border: 0;
+ }
++
++@media (max-width: 520px) {
++  .project-phases-section__milestones {
++    grid-template-columns: 1fr;
++  }
++
++  .milestone-card__facts {
++    grid-template-columns: 1fr;
++  }
++}
+diff --git a/frontend/src/app/features/project/project-phases-section.component.spec.ts b/frontend/src/app/features/project/project-phases-section.component.spec.ts
+index cffbc61..dcb6e28 100644
+--- a/frontend/src/app/features/project/project-phases-section.component.spec.ts
++++ b/frontend/src/app/features/project/project-phases-section.component.spec.ts
+@@ -17,7 +17,7 @@ describe('ProjectPhasesSectionComponent', () => {
+ 
+   afterEach(() => httpMock.verify());
+ 
+-  it('should render phases gantt and overdue milestone summary (Story 6.4)', () => {
++  it('should render project schedule heading, gantt markers and milestone cards (Story 6.4)', () => {
+     const fixture = TestBed.createComponent(ProjectPhasesSectionComponent);
+     fixture.componentRef.setInput('projectId', 'a0000000-0000-4000-8000-000000000001');
+     fixture.detectChanges();
+@@ -27,17 +27,17 @@ describe('ProjectPhasesSectionComponent', () => {
+       projectName: 'Nexus Analytics Pilot',
+       startDate: '2025-03-01',
+       plannedEndDate: '2026-06-30',
+-      forecastEndDate: '2026-06-30',
++      forecastEndDate: '2026-07-15',
+       actualEndDate: null,
+-      scheduleDeviationDays: 0,
++      scheduleDeviationDays: 15,
+       status: 'ON_TRACK',
+       statusLabel: 'Auf Kurs',
+       phases: [
+         {
+           name: 'Umsetzung',
+           phaseType: 'IMPLEMENTATION',
+-          status: 'COMPLETED',
+-          statusLabel: 'Abgeschlossen',
++          status: 'IN_PROGRESS',
++          statusLabel: 'Laufend',
+           plannedStartDate: '2025-06-01',
+           plannedEndDate: '2026-03-31',
+           actualOrForecastStartDate: null,
+@@ -58,15 +58,34 @@ describe('ProjectPhasesSectionComponent', () => {
+           overdue: true,
+           blockers: null,
+         },
++        {
++          name: 'Go-Live',
++          status: 'PLANNED',
++          statusLabel: 'Geplant',
++          plannedDueDate: '2026-09-01',
++          actualOrForecastDate: null,
++          deviationDays: 0,
++          overdue: false,
++          blockers: null,
++        },
+       ],
+       accessibilitySummary: 'Phasen: Umsetzung. ├£berf├ñllige Meilensteine: Pilot-Release.',
+     });
+     fixture.detectChanges();
+ 
+     const text = fixture.nativeElement.textContent as string;
+-    expect(text).toContain('Phasen & Meilensteine');
++    expect(text).toContain('Projektzeitplan & Meilensteine');
++    expect(text).not.toContain('Portfolio-Zeitleiste');
++    expect(text).not.toContain('Terminlage');
++    expect(text).toContain('Planende');
++    expect(text).toContain('Forecast-Ende');
++    expect(text).toContain('Heute');
+     expect(text).toContain('Pilot-Release');
+     expect(text).toContain('├£berf├ñllig');
++    expect(text).toContain('Go-Live');
++    expect(text).toContain('+1 Tage');
++    expect(fixture.nativeElement.querySelectorAll('.milestone-card').length).toBe(2);
++    expect(fixture.nativeElement.querySelector('.milestone-card--overdue')).toBeTruthy();
+     expect(text).toContain('├£berf├ñllige Meilensteine: Pilot-Release.');
+   });
+ });
+diff --git a/frontend/src/app/features/project/project-phases-section.component.ts b/frontend/src/app/features/project/project-phases-section.component.ts
+index be2fd34..95ee6d9 100644
+--- a/frontend/src/app/features/project/project-phases-section.component.ts
++++ b/frontend/src/app/features/project/project-phases-section.component.ts
+@@ -4,7 +4,11 @@ import { take } from 'rxjs';
+ 
+ import { ProjectApiService } from '../../core/api/project-api.service';
+ import { GanttTimelineComponent } from '../../shared/components/gantt-timeline.component';
+-import { ProjectPhases, toGanttProject } from '../../shared/models/project-phases.model';
++import {
++  ProjectMilestoneItem,
++  ProjectPhases,
++  toGanttProject,
++} from '../../shared/models/project-phases.model';
+ 
+ type LoadStatus = 'loading' | 'success' | 'error';
+ 
+@@ -53,6 +57,37 @@ export class ProjectPhasesSectionComponent {
+       });
+   }
+ 
++  /** ├£berf├ñllige zuerst, danach nach Plantermin. */
++  sortedMilestones(milestones: ProjectMilestoneItem[]): ProjectMilestoneItem[] {
++    return [...milestones].sort((a, b) => {
++      if (a.overdue !== b.overdue) {
++        return a.overdue ? -1 : 1;
++      }
++      return a.plannedDueDate.localeCompare(b.plannedDueDate);
++    });
++  }
++
++  formatDate(iso: string): string {
++    const [year, month, day] = iso.split('-').map(Number);
++    return new Intl.DateTimeFormat('de-DE').format(new Date(year, month - 1, day));
++  }
++
++  formatDeviation(days: number): string {
++    const abs = Math.abs(days);
++    if (days > 0) {
++      return `+${abs} Tage`;
++    }
++    if (days < 0) {
++      return `ÔêÆ${abs} Tage`;
++    }
++    return 'Keine';
++  }
++
++  isDone(status: string): boolean {
++    const normalized = status?.toUpperCase() ?? '';
++    return normalized === 'COMPLETED' || normalized === 'DONE';
++  }
++
+   private resolveErrorMessage(error: unknown): string {
+     if (error instanceof HttpErrorResponse) {
+       const body = error.error as { message?: string } | null;
+diff --git a/frontend/src/app/features/project/project-report-comparison.component.html b/frontend/src/app/features/project/project-report-comparison.component.html
+index 3d99702..313d195 100644
+--- a/frontend/src/app/features/project/project-report-comparison.component.html
++++ b/frontend/src/app/features/project/project-report-comparison.component.html
+@@ -15,32 +15,28 @@
+         {{ data.unavailableReason || 'Kein vorheriger Berichtsstand vorhanden ÔÇö Vergleich nicht m├Âglich.' }}
+       </p>
+     } @else {
+-      <dl>
+-        <div>
+-          <dt>Berichtsst├ñnde</dt>
+-          <dd>{{ data.previousSnapshotDate }} ÔåÆ {{ data.currentSnapshotDate }}</dd>
+-        </div>
+-        <div>
+-          <dt>Fortschritt ╬ö</dt>
+-          <dd>{{ formatSigned(data.progressDeltaPercent, ' %') }}</dd>
+-        </div>
+-        <div>
+-          <dt>Budgetverbrauch ╬ö</dt>
+-          <dd>{{ formatSigned(data.budgetActualDelta, ' Ôé¼') }}</dd>
+-        </div>
+-        <div>
+-          <dt>Terminabweichung ╬ö</dt>
+-          <dd>{{ formatSigned(data.scheduleDeviationDeltaDays, ' Tage') }}</dd>
+-        </div>
+-        <div>
+-          <dt>Ampelstatus</dt>
+-          <dd>{{ data.previousStatusLabel }} ÔåÆ {{ data.currentStatusLabel }}</dd>
+-        </div>
+-        <div>
+-          <dt>Offene Risiken ╬ö</dt>
+-          <dd>{{ formatSigned(data.openRiskCountDelta) }}</dd>
+-        </div>
+-      </dl>
++      <p class="report-comparison__period">
++        Berichtsst├ñnde {{ data.previousSnapshotDate }} ÔåÆ {{ data.currentSnapshotDate }}
++      </p>
++      <ul class="report-comparison__cards" aria-label="Kennzahl-Vergleich">
++        @for (card of comparisonCards(data); track card.id) {
++          <li
++            class="report-comparison__card"
++            [class.report-comparison__card--improved]="card.tone === 'improved'"
++            [class.report-comparison__card--worsened]="card.tone === 'worsened'"
++            [class.report-comparison__card--unchanged]="card.tone === 'unchanged' || card.tone === 'neutral'"
++          >
++            <p class="report-comparison__metric">{{ card.metric }}</p>
++            <p class="report-comparison__change">
++              <span class="report-comparison__icon" aria-hidden="true">{{ card.icon }}</span>
++              <span>{{ card.change }}</span>
++            </p>
++            <p class="report-comparison__assessment">
++              <span class="visually-hidden">Bewertung: </span>{{ card.assessment }}
++            </p>
++          </li>
++        }
++      </ul>
+     }
+   }
+ </section>
+diff --git a/frontend/src/app/features/project/project-report-comparison.component.scss b/frontend/src/app/features/project/project-report-comparison.component.scss
+index cf9e31a..82790a5 100644
+--- a/frontend/src/app/features/project/project-report-comparison.component.scss
++++ b/frontend/src/app/features/project/project-report-comparison.component.scss
+@@ -8,9 +8,10 @@
+ }
+ 
+ .report-comparison__hint,
+-.report-comparison__missing {
+-  margin: 0 0 1rem;
++.report-comparison__period {
++  margin: 0 0 0.75rem;
+   color: var(--cgi-gray-3);
++  font-size: 0.875rem;
+ }
+ 
+ .report-comparison__error {
+@@ -21,6 +22,7 @@
+ }
+ 
+ .report-comparison__missing {
++  margin: 0;
+   padding: 1rem;
+   border: 1px dashed var(--cgi-purple-6);
+   border-radius: 0.75rem;
+@@ -28,28 +30,108 @@
+   color: var(--cgi-primary-darkest);
+ }
+ 
+-.report-comparison dl {
+-  margin: 0;
++.report-comparison__cards {
+   display: grid;
+-  grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));
++  grid-template-columns: repeat(auto-fit, minmax(10.5rem, 1fr));
+   gap: 0.75rem;
++  margin: 0;
++  padding: 0;
++  list-style: none;
+ }
+ 
+-.report-comparison div {
+-  padding: 0.75rem;
+-  border: 1px solid var(--cgi-gray-7);
+-  border-radius: 0.75rem;
++.report-comparison__card {
++  display: flex;
++  flex-direction: column;
++  gap: 0.35rem;
++  min-height: 6.5rem;
++  padding: 0.85rem 1rem;
++  border: 1px solid var(--cgi-gray-6);
++  border-left-width: 4px;
++  border-radius: 0.5rem;
+   background: var(--cgi-surface);
++  box-shadow: 0 1px 3px rgb(32 10 88 / 7%);
++}
++
++.report-comparison__card--improved {
++  border-left-color: var(--cgi-green-3, #2e7d32);
++}
++
++.report-comparison__card--worsened {
++  border-left-color: var(--cgi-orange-3, #e65100);
+ }
+ 
+-.report-comparison dt {
+-  margin-bottom: 0.25rem;
++.report-comparison__card--unchanged {
++  border-left-color: var(--cgi-gray-5, #9e9e9e);
++}
++
++.report-comparison__metric {
++  margin: 0;
++  color: var(--cgi-gray-3);
+   font-size: 0.75rem;
+   font-weight: 700;
+-  color: var(--cgi-gray-3);
++  letter-spacing: 0.02em;
++  text-transform: uppercase;
+ }
+ 
+-.report-comparison dd {
++.report-comparison__change {
++  display: flex;
++  align-items: baseline;
++  gap: 0.35rem;
+   margin: 0;
++  color: var(--cgi-primary-darkest);
++  font-size: 0.95rem;
++  font-weight: 700;
++  font-variant-numeric: tabular-nums;
++  line-height: 1.25;
++}
++
++.report-comparison__icon {
++  flex: 0 0 auto;
++  font-size: 1rem;
++  line-height: 1;
++}
++
++.report-comparison__card--improved .report-comparison__icon,
++.report-comparison__card--improved .report-comparison__assessment {
++  color: var(--cgi-green-3, #2e7d32);
++}
++
++.report-comparison__card--worsened .report-comparison__icon,
++.report-comparison__card--worsened .report-comparison__assessment {
++  color: var(--cgi-orange-3, #e65100);
++}
++
++.report-comparison__card--unchanged .report-comparison__assessment {
++  color: var(--cgi-gray-3);
++}
++
++.report-comparison__assessment {
++  margin: auto 0 0;
++  font-size: 0.75rem;
+   font-weight: 600;
++  line-height: 1.3;
++}
++
++.visually-hidden {
++  position: absolute;
++  width: 1px;
++  height: 1px;
++  padding: 0;
++  margin: -1px;
++  overflow: hidden;
++  clip: rect(0, 0, 0, 0);
++  white-space: nowrap;
++  border: 0;
++}
++
++@media (max-width: 640px) {
++  .report-comparison__cards {
++    grid-template-columns: 1fr 1fr;
++  }
++}
++
++@media (max-width: 420px) {
++  .report-comparison__cards {
++    grid-template-columns: 1fr;
++  }
+ }
+diff --git a/frontend/src/app/features/project/project-report-comparison.component.spec.ts b/frontend/src/app/features/project/project-report-comparison.component.spec.ts
+index 70c058b..ffc9b33 100644
+--- a/frontend/src/app/features/project/project-report-comparison.component.spec.ts
++++ b/frontend/src/app/features/project/project-report-comparison.component.spec.ts
+@@ -17,7 +17,7 @@ describe('ProjectReportComparisonComponent', () => {
+ 
+   afterEach(() => httpMock.verify());
+ 
+-  it('should render deltas when comparison is available (Story 6.7)', () => {
++  it('should render comparison cards with text assessment (Story 6.7)', () => {
+     const fixture = TestBed.createComponent(ProjectReportComparisonComponent);
+     fixture.componentRef.setInput('projectId', 'a0000000-0000-4000-8000-000000000001');
+     fixture.detectChanges();
+@@ -42,7 +42,19 @@ describe('ProjectReportComparisonComponent', () => {
+     const text = fixture.nativeElement.textContent as string;
+     expect(text).toContain('Berichtsstandsvergleich');
+     expect(text).toContain('2026-06-01');
+-    expect(text).toContain('+5 %');
++    expect(text).toContain('Fortschritt');
++    expect(text).toContain('+5 Prozentpunkte');
++    expect(text).toContain('Verbesserung');
++    expect(text).toContain('Ist-Kosten');
++    expect(text).toContain('+12.000 Ôé¼');
++    expect(text).toContain('Kosten gestiegen');
++    expect(text).toContain('Termin');
++    expect(text).toContain('Unver├ñndert');
++    expect(text).toContain('Risiken');
++    expect(text).toContain('ÔêÆ1 offene Risiken');
++    expect(fixture.nativeElement.querySelectorAll('.report-comparison__card').length).toBe(5);
++    expect(fixture.nativeElement.querySelector('.report-comparison__card--improved')).toBeTruthy();
++    expect(fixture.nativeElement.querySelector('.report-comparison__card--worsened')).toBeTruthy();
+   });
+ 
+   it('should show defined hint when previous snapshot is missing (Story 6.7)', () => {
+diff --git a/frontend/src/app/features/project/project-report-comparison.component.ts b/frontend/src/app/features/project/project-report-comparison.component.ts
+index 2dc8bc0..589fa34 100644
+--- a/frontend/src/app/features/project/project-report-comparison.component.ts
++++ b/frontend/src/app/features/project/project-report-comparison.component.ts
+@@ -6,6 +6,16 @@ import { ProjectApiService } from '../../core/api/project-api.service';
+ import { ProjectTrends } from '../../shared/models/project-insights.model';
+ 
+ type LoadStatus = 'loading' | 'success' | 'error';
++export type ComparisonTone = 'improved' | 'worsened' | 'unchanged' | 'neutral';
++
++export interface ComparisonCard {
++  id: string;
++  metric: string;
++  change: string;
++  assessment: string;
++  tone: ComparisonTone;
++  icon: string;
++}
+ 
+ @Component({
+   selector: 'app-project-report-comparison',
+@@ -46,12 +56,141 @@ export class ProjectReportComparisonComponent {
+       });
+   }
+ 
+-  formatSigned(value: number | null | undefined, suffix = ''): string {
+-    if (value == null) {
+-      return 'ÔÇö';
++  comparisonCards(data: ProjectTrends): ComparisonCard[] {
++    const cards: ComparisonCard[] = [];
++
++    if (data.progressDeltaPercent != null) {
++      const delta = data.progressDeltaPercent;
++      const abs = Math.abs(delta).toLocaleString('de-DE');
++      cards.push({
++        id: 'progress',
++        metric: 'Fortschritt',
++        change:
++          delta === 0
++            ? 'Unver├ñndert'
++            : delta > 0
++              ? `+${abs} Prozentpunkte`
++              : `ÔêÆ${abs} Prozentpunkte`,
++        assessment:
++          delta === 0 ? 'Stabil' : delta > 0 ? 'Verbesserung' : 'Verschlechterung',
++        tone: delta === 0 ? 'unchanged' : delta > 0 ? 'improved' : 'worsened',
++        icon: delta === 0 ? 'ÔåÆ' : delta > 0 ? 'Ôåæ' : 'Ôåô',
++      });
++    }
++
++    if (data.budgetActualDelta != null) {
++      const delta = data.budgetActualDelta;
++      const abs = Math.abs(delta).toLocaleString('de-DE');
++      cards.push({
++        id: 'costs',
++        metric: 'Ist-Kosten',
++        change: delta === 0 ? 'Unver├ñndert' : delta > 0 ? `+${abs} Ôé¼` : `ÔêÆ${abs} Ôé¼`,
++        assessment:
++          delta === 0
++            ? 'Stabil'
++            : delta > 0
++              ? 'Kosten gestiegen'
++              : 'Kosten gesunken',
++        tone: delta === 0 ? 'unchanged' : delta > 0 ? 'worsened' : 'improved',
++        icon: delta === 0 ? 'ÔåÆ' : delta > 0 ? 'Ôåæ' : 'Ôåô',
++      });
++    }
++
++    if (data.scheduleDeviationDeltaDays != null) {
++      const delta = data.scheduleDeviationDeltaDays;
++      const abs = Math.abs(delta).toLocaleString('de-DE');
++      cards.push({
++        id: 'schedule',
++        metric: 'Termin',
++        change:
++          delta === 0
++            ? 'Unver├ñndert'
++            : delta > 0
++              ? `+${abs} Tage Abweichung`
++              : `ÔêÆ${abs} Tage Abweichung`,
++        assessment:
++          delta === 0
++            ? 'Stabil'
++            : delta > 0
++              ? 'Verschlechterung'
++              : 'Verbesserung',
++        tone: delta === 0 ? 'unchanged' : delta > 0 ? 'worsened' : 'improved',
++        icon: delta === 0 ? 'ÔåÆ' : delta > 0 ? 'Ôåô' : 'Ôåæ',
++      });
++    }
++
++    if (data.previousStatusLabel && data.currentStatusLabel) {
++      const tone = this.statusTone(data.previousStatus, data.currentStatus);
++      cards.push({
++        id: 'status',
++        metric: 'Status',
++        change:
++          data.previousStatusLabel === data.currentStatusLabel
++            ? data.currentStatusLabel
++            : `${data.previousStatusLabel} ÔåÆ ${data.currentStatusLabel}`,
++        assessment:
++          tone === 'unchanged'
++            ? 'Unver├ñndert'
++            : tone === 'improved'
++              ? 'Verbesserung'
++              : tone === 'worsened'
++                ? 'Verschlechterung'
++                : 'Statuswechsel',
++        tone,
++        icon: tone === 'improved' ? 'Ôåæ' : tone === 'worsened' ? 'Ôåô' : 'ÔåÆ',
++      });
++    }
++
++    if (data.openRiskCountDelta != null) {
++      const delta = data.openRiskCountDelta;
++      const abs = Math.abs(delta).toLocaleString('de-DE');
++      cards.push({
++        id: 'risks',
++        metric: 'Risiken',
++        change:
++          delta === 0
++            ? 'Unver├ñndert'
++            : delta > 0
++              ? `+${abs} offene Risiken`
++              : `ÔêÆ${abs} offene Risiken`,
++        assessment:
++          delta === 0
++            ? 'Stabil'
++            : delta > 0
++              ? 'Verschlechterung'
++              : 'Verbesserung',
++        tone: delta === 0 ? 'unchanged' : delta > 0 ? 'worsened' : 'improved',
++        icon: delta === 0 ? 'ÔåÆ' : delta > 0 ? 'Ôåæ' : 'Ôåô',
++      });
++    }
++
++    return cards;
++  }
++
++  private statusTone(
++    previous: string | null | undefined,
++    current: string | null | undefined,
++  ): ComparisonTone {
++    if (!previous || !current || previous === current) {
++      return 'unchanged';
++    }
++    const rank = (code: string): number => {
++      switch (code.toUpperCase()) {
++        case 'ON_TRACK':
++          return 0;
++        case 'AT_RISK':
++          return 1;
++        case 'CRITICAL':
++        case 'OFF_TRACK':
++          return 2;
++        default:
++          return 1;
++      }
++    };
++    const delta = rank(current) - rank(previous);
++    if (delta === 0) {
++      return 'neutral';
+     }
+-    const abs = Math.abs(value).toLocaleString('de-DE');
+-    const sign = value > 0 ? '+' : value < 0 ? 'ÔêÆ' : '';
+-    return `${sign}${abs}${suffix}`;
++    return delta < 0 ? 'improved' : 'worsened';
+   }
+ }
+diff --git a/frontend/src/app/features/project/project-team-capacity-section.component.html b/frontend/src/app/features/project/project-team-capacity-section.component.html
+index 496493e..9109a8c 100644
+--- a/frontend/src/app/features/project/project-team-capacity-section.component.html
++++ b/frontend/src/app/features/project/project-team-capacity-section.component.html
+@@ -1,29 +1,32 @@
+-<section class="capacity-section" aria-labelledby="capacity-section-heading">
+-  <div class="capacity-section__header">
+-    <div>
+-      <h2 id="capacity-section-heading">Team &amp; Kapazit├ñt</h2>
+-      <p class="capacity-section__subtitle">
+-        Projektbezogene Rollen- und Skill-Abdeckung ohne sensible Personaldetails
+-      </p>
++@if (status() === 'loading') {
++  <p class="capacity-section__state" aria-live="polite">Kapazit├ñtsdaten werden geladen ÔÇª</p>
++} @else if (status() === 'error') {
++  <section class="capacity-section" aria-labelledby="capacity-section-heading">
++    <div class="capacity-section__header">
++      <div>
++        <h2 id="capacity-section-heading">Team &amp; Kapazit├ñt</h2>
++      </div>
+     </div>
+-    @if (status() === 'success' && data(); as payload) {
+-      <span class="capacity-section__badge">{{ payload.factsBadge }}</span>
+-    }
+-  </div>
+-
+-  @if (status() === 'loading') {
+-    <p class="capacity-section__state" aria-live="polite">Kapazit├ñtsdaten werden geladen ÔÇª</p>
+-  } @else if (status() === 'error') {
+     <div class="capacity-section__error" role="alert">
+       <p>{{ errorMessage() }}</p>
+       <button type="button" (click)="load()">Erneut laden</button>
+     </div>
+-  } @else if (data(); as payload) {
+-    @if (payload.roles.length === 0 && !payload.summary) {
+-      <p class="capacity-section__state" role="status">
+-        Keine Kapazit├ñtsdaten f├╝r dieses Projekt hinterlegt.
+-      </p>
+-    } @else {
++  </section>
++} @else if (hasRoles()) {
++  <section class="capacity-section" aria-labelledby="capacity-section-heading">
++    <div class="capacity-section__header">
++      <div>
++        <h2 id="capacity-section-heading">Team &amp; Kapazit├ñt</h2>
++        <p class="capacity-section__subtitle">
++          Projektbezogene Rollen- und Skill-Abdeckung ohne sensible Personaldetails
++        </p>
++      </div>
++      @if (data(); as payload) {
++        <span class="capacity-section__badge">{{ payload.factsBadge }}</span>
++      }
++    </div>
++
++    @if (data(); as payload) {
+       <div class="capacity-section__grid">
+         <ul class="capacity-section__roles" aria-label="Rollenbesetzung">
+           @for (role of payload.roles; track role.id) {
+@@ -46,6 +49,9 @@
+               </div>
+               <p class="capacity-section__role-meta">
+                 {{ formatFte(role.availableFte) }} / {{ formatFte(role.requiredFte) }} FTE verf├╝gbar
++                @if (role.coveragePercent < 100) {
++                  ┬À Unterdeckung {{ formatFte(role.requiredFte - role.availableFte) }} FTE
++                }
+               </p>
+             </li>
+           }
+@@ -57,7 +63,7 @@
+             <p class="capacity-section__summary-detail">{{ summary.impactDetail }}</p>
+             <dl>
+               <div>
+-                <dt>Fehlende Rollen</dt>
++                <dt>Fehlende Kapazit├ñt</dt>
+                 <dd>{{ formatFte(summary.missingFte) }} FTE</dd>
+               </div>
+               <div>
+@@ -65,7 +71,7 @@
+                 <dd>{{ formatDate(summary.nextAvailabilityDate) }}</dd>
+               </div>
+               <div>
+-                <dt>├£berlastete Rollen</dt>
++                <dt>Kritische / ├╝berlastete Rollen</dt>
+                 <dd>{{ summary.overloadedRoles }}</dd>
+               </div>
+               <div>
+@@ -77,5 +83,5 @@
+         }
+       </div>
+     }
+-  }
+-</section>
++  </section>
++}
+diff --git a/frontend/src/app/features/project/project-team-capacity-section.component.spec.ts b/frontend/src/app/features/project/project-team-capacity-section.component.spec.ts
+index 1d9ba57..2e99a89 100644
+--- a/frontend/src/app/features/project/project-team-capacity-section.component.spec.ts
++++ b/frontend/src/app/features/project/project-team-capacity-section.component.spec.ts
+@@ -92,7 +92,7 @@ describe('ProjectTeamCapacitySectionComponent', () => {
+     expect(fixture.nativeElement.textContent).toContain('Kapazit├ñt nicht verf├╝gbar');
+   });
+ 
+-  it('should show empty state when no capacity data exists', () => {
++  it('should hide the section entirely when no role capacity rows exist', () => {
+     const fixture = TestBed.createComponent(ProjectTeamCapacitySectionComponent);
+     fixture.componentRef.setInput('projectId', projectId);
+     fixture.detectChanges();
+@@ -106,8 +106,8 @@ describe('ProjectTeamCapacitySectionComponent', () => {
+     });
+     fixture.detectChanges();
+ 
+-    expect(fixture.nativeElement.textContent).toContain(
+-      'Keine Kapazit├ñtsdaten f├╝r dieses Projekt hinterlegt.',
+-    );
++    const text = fixture.nativeElement.textContent as string;
++    expect(text).not.toContain('Team & Kapazit├ñt');
++    expect(text).not.toContain('Keine Kapazit├ñtsdaten');
+   });
+ });
+diff --git a/frontend/src/app/features/project/project-team-capacity-section.component.ts b/frontend/src/app/features/project/project-team-capacity-section.component.ts
+index 936969b..6aeebb8 100644
+--- a/frontend/src/app/features/project/project-team-capacity-section.component.ts
++++ b/frontend/src/app/features/project/project-team-capacity-section.component.ts
+@@ -20,6 +20,12 @@ export class ProjectTeamCapacitySectionComponent {
+   readonly data = signal<ProjectCapacity | null>(null);
+   readonly errorMessage = signal<string | null>(null);
+ 
++  /** Section is shown only when role capacity rows exist ÔÇö no empty placeholder. */
++  hasRoles(): boolean {
++    const payload = this.data();
++    return !!payload && payload.roles.length > 0;
++  }
++
+   constructor() {
+     effect(() => this.load(this.projectId()));
+   }
+diff --git a/frontend/src/app/shared/components/gantt-timeline.component.html b/frontend/src/app/shared/components/gantt-timeline.component.html
+index f9ada7d..cc4040b 100644
+--- a/frontend/src/app/shared/components/gantt-timeline.component.html
++++ b/frontend/src/app/shared/components/gantt-timeline.component.html
+@@ -1,15 +1,22 @@
+-<section class="gantt-timeline" aria-labelledby="gantt-timeline-heading">
+-  <div class="gantt-timeline__section-head">
+-    <div>
+-      <p class="gantt-timeline__eyebrow">Terminlage</p>
+-      <h2 id="gantt-timeline-heading" class="gantt-timeline__title">
+-        Portfolio-Zeitleiste
+-      </h2>
++<section
++  class="gantt-timeline"
++  [class.gantt-timeline--project]="isProjectView()"
++  [attr.aria-labelledby]="isProjectView() ? null : 'gantt-timeline-heading'"
++  [attr.aria-label]="isProjectView() ? 'Projektzeitplan' : null"
++>
++  @if (!isProjectView()) {
++    <div class="gantt-timeline__section-head">
++      <div>
++        <p class="gantt-timeline__eyebrow">Terminlage</p>
++        <h2 id="gantt-timeline-heading" class="gantt-timeline__title">
++          Portfolio-Zeitleiste
++        </h2>
++      </div>
++      <p class="gantt-timeline__hint">
++        Horizontal scrollen, um den gesamten Zeitraum zu sehen.
++      </p>
+     </div>
+-    <p class="gantt-timeline__hint">
+-      Horizontal scrollen, um den gesamten Zeitraum zu sehen.
+-    </p>
+-  </div>
++  }
+ 
+   <p class="visually-hidden" id="gantt-timeline-summary">
+     {{ screenReaderSummary() }}
+@@ -19,32 +26,36 @@
+     class="gantt-timeline__frame"
+     tabindex="0"
+     role="region"
+-    aria-labelledby="gantt-timeline-heading"
++    [attr.aria-labelledby]="isProjectView() ? null : 'gantt-timeline-heading'"
++    [attr.aria-label]="isProjectView() ? 'Projektzeitplan' : null"
+     aria-describedby="gantt-timeline-summary"
+   >
+-    <div class="gantt-timeline__names" (scroll)="onNamesScroll($event)">
+-      <div class="gantt-timeline__names-head">
+-        <span>Projekt</span>
+-        <small>Status</small>
+-      </div>
+-      @for (row of rows(); track row.project.id) {
+-        <div class="gantt-timeline__name-cell">
+-          <span
+-            class="gantt-timeline__project-name"
+-            [attr.title]="row.project.name"
+-            >{{ row.project.name }}</span
+-          >
+-          <span class="gantt-timeline__project-status">{{
+-            row.project.statusLabel
+-          }}</span>
++    @if (!isProjectView()) {
++      <div class="gantt-timeline__names" (scroll)="onNamesScroll($event)">
++        <div class="gantt-timeline__names-head">
++          <span>Projekt</span>
++          <small>Status</small>
+         </div>
+-      }
+-    </div>
++        @for (row of rows(); track row.project.id) {
++          <div class="gantt-timeline__name-cell">
++            <span
++              class="gantt-timeline__project-name"
++              [attr.title]="row.project.name"
++              >{{ row.project.name }}</span
++            >
++            <span class="gantt-timeline__project-status">{{
++              row.project.statusLabel
++            }}</span>
++          </div>
++        }
++      </div>
++    }
+ 
+     <div class="gantt-timeline__scroll" (scroll)="onTimelineScroll($event)">
+       <div
+         class="gantt-timeline__canvas"
+         [style.min-width.rem]="trackWidthRem()"
++        [style.--gantt-month-rem]="monthColRem() + 'rem'"
+       >
+         <div class="gantt-timeline__head">
+           <div class="gantt-timeline__years">
+@@ -59,7 +70,16 @@
+           </div>
+           <div class="gantt-timeline__months">
+             @for (month of axisMonths(); track month.key) {
+-              <div class="gantt-timeline__month">{{ month.monthLabel }}</div>
++              <div
++                class="gantt-timeline__month"
++                [style.width.rem]="monthColRem()"
++                [style.min-width.rem]="monthColRem()"
++                [style.flex]="
++                  '0 0 ' + monthColRem() + 'rem'
++                "
++              >
++                {{ month.monthLabel }}
++              </div>
+             }
+           </div>
+         </div>
+@@ -79,7 +99,12 @@
+             <div class="gantt-timeline__track">
+               <div class="gantt-timeline__month-grid" aria-hidden="true">
+                 @for (month of axisMonths(); track month.key) {
+-                  <span class="gantt-timeline__month-slot"></span>
++                  <span
++                    class="gantt-timeline__month-slot"
++                    [style.width.rem]="monthColRem()"
++                    [style.min-width.rem]="monthColRem()"
++                    [style.flex]="'0 0 ' + monthColRem() + 'rem'"
++                  ></span>
+                 }
+               </div>
+ 
+@@ -98,17 +123,24 @@
+                   <span
+                     class="gantt-timeline__phase"
+                     [class.gantt-timeline__phase--analyse]="
+-                      segment.phaseType === 'ANALYSE'
++                      segment.phaseType === 'ANALYSE' ||
++                      segment.phaseType === 'ANALYSIS'
+                     "
+                     [class.gantt-timeline__phase--umsetzung]="
+-                      segment.phaseType === 'UMSETZUNG'
++                      segment.phaseType === 'UMSETZUNG' ||
++                      segment.phaseType === 'IMPLEMENTATION'
+                     "
+                     [class.gantt-timeline__phase--rollout]="
+                       segment.phaseType === 'ROLLOUT'
+                     "
++                    [class.gantt-timeline__phase--current]="segment.current"
+                     [style.left.%]="segment.leftPercent"
+                     [style.width.%]="segment.widthPercent"
+-                    [attr.title]="segment.name"
++                    [attr.title]="
++                      segment.current
++                        ? segment.name + ' (aktuelle Phase)'
++                        : segment.name
++                    "
+                   ></span>
+                 }
+               </div>
+@@ -134,6 +166,9 @@
+                   [class.gantt-timeline__handover--plan]="
+                     marker.kind === 'plan'
+                   "
++                  [class.gantt-timeline__handover--forecast]="
++                    marker.kind === 'forecast'
++                  "
+                   [class.gantt-timeline__handover--current]="
+                     marker.kind === 'current'
+                   "
+@@ -186,6 +221,12 @@
+       ></span
+       >Rollout</span
+     >
++    <span
++      ><span
++        class="gantt-timeline__swatch gantt-timeline__swatch--current-phase"
++      ></span
++      >Aktuelle Phase</span
++    >
+     <span
+       ><span
+         class="gantt-timeline__swatch gantt-timeline__swatch--overrun"
+@@ -196,11 +237,26 @@
+       ><span class="gantt-timeline__swatch gantt-timeline__swatch--today"></span
+       >Heute</span
+     >
+-    <span
+-      ><span
+-        class="gantt-timeline__swatch gantt-timeline__swatch--handover"
+-      ></span
+-      >Kunden├╝bergabe</span
+-    >
++    @if (isProjectView()) {
++      <span
++        ><span
++          class="gantt-timeline__swatch gantt-timeline__swatch--plan"
++        ></span
++        >Planende</span
++      >
++      <span
++        ><span
++          class="gantt-timeline__swatch gantt-timeline__swatch--forecast"
++        ></span
++        >Forecast-Ende</span
++      >
++    } @else {
++      <span
++        ><span
++          class="gantt-timeline__swatch gantt-timeline__swatch--handover"
++        ></span
++        >Kunden├╝bergabe</span
++      >
++    }
+   </div>
+ </section>
+diff --git a/frontend/src/app/shared/components/gantt-timeline.component.scss b/frontend/src/app/shared/components/gantt-timeline.component.scss
+index b9624a9..1015eb5 100644
+--- a/frontend/src/app/shared/components/gantt-timeline.component.scss
++++ b/frontend/src/app/shared/components/gantt-timeline.component.scss
+@@ -2,6 +2,10 @@
+   margin-top: 2rem;
+ }
+ 
++.gantt-timeline--project {
++  margin-top: 0;
++}
++
+ .gantt-timeline__section-head {
+   display: flex;
+   flex-wrap: wrap;
+@@ -42,10 +46,10 @@
+   background: var(--cgi-surface);
+   box-shadow: 0 1px 3px rgb(32 10 88 / 7%);
+   outline: none;
+-}
+ 
+-.gantt-timeline__frame:focus-visible {
+-  box-shadow: 0 0 0 3px var(--cgi-purple-5);
++  &:focus-visible {
++    box-shadow: 0 0 0 3px var(--cgi-purple-5);
++  }
+ }
+ 
+ .gantt-timeline__names {
+@@ -58,10 +62,10 @@
+   border-right: 1px solid var(--cgi-gray-6);
+   background: var(--cgi-surface);
+   scrollbar-width: none;
+-}
+ 
+-.gantt-timeline__names::-webkit-scrollbar {
+-  display: none;
++  &::-webkit-scrollbar {
++    display: none;
++  }
+ }
+ 
+ .gantt-timeline__names-head {
+@@ -76,17 +80,17 @@
+   border-bottom: 1px solid var(--cgi-gray-6);
+   background: var(--cgi-purple-1);
+   color: #fff;
+-}
+ 
+-.gantt-timeline__names-head span {
+-  font-size: 0.75rem;
+-  font-weight: 700;
+-}
++  span {
++    font-size: 0.75rem;
++    font-weight: 700;
++  }
+ 
+-.gantt-timeline__names-head small {
+-  margin-top: 0.15rem;
+-  color: var(--cgi-purple-6);
+-  font-size: 0.625rem;
++  small {
++    margin-top: 0.15rem;
++    color: var(--cgi-purple-6);
++    font-size: 0.625rem;
++  }
+ }
+ 
+ .gantt-timeline__name-cell {
+@@ -157,34 +161,38 @@
+   border-left: 1px solid var(--cgi-purple-6);
+   color: var(--cgi-purple-1);
+   font-weight: 700;
+-}
+ 
+-.gantt-timeline__year:first-child {
+-  border-left: 0;
++  &:first-child {
++    border-left: 0;
++  }
+ }
+ 
+ .gantt-timeline__months {
+   height: 2.5rem;
+ }
+ 
++.gantt-timeline__month,
++.gantt-timeline__month-slot {
++  width: var(--gantt-month-rem, 5.5rem);
++  min-width: var(--gantt-month-rem, 5.5rem);
++  flex: 0 0 var(--gantt-month-rem, 5.5rem);
++  border-left: 1px solid var(--cgi-gray-6);
++  box-sizing: border-box;
++
++  &:first-child {
++    border-left: 0;
++  }
++}
++
+ .gantt-timeline__month {
+   display: grid;
+-  width: 5.5rem;
+-  min-width: 5.5rem;
+-  flex: 0 0 5.5rem;
+   place-items: center;
+-  border-left: 1px solid var(--cgi-gray-6);
+-  box-sizing: border-box;
+   color: var(--cgi-gray-2);
+   font-variant-numeric: tabular-nums;
+   font-weight: 600;
+   text-align: center;
+ }
+ 
+-.gantt-timeline__month:first-child {
+-  border-left: 0;
+-}
+-
+ .gantt-timeline__row {
+   height: 4.5rem;
+   padding: 0.25rem 0;
+@@ -207,24 +215,20 @@
+ }
+ 
+ .gantt-timeline__month-slot {
+-  width: 5.5rem;
+-  min-width: 5.5rem;
+-  flex: 0 0 5.5rem;
+-  border-left: 1px solid var(--cgi-gray-7);
+-  box-sizing: border-box;
++  border-left-color: var(--cgi-gray-7);
+ }
+ 
+-.gantt-timeline__month-slot:first-child {
+-  border-left: 0;
++.gantt-timeline__bar,
++.gantt-timeline__overrun {
++  position: absolute;
++  top: 1.75rem;
++  height: 1.1rem;
++  border-radius: 0.2rem;
+ }
+ 
+ .gantt-timeline__bar {
+-  position: absolute;
+   z-index: 1;
+-  top: 1.75rem;
+-  height: 1.1rem;
+   overflow: hidden;
+-  border-radius: 0.2rem;
+   background: var(--cgi-purple-7);
+   box-shadow: inset 0 0 0 1px rgb(32 10 88 / 10%);
+ }
+@@ -247,20 +251,15 @@
+   background: var(--cgi-purple-2);
+ }
+ 
++.gantt-timeline__phase--current {
++  box-shadow: inset 0 0 0 2px var(--cgi-primary);
++}
++
+ .gantt-timeline__overrun {
+-  position: absolute;
+   z-index: 2;
+-  top: 1.75rem;
+-  height: 1.1rem;
+   border: 1px dashed var(--cgi-error);
+   border-radius: 0 0.2rem 0.2rem 0;
+-  background: repeating-linear-gradient(
+-    -45deg,
+-    rgb(176 0 32 / 18%),
+-    rgb(176 0 32 / 18%) 4px,
+-    rgb(176 0 32 / 5%) 4px,
+-    rgb(176 0 32 / 5%) 8px
+-  );
++  background: rgb(176 0 32 / 14%);
+ }
+ 
+ .gantt-timeline__today {
+@@ -272,20 +271,20 @@
+   transform: translateX(-50%);
+   background: var(--cgi-red-3);
+   pointer-events: none;
+-}
+ 
+-.gantt-timeline__today span {
+-  position: absolute;
+-  top: 0.3rem;
+-  left: 50%;
+-  transform: translate(-50%, -100%);
+-  padding: 0.12rem 0.3rem;
+-  border-radius: 0.2rem;
+-  background: var(--cgi-red-3);
+-  color: #fff;
+-  font-size: 0.6rem;
+-  font-weight: 700;
+-  white-space: nowrap;
++  span {
++    position: absolute;
++    top: 0.3rem;
++    left: 50%;
++    transform: translate(-50%, -100%);
++    padding: 0.12rem 0.3rem;
++    border-radius: 0.2rem;
++    background: var(--cgi-red-3);
++    color: #fff;
++    font-size: 0.6rem;
++    font-weight: 700;
++    white-space: nowrap;
++  }
+ }
+ 
+ .gantt-timeline__handover {
+@@ -294,7 +293,6 @@
+   top: 0.15rem;
+   bottom: 0.15rem;
+   transform: translateX(-50%);
+-  pointer-events: auto;
+ }
+ 
+ .gantt-timeline__handover-line {
+@@ -309,12 +307,16 @@
+ 
+ .gantt-timeline__handover--plan .gantt-timeline__handover-line {
+   width: 0;
+-  border-left: 2px dashed var(--cgi-error);
++  border-left: 2px dashed var(--cgi-gray-3);
+   background: transparent;
+ }
+ 
+-.gantt-timeline__handover--delayed.gantt-timeline__handover--current
+-  .gantt-timeline__handover-line {
++.gantt-timeline__handover--forecast .gantt-timeline__handover-line {
++  background: var(--cgi-orange-3, #e65100);
++}
++
++.gantt-timeline__handover--delayed.gantt-timeline__handover--current .gantt-timeline__handover-line,
++.gantt-timeline__handover--delayed.gantt-timeline__handover--forecast .gantt-timeline__handover-line {
+   background: var(--cgi-error);
+ }
+ 
+@@ -358,17 +360,21 @@
+ .gantt-timeline__handover--plan .gantt-timeline__handover-label {
+   top: auto;
+   bottom: 0.15rem;
+-  border: 1px solid var(--cgi-error);
++  border: 1px solid var(--cgi-purple-1);
+   background: #fff;
+-  color: var(--cgi-error);
++  color: var(--cgi-purple-1);
+ }
+ 
+ .gantt-timeline__handover--plan .gantt-timeline__handover-detail {
+   display: none;
+ }
+ 
+-.gantt-timeline__handover--delayed.gantt-timeline__handover--current
+-  .gantt-timeline__handover-label {
++.gantt-timeline__handover--forecast .gantt-timeline__handover-label {
++  background: var(--cgi-orange-3, #e65100);
++}
++
++.gantt-timeline__handover--delayed.gantt-timeline__handover--current .gantt-timeline__handover-label,
++.gantt-timeline__handover--delayed.gantt-timeline__handover--forecast .gantt-timeline__handover-label {
+   background: var(--cgi-error);
+ }
+ 
+@@ -379,11 +385,11 @@
+   margin-top: 0.75rem;
+   color: var(--cgi-gray-3);
+   font-size: 0.6875rem;
+-}
+ 
+-.gantt-timeline__legend > span {
+-  display: inline-flex;
+-  align-items: center;
++  > span {
++    display: inline-flex;
++    align-items: center;
++  }
+ }
+ 
+ .gantt-timeline__swatch {
+@@ -409,27 +415,35 @@
+ 
+ .gantt-timeline__swatch--overrun {
+   border: 1px dashed var(--cgi-error);
+-  background: repeating-linear-gradient(
+-    -45deg,
+-    rgb(176 0 32 / 24%),
+-    rgb(176 0 32 / 24%) 2px,
+-    transparent 2px,
+-    transparent 4px
+-  );
++  background: rgb(176 0 32 / 24%);
+ }
+ 
+-.gantt-timeline__swatch--today {
++.gantt-timeline__swatch--today,
++.gantt-timeline__swatch--handover,
++.gantt-timeline__swatch--plan,
++.gantt-timeline__swatch--forecast {
+   width: 2px;
+   border-radius: 0;
++}
++
++.gantt-timeline__swatch--today {
+   background: var(--cgi-red-3);
+ }
+ 
+-.gantt-timeline__swatch--handover {
+-  width: 2px;
+-  border-radius: 0;
++.gantt-timeline__swatch--handover,
++.gantt-timeline__swatch--plan {
+   background: var(--cgi-purple-1);
+ }
+ 
++.gantt-timeline__swatch--forecast {
++  background: var(--cgi-orange-3, #e65100);
++}
++
++.gantt-timeline__swatch--current-phase {
++  box-shadow: inset 0 0 0 2px var(--cgi-primary);
++  background: var(--cgi-purple-4);
++}
++
+ @media (max-width: 720px) {
+   .gantt-timeline__names {
+     flex-basis: 10rem;
+diff --git a/frontend/src/app/shared/components/gantt-timeline.component.spec.ts b/frontend/src/app/shared/components/gantt-timeline.component.spec.ts
+index 3013b44..9ff5b5d 100644
+--- a/frontend/src/app/shared/components/gantt-timeline.component.spec.ts
++++ b/frontend/src/app/shared/components/gantt-timeline.component.spec.ts
+@@ -125,4 +125,16 @@ describe('GanttTimelineComponent', () => {
+       ).position,
+     ).toBe('sticky');
+   });
++
++  it('should hide portfolio headings in project variant', () => {
++    fixture.componentRef.setInput('variant', 'project');
++    fixture.detectChanges();
++
++    const text = fixture.nativeElement.textContent as string;
++    expect(text).not.toContain('Portfolio-Zeitleiste');
++    expect(text).not.toContain('Terminlage');
++    expect(text).toContain('Planende');
++    expect(text).toContain('Forecast-Ende');
++    expect(fixture.nativeElement.querySelector('.gantt-timeline__names')).toBeNull();
++  });
+ });
+diff --git a/frontend/src/app/shared/components/gantt-timeline.component.ts b/frontend/src/app/shared/components/gantt-timeline.component.ts
+index c953c2f..c04512d 100644
+--- a/frontend/src/app/shared/components/gantt-timeline.component.ts
++++ b/frontend/src/app/shared/components/gantt-timeline.component.ts
+@@ -9,6 +9,8 @@ export function syncScrollTops(source: HTMLElement, target: HTMLElement): void {
+   }
+ }
+ 
++export type GanttVariant = 'portfolio' | 'project';
++
+ export interface GanttAxisMonth {
+   key: string;
+   monthLabel: string;
+@@ -22,7 +24,7 @@ export interface GanttAxisYear {
+ }
+ 
+ export interface GanttHandoverMarker {
+-  kind: 'current' | 'plan';
++  kind: 'plan' | 'forecast' | 'current';
+   label: string;
+   detailLabel: string | null;
+   offsetPercent: number;
+@@ -31,25 +33,29 @@ export interface GanttHandoverMarker {
+   delayed: boolean;
+ }
+ 
++export interface GanttPhaseSegment {
++  leftPercent: number;
++  widthPercent: number;
++  name: string;
++  phaseType: string;
++  current: boolean;
++}
++
+ export interface GanttRowLayout {
+   project: PortfolioTimelineProject;
+   barLeftPercent: number;
+   barWidthPercent: number;
+   overrunLeftPercent: number | null;
+   overrunWidthPercent: number | null;
+-  phaseSegments: {
+-    leftPercent: number;
+-    widthPercent: number;
+-    name: string;
+-    phaseType: string;
+-  }[];
++  phaseSegments: GanttPhaseSegment[];
+   handoverMarkers: GanttHandoverMarker[];
+ }
+ 
+ const MS_PER_DAY = 86_400_000;
+-const MONTH_COL_REM = 5.5;
++const MONTH_COL_REM_PORTFOLIO = 5.5;
++const MONTH_COL_REM_PROJECT = 4.25;
+ 
+-/** Portfolio Gantt timeline ÔÇö CGI-konforme HTML/CSS presentation (FR-3 / Story 5.2). */
++/** Portfolio/Project Gantt timeline ÔÇö CGI-konforme HTML/CSS presentation (FR-3 / Story 5.2 / 6.4). */
+ @Component({
+   selector: 'app-gantt-timeline',
+   imports: [],
+@@ -58,9 +64,17 @@ const MONTH_COL_REM = 5.5;
+ })
+ export class GanttTimelineComponent {
+   readonly projects = input.required<PortfolioTimelineProject[]>();
++  /** `project` = kompakter Einzelprojekt-Zeitplan ohne Portfolio-├£berschriften. */
++  readonly variant = input<GanttVariant>('portfolio');
+ 
+   private readonly today = startOfDay(new Date());
+ 
++  readonly isProjectView = computed(() => this.variant() === 'project');
++
++  readonly monthColRem = computed(() =>
++    this.isProjectView() ? MONTH_COL_REM_PROJECT : MONTH_COL_REM_PORTFOLIO,
++  );
++
+   readonly range = computed(() => {
+     const projects = this.projects();
+     if (projects.length === 0) {
+@@ -94,6 +108,15 @@ export class GanttTimelineComponent {
+ 
+     const earliest = new Date(startMs);
+     const latest = new Date(endMs);
++
++    // Projektansicht: engerer Zeitraum, weniger horizontaler Leerraum
++    if (this.isProjectView()) {
++      return {
++        start: firstDayOfMonth(earliest),
++        end: lastDayOfMonth(latest),
++      };
++    }
++
+     return {
+       start: firstDayOfMonth(shiftMonth(earliest, -1)),
+       end: lastDayOfMonth(shiftMonth(latest, 1)),
+@@ -120,17 +143,18 @@ export class GanttTimelineComponent {
+   });
+ 
+   readonly axisYears = computed<GanttAxisYear[]>(() => {
++    const col = this.monthColRem();
+     const groups: GanttAxisYear[] = [];
+     for (const month of this.axisMonths()) {
+       const current = groups[groups.length - 1];
+       if (current?.yearLabel === month.yearLabel) {
+         current.monthCount += 1;
+-        current.widthRem = current.monthCount * MONTH_COL_REM;
++        current.widthRem = current.monthCount * col;
+       } else {
+         groups.push({
+           yearLabel: month.yearLabel,
+           monthCount: 1,
+-          widthRem: MONTH_COL_REM,
++          widthRem: col,
+         });
+       }
+     }
+@@ -138,7 +162,7 @@ export class GanttTimelineComponent {
+   });
+ 
+   readonly trackWidthRem = computed(
+-    () => this.axisMonths().length * MONTH_COL_REM,
++    () => this.axisMonths().length * this.monthColRem(),
+   );
+ 
+   readonly todayVisible = computed(() => {
+@@ -160,6 +184,20 @@ export class GanttTimelineComponent {
+           parseIso(project.plannedEndDate),
+           parseIso(currentEnd),
+         );
++        if (this.isProjectView()) {
++          if (delayDays > 0) {
++            return (
++              `${project.name}: ${project.statusLabel}, ` +
++              `Planende ${this.formatDate(project.plannedEndDate)}, ` +
++              `Forecast-Ende ${this.formatDate(currentEnd)}, ` +
++              `${delayDays} Tage Verzug`
++            );
++          }
++          return (
++            `${project.name}: ${project.statusLabel}, ` +
++            `Planende ${this.formatDate(currentEnd)}`
++          );
++        }
+         if (delayDays > 0) {
+           return (
+             `${project.name}: ${project.statusLabel}, ` +
+@@ -204,6 +242,10 @@ export class GanttTimelineComponent {
+     const plannedEndPercent = this.dateToTrackPercent(
+       parseIso(project.plannedEndDate),
+     );
++    const forecastEnd = project.forecastEndDate ?? project.actualEndDate ?? null;
++    const forecastEndPercent = forecastEnd
++      ? this.dateToTrackPercent(parseIso(forecastEnd))
++      : null;
+     const delayDays = daysBetween(
+       parseIso(project.plannedEndDate),
+       parseIso(currentEndDate),
+@@ -216,38 +258,79 @@ export class GanttTimelineComponent {
+       : null;
+ 
+     const handoverMarkers: GanttHandoverMarker[] = [];
+-    if (delayed) {
++
++    if (this.isProjectView()) {
+       handoverMarkers.push({
+         kind: 'plan',
+-        label: 'Plan',
++        label: 'Planende',
+         detailLabel: this.formatDate(project.plannedEndDate),
+         offsetPercent: plannedEndPercent,
+         delayLabel: null,
+-        tooltip: `Geplante Kunden├╝bergabe: ${this.formatDate(project.plannedEndDate)}`,
+-        delayed: true,
++        tooltip: `Planende: ${this.formatDate(project.plannedEndDate)}`,
++        delayed: false,
+       });
+-    }
++      if (forecastEnd && forecastEnd !== project.plannedEndDate) {
++        handoverMarkers.push({
++          kind: 'forecast',
++          label: 'Forecast-Ende',
++          detailLabel: this.formatDate(forecastEnd),
++          offsetPercent: forecastEndPercent!,
++          delayLabel: delayed ? `+${delayDays} Tage` : null,
++          tooltip: delayed
++            ? `Forecast-Ende: ${this.formatDate(forecastEnd)}, ${delayDays} Tage nach Plan`
++            : `Forecast-Ende: ${this.formatDate(forecastEnd)}`,
++          delayed,
++        });
++      } else {
++        handoverMarkers.push({
++          kind: 'forecast',
++          label: 'Forecast-Ende',
++          detailLabel: this.formatDate(currentEndDate),
++          offsetPercent: currentEndPercent,
++          delayLabel: null,
++          tooltip: `Forecast-Ende: ${this.formatDate(currentEndDate)} (entspricht Plan)`,
++          delayed: false,
++        });
++      }
++    } else {
++      if (delayed) {
++        handoverMarkers.push({
++          kind: 'plan',
++          label: 'Plan',
++          detailLabel: this.formatDate(project.plannedEndDate),
++          offsetPercent: plannedEndPercent,
++          delayLabel: null,
++          tooltip: `Geplante Kunden├╝bergabe: ${this.formatDate(project.plannedEndDate)}`,
++          delayed: true,
++        });
++      }
+ 
+-    handoverMarkers.push({
+-      kind: 'current',
+-      label: 'Kunden├╝bergabe',
+-      detailLabel: delayed
+-        ? `Prognose ${this.formatDate(currentEndDate)}`
+-        : this.formatDate(currentEndDate),
+-      offsetPercent: currentEndPercent,
+-      delayLabel: delayed ? `+${delayDays} Tage` : null,
+-      tooltip: delayed
+-        ? `Kunden├╝bergabe: Prognose ${this.formatDate(currentEndDate)}, ${delayDays} Tage nach Plan`
+-        : `Kunden├╝bergabe: ${this.formatDate(currentEndDate)}`,
+-      delayed,
+-    });
++      handoverMarkers.push({
++        kind: 'current',
++        label: 'Kunden├╝bergabe',
++        detailLabel: delayed
++          ? `Prognose ${this.formatDate(currentEndDate)}`
++          : this.formatDate(currentEndDate),
++        offsetPercent: currentEndPercent,
++        delayLabel: delayed ? `+${delayDays} Tage` : null,
++        tooltip: delayed
++          ? `Kunden├╝bergabe: Prognose ${this.formatDate(currentEndDate)}, ${delayDays} Tage nach Plan`
++          : `Kunden├╝bergabe: ${this.formatDate(currentEndDate)}`,
++        delayed,
++      });
++    }
+ 
+     const phaseSegments = project.phases.map((phase) => {
+-      const phaseStart = this.dateToTrackPercent(parseIso(phase.startDate));
+-      const phaseEnd = this.dateToTrackPercent(parseIso(phase.endDate));
++      const phaseStartDate = parseIso(phase.startDate);
++      const phaseEndDate = parseIso(phase.endDate);
++      const phaseStart = this.dateToTrackPercent(phaseStartDate);
++      const phaseEnd = this.dateToTrackPercent(phaseEndDate);
++      const current =
++        this.today >= phaseStartDate && this.today <= phaseEndDate;
+       return {
+         name: phase.name,
+         phaseType: phase.phaseType,
++        current,
+         leftPercent: clamp(
+           ((phaseStart - barLeftPercent) / barWidthPercent) * 100,
+         ),
+diff --git a/frontend/src/app/shared/models/project-ai.model.ts b/frontend/src/app/shared/models/project-ai.model.ts
+index da4182c..be85ca9 100644
+--- a/frontend/src/app/shared/models/project-ai.model.ts
++++ b/frontend/src/app/shared/models/project-ai.model.ts
+@@ -1,7 +1,15 @@
++export interface ProjectAiEvidenceItem {
++  label: string;
++  value: string;
++  sourceField?: string | null;
++}
++
+ export interface ProjectAiPriority {
+   rank: number;
+   title: string;
+-  reason: string;
++  managementImplication: string;
++  requiredDecision: string;
++  evidence: ProjectAiEvidenceItem[];
+   evidenceFactIds: string[];
+ }
+ 
+diff --git a/frontend/src/app/shared/models/project-issues-capacity.model.ts b/frontend/src/app/shared/models/project-issues-capacity.model.ts
+index d5ecb11..3260c5f 100644
+--- a/frontend/src/app/shared/models/project-issues-capacity.model.ts
++++ b/frontend/src/app/shared/models/project-issues-capacity.model.ts
+@@ -3,21 +3,34 @@ export interface IssueActionMetric {
+   value: string;
+ }
+ 
++export interface RequiredDecision {
++  decideWho: string;
++  decideBy: string | null;
++  impactIfDeferred: string;
++}
++
+ export interface IssueActionItem {
+   id: string;
+   itemType: 'PROBLEM' | 'RISK' | string;
+   itemTypeLabel: string;
+   category: string;
+   title: string;
+-  description: string;
++  cause: string;
++  impact: string | null;
+   severity: string;
+   severityLabel: string;
++  priority: string;
+   metrics: IssueActionMetric[];
+   owner: string | null;
+   dueDate: string | null;
++  overdueDays: number | null;
++  overdueLabel: string | null;
++  nextAction: string | null;
++  escalationNeeded: boolean;
+   actionKind: string;
+   actionLabel: string;
+   actionText: string | null;
++  requiredDecision: RequiredDecision | null;
+ }
+ 
+ export interface ProjectIssuesActions {

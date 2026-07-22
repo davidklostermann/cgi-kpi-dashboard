@@ -29,7 +29,7 @@ describe('ProjectInsightsSectionComponent', () => {
           code: 'PROGRESS_BEHIND_TIME',
           statement: 'Fortschritt liegt hinter dem erwarteten Zeitverbrauch.',
           metrics: 'Fortschritt vs. Zeitverbrauch',
-          comparisonValue: 'Schwelle −20 Prozentpunkte [OFFEN]',
+          comparisonValue: 'Schwelle −20 Prozentpunkte',
           period: 'Aktueller Berichtsstand vs. Plan',
           rationale: 'Der Ist-Fortschritt liegt unter dem erwarteten Fortschritt.',
           type: 'deterministisch',

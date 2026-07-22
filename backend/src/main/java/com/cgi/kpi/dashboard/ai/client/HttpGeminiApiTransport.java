@@ -5,9 +5,10 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.Duration;
-import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -29,6 +30,11 @@ public class HttpGeminiApiTransport implements GeminiApiTransport {
 
     private static final Logger log = LoggerFactory.getLogger(HttpGeminiApiTransport.class);
 
+    private static final Set<String> ALLOWED_GEMINI_HOSTS = Set.of(
+            "generativelanguage.googleapis.com",
+            "localhost",
+            "127.0.0.1");
+
     private final AiProperties aiProperties;
     private final ObjectMapper objectMapper;
     private final HttpClient httpClient;
@@ -47,6 +53,7 @@ public class HttpGeminiApiTransport implements GeminiApiTransport {
                     "GEMINI_API_KEY is required when APP_AI_PROVIDER=gemini (or app.ai.provider=gemini).");
         }
         aiProperties.requireGeminiModel();
+        validateGeminiBaseUrl(aiProperties.getGeminiApiBaseUrl());
     }
 
     @Override
@@ -104,7 +111,24 @@ public class HttpGeminiApiTransport implements GeminiApiTransport {
     }
 
     private URI buildGenerateContentUri(String model) {
-        return buildGenerateContentUri(model, aiProperties.getGeminiApiBaseUrl());
+        String baseUrl = aiProperties.getGeminiApiBaseUrl();
+        validateGeminiBaseUrl(baseUrl);
+        return buildGenerateContentUri(model, baseUrl);
+    }
+
+    static void validateGeminiBaseUrl(String baseUrl) {
+        URI uri = URI.create(normalizeBaseUrl(baseUrl));
+        String host = uri.getHost();
+        if (host == null || !ALLOWED_GEMINI_HOSTS.contains(host.toLowerCase(Locale.ROOT))) {
+            throw new IllegalStateException(
+                    "Unsupported Gemini API base URL host: "
+                            + host
+                            + ". Allowed hosts: generativelanguage.googleapis.com, localhost, 127.0.0.1.");
+        }
+        if ("generativelanguage.googleapis.com".equalsIgnoreCase(host)
+                && !"https".equalsIgnoreCase(uri.getScheme())) {
+            throw new IllegalStateException("Gemini API base URL must use HTTPS.");
+        }
     }
 
     static Map<String, Object> buildRequestBody(String prompt) {

@@ -125,4 +125,16 @@ describe('GanttTimelineComponent', () => {
       ).position,
     ).toBe('sticky');
   });
+
+  it('should hide portfolio headings in project variant', () => {
+    fixture.componentRef.setInput('variant', 'project');
+    fixture.detectChanges();
+
+    const text = fixture.nativeElement.textContent as string;
+    expect(text).not.toContain('Portfolio-Zeitleiste');
+    expect(text).not.toContain('Terminlage');
+    expect(text).toContain('Planende');
+    expect(text).toContain('Forecast-Ende');
+    expect(fixture.nativeElement.querySelector('.gantt-timeline__names')).toBeNull();
+  });
 });

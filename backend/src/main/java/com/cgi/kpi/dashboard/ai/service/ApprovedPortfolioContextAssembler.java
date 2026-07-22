@@ -71,7 +71,9 @@ public class ApprovedPortfolioContextAssembler {
                         prefix + "status",
                         prefix + "scheduleDeviationDays",
                         prefix + "budgetDeviationPercent",
-                        prefix + "openRiskCount");
+                        prefix + "openRiskCount",
+                        prefix + "progressPercent",
+                        prefix + "criticalIssueCount");
                 addFact(facts, prefix + "status", "PROJECT", row.name() + " Status",
                         row.status(), row.statusLabel());
                 addFact(facts, prefix + "scheduleDeviationDays", "PROJECT", row.name() + " Terminabweichung",
@@ -82,6 +84,10 @@ public class ApprovedPortfolioContextAssembler {
                         row.budgetDeviationPercent() == null ? "n/a" : row.budgetDeviationPercent() + " %");
                 addFact(facts, prefix + "openRiskCount", "PROJECT", row.name() + " offene Risiken",
                         row.openRiskCount(), String.valueOf(row.openRiskCount()));
+                addFact(facts, prefix + "progressPercent", "PROJECT", row.name() + " Fortschritt",
+                        row.progressPercent(), row.progressPercent() + " %");
+                addFact(facts, prefix + "criticalIssueCount", "PROJECT", row.name() + " kritische Issues",
+                        row.criticalIssueCount(), String.valueOf(row.criticalIssueCount()));
 
                 candidates.add(new CandidateProjectDto(
                         row.id(),

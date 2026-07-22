@@ -11,4 +11,16 @@
       <span class="cgi-top-nav__brand-subtitle">Portfolio &amp; Projektsteuerung</span>
     </span>
   </a>
+
+  @if (currentUser(); as user) {
+    <div class="cgi-top-nav__session">
+      <span class="cgi-top-nav__user" aria-label="Angemeldeter Benutzer">
+        {{ user.username }}
+        @if (roleLabel(); as role) {
+          <span class="cgi-top-nav__role">({{ role }})</span>
+        }
+      </span>
+      <button mat-stroked-button type="button" (click)="logout()">Abmelden</button>
+    </div>
+  }
 </mat-toolbar>

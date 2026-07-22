@@ -14,17 +14,25 @@ type LoadStatus = 'loading' | 'success' | 'error';
 })
 export class ProjectTeamCapacitySectionComponent {
   private readonly projectApi = inject(ProjectApiService);
+  private loadGeneration = 0;
 
   readonly projectId = input.required<string>();
   readonly status = signal<LoadStatus>('loading');
   readonly data = signal<ProjectCapacity | null>(null);
   readonly errorMessage = signal<string | null>(null);
 
+  /** True when at least one role capacity row exists. */
+  hasRoles(): boolean {
+    const payload = this.data();
+    return !!payload && payload.roles.length > 0;
+  }
+
   constructor() {
     effect(() => this.load(this.projectId()));
   }
 
   load(projectId = this.projectId()): void {
+    const generation = ++this.loadGeneration;
     this.status.set('loading');
     this.errorMessage.set(null);
     this.projectApi
@@ -32,10 +40,16 @@ export class ProjectTeamCapacitySectionComponent {
       .pipe(take(1))
       .subscribe({
         next: (payload) => {
+          if (generation !== this.loadGeneration || projectId !== this.projectId()) {
+            return;
+          }
           this.data.set(payload);
           this.status.set('success');
         },
         error: (error: unknown) => {
+          if (generation !== this.loadGeneration || projectId !== this.projectId()) {
+            return;
+          }
           this.data.set(null);
           this.errorMessage.set(this.resolveError(error));
           this.status.set('error');

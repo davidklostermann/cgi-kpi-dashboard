@@ -5,10 +5,20 @@ import { routes } from './app.routes';
 import { AppShellComponent } from './core/layout/app-shell.component';
 import { ProjectDetailPageComponent } from './features/project/project-detail-page.component';
 
-describe('App routes (Story 2.2)', () => {
+describe('App routes (Story 2.2 / 11.5)', () => {
+  it('should expose login and change-password routes outside shell', async () => {
+    const loginRoute = routes.find((route) => route.path === 'login');
+    const changePasswordRoute = routes.find((route) => route.path === 'change-password');
+
+    expect(loginRoute?.loadComponent).toBeDefined();
+    expect(changePasswordRoute?.loadComponent).toBeDefined();
+    expect(changePasswordRoute?.canActivate).toBeDefined();
+  });
+
   it('should load shell with portfolio and projects child routes', async () => {
     const shellRoute = routes.find((route) => route.path === '');
     expect(shellRoute?.loadComponent).toBeDefined();
+    expect(shellRoute?.canActivate?.length).toBeGreaterThan(0);
 
     const shellModule = (await shellRoute!.loadComponent!()) as Type<AppShellComponent>;
     expect(shellModule).toBe(AppShellComponent);

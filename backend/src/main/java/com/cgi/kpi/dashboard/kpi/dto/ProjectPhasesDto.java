@@ -42,6 +42,7 @@ public record ProjectPhasesDto(
             LocalDate plannedDueDate,
             LocalDate actualOrForecastDate,
             Integer deviationDays,
+            Integer overdueDays,
             boolean overdue,
             String blockers) {
     }

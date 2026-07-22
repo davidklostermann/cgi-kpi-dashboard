@@ -21,6 +21,7 @@ export interface ProjectMilestoneItem {
   plannedDueDate: string;
   actualOrForecastDate: string | null;
   deviationDays: number | null;
+  overdueDays: number | null;
   overdue: boolean;
   blockers: string | null;
 }

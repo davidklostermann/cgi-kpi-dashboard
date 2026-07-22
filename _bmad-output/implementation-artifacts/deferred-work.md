@@ -35,9 +35,21 @@
 - `extractJsonPayload` Brace-Counting ohne String-Kontext — JSON mit `{`/`}` in Werten kann fehlschneiden.
 - Fehlende Unit-Tests für `JpaPortfolioReportTrendReader` — Coverage-Follow-up.
 
-## Deferred from: security multi-user planning (2026-07-21)
+## Deferred from: code review of 11-3-spring-security-grundkonfiguration (2026-07-21)
 
-- Implementierung Epics 11–14 — Planungsartefakte + P0 geschlossen; kein Anwendungscode in diesem Schritt.
+- `lockedUntil` / Account-Lockout nicht in `DashboardUserDetailsService`/`DashboardUserDetails` — Story 11.4
+- `mustChangePassword`-Enforcement fehlt — Story 11.4
+- Session bleibt nach User-Deaktivierung gültig bis Expiry — Story 11.6
+- Rollen-Enforcement auf URL-Ebene (`hasRole`) — Story 12.2 (Out of Scope 11.3)
+
+## Deferred from: code review of 11-4-login-logout-me (2026-07-21)
+
+- `lockedUntil` / Brute-Force-Lockout — Story 14.2
+- Passwortwechsel invalidiert andere parallele Sessions nicht — Story 11.6
+- Stale `mustChangePassword` in Session nach Admin-DB-Update — Epic 13
+- CSRF-Negativtests für Auth-Endpoints — Story 11.6
+
+## Deferred from: security multi-user planning (2026-07-21)
 - Produktiv Secret Store / KMS Vendor — OFFEN, **Blocker vor Produktion**.
 - CGI-SSO Timing — OFFEN; Architektur vorbereitet.
 - Project-AI Cache ohne Tenant — Epic 12.3 (isolieren oder disable).
@@ -66,3 +78,33 @@
 - Kein `progress_percent`-Range-Check im Mapper — Seed-Daten kontrolliert.
 - `ProjectMapper` ohne Unit-Tests — Integrationstest deckt Happy-Path ab.
 - Application-Schicht liefert API-DTOs direkt (`ProjectQueryService` → `api.projects.dto.*`) — MVP-Muster beibehalten; Refactor optional später.
+
+## Deferred from: code review of 11-1-datenmodell-workspace-user-flyway (2026-07-21)
+
+- Username case-sensitiv (PostgreSQL UNIQUE ohne Normalisierung) — Entscheidung/Normalisierung in Story 11.2 Bootstrap/Login.
+- Leerer Username / leerer `password_hash` schema-konform — Validierung in 11.2, nicht DB-CHECK in 11.1.
+- `failed_login_count` ohne CHECK `>= 0` — Lockout-Logik Story 11.3.
+- Nur H2-ITs, kein PostgreSQL/Testcontainers — Projekt-Pattern seit Epic 3.
+- Isolierter V7→V8-Upgrade-Test fehlt — Endzustand via FlywayMigrationIntegrationTest abgedeckt.
+- `WorkspaceMembershipRepository.findByUserId` fehlt — Story 11.3 UserDetails.
+- Unit-Tests bauen `Project` ohne `workspaceId` (In-Memory) — kein Persist-Pfad betroffen.
+
+## Deferred from: code review of 11-2-bootstrap-administrator-env (2026-07-21)
+
+- TOCTOU-Race bei parallelem JVM-Start — v1 Single-Instance; UNIQUE(username) als Stop.
+- Bootstrap blockiert bei jedem existierenden `app_user` — count()-Trigger by design.
+- Default-Workspace fehlt → App-Start bricht ab — gewolltes Fail-Fast.
+- Kein Rollback-IT User+Membership-Partial-Failure — TX vor Inserts ausreichend v1.
+- Passwort bleibt in BootstrapProperties-Heap — kein Wipe vorgesehen.
+- Logging-Test nur Erfolgspfad — Skip-Pfade nicht auf Secret-Leak geprüft.
+
+## Deferred from: code review of 12-2-endpoint-policies-ki-admin (2026-07-22)
+
+- Method Security (`@EnableMethodSecurity` / `@PreAuthorize`) — Story-12.2-DoD URL+Service akzeptiert; AD-13 erwähnt Method Security als dritte Schicht; Follow-up Epic 14 oder bei neuen KI-Controllern.
+
+## Deferred from: code review of 12-1-workspace-scope-private-settings (2026-07-22)
+
+- Kind-Repos laden global per `findAll().filter(workspaceProjectIds)` — Performance-Follow-up `findByProject_IdIn` laut Story-Dev-Notes.
+- Race bei erstem Preferences-PUT kann unhandled `DataIntegrityViolationException` → 500 werfen.
+- Korruptes `preferences_json` wird beim GET still zu leerem Objekt normalisiert.
+- Doppelter `riskRepository.findAll()`-Scan in `JpaPortfolioTableReader.readTable()`.

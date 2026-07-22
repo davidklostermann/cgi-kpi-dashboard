@@ -40,6 +40,24 @@ class ProjectIssuesCapacityAssemblerTest {
         assertEquals("Fakten aus Backend", dto.factsBadge());
         assertEquals("Laufende Maßnahme", dto.items().get(0).actionLabel());
         assertTrue(dto.items().get(0).metrics().size() >= 1);
+        assertEquals("Beschreibung", dto.items().get(0).cause());
+        assertTrue(dto.items().get(0).escalationNeeded());
+        assertNotNull(dto.items().get(0).requiredDecision());
+    }
+
+    @Test
+    void assembleIssuesActionsComputesOverdueLabelAgainstReferenceDate() {
+        Project project = project();
+        Problem overdue = problem("HIGH", "OPEN", "Verspätet");
+        overdue.setTargetDate(LocalDate.of(2026, 6, 24));
+        overdue.setCountermeasure("Maßnahme ohne Entscheidungssignal");
+
+        ProjectIssuesActionsDto dto = assembler.assembleIssuesActions(project, List.of(overdue), List.of());
+
+        assertEquals(1, dto.items().size());
+        assertEquals(7, dto.items().get(0).overdueDays());
+        assertEquals("Überfällig seit 7 Tagen", dto.items().get(0).overdueLabel());
+        assertTrue(dto.items().get(0).escalationNeeded());
     }
 
     @Test
@@ -95,7 +113,7 @@ class ProjectIssuesCapacityAssemblerTest {
         problem.setStatus(status);
         problem.setResponsible("Projektleitung");
         problem.setTargetDate(LocalDate.of(2026, 8, 5));
-        problem.setCountermeasure("Maßnahme");
+        problem.setCountermeasure("Steering-Entscheidung einholen");
         problem.setCategory("RESSOURCEN");
         problem.setMetric1Label("Bedarf");
         problem.setMetric1Value("3,0 FTE");

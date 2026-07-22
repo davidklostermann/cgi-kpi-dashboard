@@ -18,6 +18,7 @@ import com.cgi.kpi.dashboard.domain.model.Problem;
 import com.cgi.kpi.dashboard.domain.model.Project;
 import com.cgi.kpi.dashboard.domain.model.ProjectReportSnapshot;
 import com.cgi.kpi.dashboard.domain.model.Risk;
+import com.cgi.kpi.dashboard.domain.model.WorkspaceIds;
 
 @SpringBootTest
 @ActiveProfiles("test")
@@ -119,6 +120,7 @@ class DomainExtensionIntegrationTest {
 
     private static Project baseProject(String name) {
         Project project = new Project();
+        project.setWorkspaceId(WorkspaceIds.DEFAULT);
         project.setName(name);
         project.setCustomerName("Test Customer GmbH");
         project.setStatus("ON_TRACK");

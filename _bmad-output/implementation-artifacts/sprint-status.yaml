@@ -1,160 +1,169 @@
-# Sprint Status — cgi-kpi-dashboard MVP
+# generated: 2026-07-21
+# last_updated: 2026-07-21
+# project: cgi-kpi-dashboard
+# project_key: NOKEY
+# tracking_system: file-system
+# story_location: {project-root}/_bmad-output/implementation-artifacts
 
 # STATUS DEFINITIONS:
+# ==================
+# Epic Status:
+#   - backlog: Epic not yet started
+#   - in-progress: Epic actively being worked on
+#   - done: All stories in epic completed
+#
+# Epic Status Transitions:
+#   - backlog → in-progress: Automatically when first story is created (via create-story)
+#   - in-progress → done: Manually when all stories reach 'done' status
+#
+# Story Status:
+#   - backlog: Story only exists in epic file
+#   - ready-for-dev: Story file created in stories folder
+#   - in-progress: Developer actively working on implementation
+#   - review: Ready for code review (via Dev's code-review workflow)
+#   - done: Story completed
+#
+# Retrospective Status:
+#   - optional: Can be completed but not required
+#   - done: Retrospective has been completed
+#
+# Action Item Status:
+#   - open: Committed during a retrospective, not yet addressed
+#   - in-progress: Actively being worked on
+#   - done: Completed
+#
+# WORKFLOW NOTES:
+# ===============
+# - Epic transitions to 'in-progress' automatically when first story is created
+# - Stories can be worked in parallel if team capacity allows
+# - Developer typically creates next story after previous one is 'done' to incorporate learnings
+# - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
+# - Retrospective appends its action items to action_items; sprint-status surfaces open ones
+# - Preservation: Epics 1–9 statuses preserved from prior tracking (done)
+# - P0 Security decisions closed 2026-07-21; Epics 10–14 tracked
+# - Priority: Security & Multi-User (Epic 11) ahead of Epic 10 implementation
+# - ready-for-dev: 10-1-unabhaengiges-laden-fakten-ki (paused)
+# - ready-for-dev: 11-3-spring-security-grundkonfiguration (2026-07-21)
+# - done: 11-2-bootstrap-administrator-env (review patches 2026-07-21)
+# - done: 11-1-datenmodell-workspace-user-flyway (review patches applied 2026-07-21)
 
-#   backlog: Geplant, noch nicht spezifiziert/bereit zur Implementierung
+last_updated: 2026-07-22
+project: cgi-kpi-dashboard
+project_key: NOKEY
+tracking_system: file-system
+story_location: "{project-root}/_bmad-output/implementation-artifacts"
 
-#   ready-for-dev: Story spezifiziert, bereit zur Implementierung
-
-#   in-progress: Aktiv in Entwicklung
-
-#   review: Implementierung abgeschlossen, wartet auf Review
-
-#   done: Abgeschlossen und gemerged
-
-
-
-last_updated: 2026-07-21
+# NOTES:
+# - Epic 11 done (2026-07-22); Epic 12 in-progress
+# - done: 12-1-workspace-scope-private-settings (code review patches 2026-07-22)
+# - review: 12-2-endpoint-policies-ki-admin (2026-07-22)
 
 development_status:
 
   epic-1: done
-
   1-1-backend-grundgeruest-spring-boot: done
-
   1-2-angular-grundstruktur-feature-basiert: done
-
   1-3-lokales-entwicklungs-setup: done
-
   1-4-einheitliches-api-fehlerformat: done
+  epic-1-retrospective: optional
 
   epic-2: done
-
   2-1-cgi-shell-top-nav-side-nav: done
-
   2-2-routing-und-lazy-loading: done
-
   2-3-breadcrumbs-und-seitentitel: done
-
   2-4-layout-raster-haupt-vs-ki-spalte: done
+  epic-2-retrospective: optional
 
   epic-3: done
-
   3-1-domain-modell-und-jpa: done
-
   3-2-flyway-migrationen: done
-
   3-3-mock-seed-20-projekte: done
-
   3-4-kpi-modul-grundstruktur: done
-
   3-5-basis-rest-projekte-und-portfolio: done
-
   3-6-domain-erweiterung-stammdaten-probleme-snapshots: done
-
   3-7-mock-seed-erweiterung: done
+  epic-3-retrospective: optional
 
   epic-4: done
-
   4-1-portfolio-kpi-berechnung-api: done
-
   4-2-kpi-card-komponente: done
-
   4-3-portfolio-kpi-sektion: done
-
   4-4-portfolio-filter: done
+  epic-4-retrospective: optional
 
   epic-5: done
-
   5-1-portfolio-gantt-api: done
-
   5-2-gantt-timeline-komponente: done
-
   5-3-portfolio-projekttabelle: done
-
   5-4-trend-statusvisualisierung: done
-
   5-5-navigation-tabelle-detail: done
+  epic-5-retrospective: optional
 
   epic-6: done
-
   6-1-projekt-kpi-api: done
-
   6-2-projekt-stammdaten-header: done
-
   6-3-projekt-kpi-karten-budget-aufwand: done
-
   6-4-projekt-phasen-meilensteine: done
-
   6-5-zurueck-navigation-filter: done
-
   6-6-management-insights-api-ui: done
-
   6-7-berichtsstandsvergleich: done
+  epic-6-retrospective: optional
 
   epic-7: done
-
   7-1-risiken-api: done
-
   7-2-risiken-ui: done
-
   7-3-status-badge-konsistent: done
-
   7-4-probleme-api-ui: done
-
   7-5-team-kapazitaet: done
+  epic-7-retrospective: optional
 
   epic-8: done
-
   8-1-portfolio-kpi-reader-fuer-ai: done
-
   8-2-portfolio-trendanalyse-api: done
-
   8-3-portfolio-ki-panel: done
-
   8-4-top-3-handlungsbedarf: done
+  epic-8-retrospective: optional
 
   epic-9: done
-
   9-1-approved-project-data-reader: done
-
   9-2-summary-forecast-api: done
-
   9-3-projekt-qa-api: done
-
   9-4-ki-panels-projekt-detail: done
-
   9-5-quick-reply-chips: done
+  epic-9-retrospective: optional
 
-  # --- Epic 10 (MVP Qualität/A11y) — backlog, noch keine Implementierung ---
-  epic-10: backlog
-  10-1-unabhaengiges-laden-fakten-ki: backlog
+  epic-10: in-progress
+  10-1-unabhaengiges-laden-fakten-ki: ready-for-dev
   10-2-graceful-degradation-ui: backlog
   10-3-barrierefreiheit-wcag: backlog
   10-4-screenreader-zusammenfassungen: backlog
+  epic-10-retrospective: optional
 
-  # --- Post-MVP Security (P0 closed 2026-07-21) — backlog ---
-  epic-11: backlog
-  11-1-datenmodell-workspace-user-flyway: backlog
-  11-2-bootstrap-administrator-env: backlog
-  11-3-spring-security-grundkonfiguration: backlog
-  11-4-login-logout-me: backlog
-  11-5-angular-authentifizierung: backlog
-  11-6-session-und-auth-tests: backlog
+  epic-11: done
+  11-1-datenmodell-workspace-user-flyway: done
+  11-2-bootstrap-administrator-env: done
+  11-3-spring-security-grundkonfiguration: done
+  11-4-login-logout-me: done
+  11-5-angular-authentifizierung: done
+  11-6-session-und-auth-tests: done
+  epic-11-retrospective: optional
 
-  epic-12: backlog
-  12-1-workspace-scope-private-settings: backlog
-  12-2-endpoint-policies-ki-admin: backlog
-  12-3-ai-cache-isolation: backlog
-  12-4-fremdzugriffs-isolationstests: backlog
+  epic-12: done
+  12-1-workspace-scope-private-settings: done
+  12-2-endpoint-policies-ki-admin: done
+  12-3-ai-cache-isolation: done
+  12-4-fremdzugriffs-isolationstests: done
+  epic-12-retrospective: optional
 
   epic-13: backlog
   13-1-benutzerverwaltung-api: backlog
   13-2-benutzerverwaltung-ui: backlog
   13-3-ai-config-encryption: backlog
   13-4-admin-ai-test-rotation: backlog
+  epic-13-retrospective: optional
 
   epic-14: backlog
   14-1-csrf-cors-cookies-headers: backlog
   14-2-rate-limiting-audit-ui: backlog
   14-3-scanning-session-last-runbooks: backlog
+  epic-14-retrospective: optional

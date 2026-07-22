@@ -18,6 +18,7 @@ import com.cgi.kpi.dashboard.domain.model.Project;
 import com.cgi.kpi.dashboard.domain.model.ProjectBudget;
 import com.cgi.kpi.dashboard.domain.model.ProjectPhase;
 import com.cgi.kpi.dashboard.domain.model.Risk;
+import com.cgi.kpi.dashboard.domain.model.WorkspaceIds;
 
 @SpringBootTest
 @ActiveProfiles("test")
@@ -48,6 +49,7 @@ class DomainRepositoryIntegrationTest {
         long budgetsBefore = projectBudgetRepository.count();
 
         Project project = new Project();
+        project.setWorkspaceId(WorkspaceIds.DEFAULT);
         project.setName("Pilot Alpha");
         project.setCustomerName("Kunde Intern A");
         project.setStatus("ON_TRACK");
@@ -87,6 +89,7 @@ class DomainRepositoryIntegrationTest {
         Project saved = projectRepository.saveAndFlush(project);
 
         assertNotNull(saved.getId());
+        assertEquals(WorkspaceIds.DEFAULT, saved.getWorkspaceId());
         assertEquals(projectsBefore + 1, projectRepository.count());
         assertEquals(phasesBefore + 1, projectPhaseRepository.count());
         assertEquals(milestonesBefore + 1, milestoneRepository.count());
@@ -94,6 +97,9 @@ class DomainRepositoryIntegrationTest {
         assertEquals(budgetsBefore + 1, projectBudgetRepository.count());
 
         assertTrue(projectRepository.findById(saved.getId()).isPresent());
+        assertEquals(
+                WorkspaceIds.DEFAULT,
+                projectRepository.findById(saved.getId()).orElseThrow().getWorkspaceId());
         assertTrue(projectPhaseRepository.findAll().stream().allMatch(phaseEntity -> phaseEntity.getId() != null));
         assertTrue(milestoneRepository.findAll().stream().allMatch(m -> m.getId() != null));
         assertTrue(riskRepository.findAll().stream().allMatch(r -> r.getId() != null));

@@ -114,7 +114,7 @@ describe('PortfolioPageComponent', () => {
         aiGenerated: true,
         disclaimer: 'Disclaimer',
         generatedAt: '2026-07-16T12:00:00Z',
-        topProjects: [],
+        insights: [],
       }),
     );
     httpMock.verify();
@@ -135,11 +135,10 @@ describe('PortfolioPageComponent', () => {
     httpMock.expectOne('/api/portfolio/projects').flush(mockTable);
     httpMock.expectOne('/api/portfolio/trends').flush(mockTrends);
     httpMock.expectOne('/api/portfolio/ai/trend-analysis').flush({
-      text: 'Trendanalyse',
+      insights: [],
       aiGenerated: true,
       disclaimer: 'Disclaimer',
       generatedAt: '2026-07-16T12:00:00Z',
-      topProjects: [],
     });
     fixture.detectChanges();
 
@@ -154,6 +153,6 @@ describe('PortfolioPageComponent', () => {
     expect(fixture.nativeElement.querySelector('app-project-table')).toBeTruthy();
     expect(fixture.nativeElement.querySelectorAll('app-kpi-card').length).toBe(5);
     expect(fixture.nativeElement.querySelector('app-portfolio-ai-panel')).toBeTruthy();
-    expect(fixture.nativeElement.textContent).toContain('KI-Einschätzung');
+    expect(fixture.nativeElement.textContent).toContain('Portfolio-Muster und systemische Risiken');
   });
 });

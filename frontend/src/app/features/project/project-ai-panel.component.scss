@@ -26,12 +26,18 @@
 
 .project-ai-panel__meta,
 .project-ai-panel__hint,
+.project-ai-panel__empty,
 .project-ai-panel__sources,
 .project-ai-panel__disclaimer {
   margin: 0;
   color: var(--cgi-gray-3);
   font-size: 0.75rem;
   line-height: 1.4;
+}
+
+.project-ai-panel__disclaimer {
+  margin-top: 0.25rem;
+  font-style: italic;
 }
 
 .project-ai-panel__tabs {
@@ -103,6 +109,45 @@
   margin-top: 0.5rem;
 }
 
+.project-ai-panel__priority-facts {
+  margin: 0.5rem 0;
+  display: grid;
+  gap: 0.45rem;
+}
+
+.project-ai-panel__priority-facts dt {
+  margin: 0;
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: var(--cgi-gray-3);
+}
+
+.project-ai-panel__priority-facts dd {
+  margin: 0.1rem 0 0;
+  color: var(--cgi-gray-1);
+  line-height: 1.4;
+  font-size: 0.85rem;
+}
+
+.project-ai-panel__evidence-list {
+  margin: 0.35rem 0 0.5rem;
+  padding-left: 1.1rem;
+  color: var(--cgi-gray-1);
+  font-size: 0.85rem;
+  line-height: 1.4;
+}
+
+.project-ai-panel__tech-detail {
+  margin-top: 0.35rem;
+  font-size: 0.75rem;
+  color: var(--cgi-gray-3);
+}
+
+.project-ai-panel__tech-detail summary {
+  cursor: pointer;
+  font-weight: 600;
+}
+
 .project-ai-panel__chip {
   border: 1px solid var(--cgi-purple-6);
   background: var(--cgi-purple-7);
@@ -171,10 +216,14 @@
   font-weight: 600;
 }
 
-.project-ai-panel__disclaimer {
-  margin-top: 0.5rem;
-  padding-top: 0.5rem;
-  border-top: 1px solid var(--cgi-purple-6);
+.project-ai-panel__tech-detail {
+  margin-top: 0.35rem;
+}
+
+.project-ai-panel__tech-detail summary {
+  cursor: pointer;
+  color: var(--cgi-gray-3);
+  font-size: 0.7rem;
 }
 
 .visually-hidden {

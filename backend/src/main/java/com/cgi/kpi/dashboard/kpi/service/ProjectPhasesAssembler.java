@@ -75,8 +75,13 @@ public class ProjectPhasesAssembler {
         Integer deviationDays = null;
         if (milestone.getCompletedDate() != null && milestone.getDueDate() != null) {
             deviationDays = (int) ChronoUnit.DAYS.between(milestone.getDueDate(), milestone.getCompletedDate());
-        } else if (overdue && milestone.getDueDate() != null) {
-            deviationDays = (int) ChronoUnit.DAYS.between(milestone.getDueDate(), REFERENCE_DATE);
+        }
+        Integer overdueDays = null;
+        if (overdue && milestone.getCompletedDate() == null && milestone.getDueDate() != null) {
+            long days = ChronoUnit.DAYS.between(milestone.getDueDate(), REFERENCE_DATE);
+            if (days > 0) {
+                overdueDays = (int) days;
+            }
         }
 
         return new ProjectMilestoneItemDto(
@@ -86,6 +91,7 @@ public class ProjectPhasesAssembler {
                 milestone.getDueDate(),
                 milestone.getCompletedDate(),
                 deviationDays,
+                overdueDays,
                 overdue,
                 null);
     }

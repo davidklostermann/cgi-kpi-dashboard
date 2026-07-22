@@ -1,10 +1,13 @@
 package com.cgi.kpi.dashboard.kpi.service;
 
 import java.time.Instant;
+import java.time.LocalDate;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
+import java.util.regex.Pattern;
 
 import org.springframework.stereotype.Component;
 
@@ -19,6 +22,7 @@ import com.cgi.kpi.dashboard.kpi.dto.ProjectCapacityDto.RoleCapacityItemDto;
 import com.cgi.kpi.dashboard.kpi.dto.ProjectIssuesActionsDto;
 import com.cgi.kpi.dashboard.kpi.dto.ProjectIssuesActionsDto.IssueActionItemDto;
 import com.cgi.kpi.dashboard.kpi.dto.ProjectIssuesActionsDto.MetricDto;
+import com.cgi.kpi.dashboard.kpi.dto.ProjectIssuesActionsDto.RequiredDecisionDto;
 
 /**
  * Assembles operational issues/actions and capacity DTOs for the project detail page.
@@ -28,6 +32,8 @@ public class ProjectIssuesCapacityAssembler {
 
     private static final String STATUS_OPEN = "OPEN";
     private static final String FACTS_BADGE = "Fakten aus Backend";
+    private static final Pattern DECISION_SIGNAL = Pattern.compile(
+            "(?i)(entscheidung|freigeben|steering|eskala)");
 
     public ProjectIssuesActionsDto assembleIssuesActions(Project project, List<Problem> problems, List<Risk> risks) {
         List<IssueActionItemDto> items = new ArrayList<>();
@@ -95,6 +101,15 @@ public class ProjectIssuesCapacityAssembler {
     }
 
     private static IssueActionItemDto fromProblem(Problem problem) {
+        List<MetricDto> metricList = metrics(
+                problem.getMetric1Label(), problem.getMetric1Value(),
+                problem.getMetric2Label(), problem.getMetric2Value(),
+                problem.getMetric3Label(), problem.getMetric3Value(),
+                problem.getMetric4Label(), problem.getMetric4Value());
+        String impact = resolveImpact(metricList);
+        Integer overdueDays = overdueDays(problem.getTargetDate());
+        String actionText = problem.getCountermeasure();
+        boolean escalation = escalationNeeded(problem.getSeverity(), overdueDays, actionText);
         return new IssueActionItemDto(
                 problem.getId(),
                 "PROBLEM",
@@ -102,21 +117,39 @@ public class ProjectIssuesCapacityAssembler {
                 normalizeCategory(problem.getCategory()),
                 problem.getTitle(),
                 problem.getDescription(),
+                impact,
                 problem.getSeverity(),
                 severityLabel(problem.getSeverity()),
-                metrics(
-                        problem.getMetric1Label(), problem.getMetric1Value(),
-                        problem.getMetric2Label(), problem.getMetric2Value(),
-                        problem.getMetric3Label(), problem.getMetric3Value(),
-                        problem.getMetric4Label(), problem.getMetric4Value()),
+                severityLabel(problem.getSeverity()),
+                metricList,
                 problem.getResponsible(),
                 problem.getTargetDate(),
+                overdueDays,
+                overdueLabel(overdueDays),
+                actionText,
+                escalation,
                 "COUNTERMEASURE",
                 "Laufende Maßnahme",
-                problem.getCountermeasure());
+                actionText,
+                requiredDecision(
+                        problem.getResponsible(),
+                        problem.getTargetDate(),
+                        impact,
+                        actionText,
+                        problem.getSeverity(),
+                        overdueDays));
     }
 
     private static IssueActionItemDto fromRisk(Risk risk) {
+        List<MetricDto> metricList = metrics(
+                risk.getMetric1Label(), risk.getMetric1Value(),
+                risk.getMetric2Label(), risk.getMetric2Value(),
+                risk.getMetric3Label(), risk.getMetric3Value(),
+                risk.getMetric4Label(), risk.getMetric4Value());
+        String impact = resolveImpact(metricList);
+        Integer overdueDays = overdueDays(risk.getDueDate());
+        String actionText = risk.getMitigationMeasure();
+        boolean escalation = escalationNeeded(risk.getSeverity(), overdueDays, actionText);
         return new IssueActionItemDto(
                 risk.getId(),
                 "RISK",
@@ -124,18 +157,93 @@ public class ProjectIssuesCapacityAssembler {
                 normalizeCategory(risk.getCategory()),
                 risk.getTitle(),
                 risk.getDescription(),
+                impact,
                 risk.getSeverity(),
                 severityLabel(risk.getSeverity()),
-                metrics(
-                        risk.getMetric1Label(), risk.getMetric1Value(),
-                        risk.getMetric2Label(), risk.getMetric2Value(),
-                        risk.getMetric3Label(), risk.getMetric3Value(),
-                        risk.getMetric4Label(), risk.getMetric4Value()),
+                severityLabel(risk.getSeverity()),
+                metricList,
                 risk.getOwnerName(),
                 risk.getDueDate(),
+                overdueDays,
+                overdueLabel(overdueDays),
+                actionText,
+                escalation,
                 "MITIGATION",
                 "Vorbereitung / Gegensteuerung",
-                risk.getMitigationMeasure());
+                actionText,
+                requiredDecision(
+                        risk.getOwnerName(),
+                        risk.getDueDate(),
+                        impact,
+                        actionText,
+                        risk.getSeverity(),
+                        overdueDays));
+    }
+
+    private static RequiredDecisionDto requiredDecision(
+            String owner,
+            LocalDate dueDate,
+            String impact,
+            String actionText,
+            String severity,
+            Integer overdueDays) {
+        if (!needsDecision(actionText, severity, overdueDays)) {
+            return null;
+        }
+        String impactIfDeferred = impact != null && !impact.isBlank()
+                ? "Bei Nichtentscheidung bleibt die Auswirkung bestehen: " + impact
+                : "Bei Nichtentscheidung bleibt der Handlungsbedarf ungelöst und kann den Projektverlauf weiter belasten.";
+        return new RequiredDecisionDto(
+                owner != null && !owner.isBlank() ? owner : "Nicht zugeordnet",
+                dueDate,
+                impactIfDeferred);
+    }
+
+    private static boolean needsDecision(String actionText, String severity, Integer overdueDays) {
+        if (actionText != null && DECISION_SIGNAL.matcher(actionText).find()) {
+            return true;
+        }
+        return "CRITICAL".equalsIgnoreCase(severity) && overdueDays != null && overdueDays > 0;
+    }
+
+    private static boolean escalationNeeded(String severity, Integer overdueDays, String actionText) {
+        if ("CRITICAL".equalsIgnoreCase(severity)) {
+            return true;
+        }
+        if (overdueDays != null && overdueDays > 0) {
+            return true;
+        }
+        return actionText != null && actionText.toLowerCase(Locale.ROOT).contains("eskala");
+    }
+
+    private static Integer overdueDays(LocalDate dueDate) {
+        if (dueDate == null) {
+            return null;
+        }
+        long days = ChronoUnit.DAYS.between(dueDate, ProjectKpiCalculator.REFERENCE_DATE);
+        if (days <= 0) {
+            return null;
+        }
+        return (int) days;
+    }
+
+    private static String overdueLabel(Integer overdueDays) {
+        if (overdueDays == null || overdueDays <= 0) {
+            return null;
+        }
+        return overdueDays == 1
+                ? "Überfällig seit 1 Tag"
+                : "Überfällig seit " + overdueDays + " Tagen";
+    }
+
+    private static String resolveImpact(List<MetricDto> metricList) {
+        for (MetricDto metric : metricList) {
+            String label = metric.label().toLowerCase(Locale.ROOT);
+            if (label.contains("auswirkung") || label.contains("potenzial") || label.contains("wirkung")) {
+                return metric.label() + ": " + metric.value();
+            }
+        }
+        return null;
     }
 
     private static List<MetricDto> metrics(

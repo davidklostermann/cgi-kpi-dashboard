@@ -14,20 +14,23 @@ import com.cgi.kpi.dashboard.api.projects.dto.ProjectDetailDto;
 import com.cgi.kpi.dashboard.api.projects.dto.ProjectListItemDto;
 import com.cgi.kpi.dashboard.domain.model.Project;
 import com.cgi.kpi.dashboard.infrastructure.persistence.ProjectRepository;
+import com.cgi.kpi.dashboard.security.user.CurrentUserService;
 
 @Service
 @Transactional(readOnly = true)
 public class DefaultProjectQueryService implements ProjectQueryService {
 
     private final ProjectRepository projectRepository;
+    private final CurrentUserService currentUserService;
 
-    public DefaultProjectQueryService(ProjectRepository projectRepository) {
+    public DefaultProjectQueryService(ProjectRepository projectRepository, CurrentUserService currentUserService) {
         this.projectRepository = projectRepository;
+        this.currentUserService = currentUserService;
     }
 
     @Override
     public List<ProjectListItemDto> listProjects() {
-        return projectRepository.findAll().stream()
+        return projectRepository.findAllByWorkspaceId(currentUserService.requireWorkspaceId()).stream()
                 .sorted(Comparator.comparing(Project::getName, String.CASE_INSENSITIVE_ORDER))
                 .map(ProjectMapper::toListItem)
                 .toList();
@@ -35,7 +38,8 @@ public class DefaultProjectQueryService implements ProjectQueryService {
 
     @Override
     public ProjectDetailDto getProject(UUID projectId) {
-        Project project = projectRepository.findById(projectId)
+        Project project = projectRepository
+                .findByIdAndWorkspaceId(projectId, currentUserService.requireWorkspaceId())
                 .orElseThrow(() -> new ApiException(
                         "NOT_FOUND",
                         "Project not found",

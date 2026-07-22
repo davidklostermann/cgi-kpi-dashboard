@@ -1,13 +1,12 @@
-<aside class="portfolio-ai" aria-label="Portfolio KI-Einschätzung">
-  <span class="portfolio-ai__badge">KI-Einschätzung</span>
-  <h2 class="portfolio-ai__title">Portfolio-Trendanalyse</h2>
+<aside class="portfolio-ai" aria-label="Portfolio-Muster und systemische Risiken">
+  <span class="portfolio-ai__badge">Musteranalyse</span>
+  <h2 class="portfolio-ai__title">Portfolio-Muster und systemische Risiken</h2>
 
   @if (status() === 'loading') {
-    <p class="portfolio-ai__state" aria-live="polite">Trendanalyse wird geladen …</p>
+    <p class="portfolio-ai__state" aria-live="polite">Musteranalyse wird geladen …</p>
   } @else if (status() === 'disabled') {
     <div class="portfolio-ai__error" role="alert">
       <p>{{ errorMessage() }}</p>
-      <button type="button" (click)="load()">Erneut versuchen</button>
     </div>
   } @else if (status() === 'error') {
     <div class="portfolio-ai__error" role="alert">
@@ -15,26 +14,55 @@
       <button type="button" (click)="load()">Erneut versuchen</button>
     </div>
   } @else if (analysis(); as data) {
-    @if (!data.text) {
-      <p class="portfolio-ai__state" role="status">Keine Trendanalyse verfügbar.</p>
-    } @else {
-      <p class="portfolio-ai__text">{{ data.text }}</p>
+    <p class="portfolio-ai__sublabel">{{ providerSublabel(data.aiGenerated) }}</p>
 
-      @if (data.topProjects.length > 0) {
-        <h3 class="portfolio-ai__subtitle">Top-3 Handlungsbedarf</h3>
-        <ol class="portfolio-ai__top">
-          @for (project of data.topProjects; track project.projectId) {
-            <li>
-              <a [routerLink]="['/projects', project.projectId]">{{ project.projectName }}</a>
-              <p>{{ project.reason }}</p>
+    @if (displayableInsights(data.insights); as insights) {
+      @if (insights.length === 0) {
+        <p class="portfolio-ai__state" role="status">{{ emptyStateMessage(data.insights) }}</p>
+      } @else {
+        <ul class="portfolio-ai__insights">
+          @for (insight of insights; track insight.id) {
+            <li class="portfolio-ai__card">
+              <p class="portfolio-ai__type">{{ typeLabel(insight.type) }}</p>
+              <h3>{{ insight.title }}</h3>
+              <p>{{ insight.finding }}</p>
+              <p class="portfolio-ai__implication">
+                <strong>Managementauswirkung:</strong> {{ insight.managementImplication }}
+              </p>
+              @if (insight.recommendedAction) {
+                <p class="portfolio-ai__action">
+                  <strong>Handlungsempfehlung:</strong> {{ insight.recommendedAction }}
+                </p>
+              }
+              <p class="portfolio-ai__projects">
+                Betroffene Projekte:
+                @for (project of affectedProjects(insight); track project.id; let last = $last) {
+                  <a [routerLink]="['/projects', project.id]">{{ project.name }}</a>@if (!last) {, }
+                }
+              </p>
+              <details class="portfolio-ai__evidence">
+                <summary>Belege anzeigen</summary>
+                <ul>
+                  @for (item of readableEvidence(insight); track $index) {
+                    <li>
+                      <strong>{{ item.label }}:</strong> {{ item.value }}
+                      @if (item.reportDate) {
+                        <span> ({{ formatReportDate(item.reportDate) }})</span>
+                      }
+                    </li>
+                  }
+                </ul>
+              </details>
+              <p class="portfolio-ai__meta">
+                Konfidenz {{ confidenceLabel(insight.confidence) }} · Datenqualität
+                {{ dataQualityLabel(insight.dataQuality) }}
+              </p>
             </li>
           }
-        </ol>
-      } @else {
-        <p class="portfolio-ai__state" role="status">Keine priorisierten Projekte aus freigegebenen Fakten.</p>
+        </ul>
       }
-
-      <p class="portfolio-ai__disclaimer">{{ data.disclaimer }}</p>
     }
+
+    <p class="portfolio-ai__disclaimer">{{ data.disclaimer }}</p>
   }
 </aside>

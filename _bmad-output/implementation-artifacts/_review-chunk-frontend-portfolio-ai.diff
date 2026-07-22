@@ -1,0 +1,529 @@
+﻿diff --git a/frontend/src/app/features/portfolio/portfolio-ai-panel.component.html b/frontend/src/app/features/portfolio/portfolio-ai-panel.component.html
+index a7f7007..e942694 100644
+--- a/frontend/src/app/features/portfolio/portfolio-ai-panel.component.html
++++ b/frontend/src/app/features/portfolio/portfolio-ai-panel.component.html
+@@ -1,9 +1,9 @@
+-<aside class="portfolio-ai" aria-label="Portfolio KI-Einsch├ñtzung">
+-  <span class="portfolio-ai__badge">KI-Einsch├ñtzung</span>
+-  <h2 class="portfolio-ai__title">Portfolio-Trendanalyse</h2>
++<aside class="portfolio-ai" aria-label="Portfolio-Muster und systemische Risiken">
++  <span class="portfolio-ai__badge">Musteranalyse</span>
++  <h2 class="portfolio-ai__title">Portfolio-Muster und systemische Risiken</h2>
+ 
+   @if (status() === 'loading') {
+-    <p class="portfolio-ai__state" aria-live="polite">Trendanalyse wird geladen ÔÇª</p>
++    <p class="portfolio-ai__state" aria-live="polite">Musteranalyse wird geladen ÔÇª</p>
+   } @else if (status() === 'disabled') {
+     <div class="portfolio-ai__error" role="alert">
+       <p>{{ errorMessage() }}</p>
+@@ -15,26 +15,52 @@
+       <button type="button" (click)="load()">Erneut versuchen</button>
+     </div>
+   } @else if (analysis(); as data) {
+-    @if (!data.text) {
+-      <p class="portfolio-ai__state" role="status">Keine Trendanalyse verf├╝gbar.</p>
+-    } @else {
+-      <p class="portfolio-ai__text">{{ data.text }}</p>
+-
+-      @if (data.topProjects.length > 0) {
+-        <h3 class="portfolio-ai__subtitle">Top-3 Handlungsbedarf</h3>
+-        <ol class="portfolio-ai__top">
+-          @for (project of data.topProjects; track project.projectId) {
+-            <li>
+-              <a [routerLink]="['/projects', project.projectId]">{{ project.projectName }}</a>
+-              <p>{{ project.reason }}</p>
++    @if (displayableInsights(data.insights); as insights) {
++      @if (insights.length === 0) {
++        <p class="portfolio-ai__state" role="status">{{ emptyMessage }}</p>
++      } @else {
++        <ul class="portfolio-ai__insights">
++          @for (insight of insights; track insight.id) {
++            <li class="portfolio-ai__card">
++              <p class="portfolio-ai__type">{{ typeLabel(insight.type) }}</p>
++              <h3>{{ insight.title }}</h3>
++              <p>{{ insight.finding }}</p>
++              <p class="portfolio-ai__implication">
++                <strong>Managementauswirkung:</strong> {{ insight.managementImplication }}
++              </p>
++              @if (insight.recommendedAction) {
++                <p class="portfolio-ai__action">
++                  <strong>Handlungsempfehlung:</strong> {{ insight.recommendedAction }}
++                </p>
++              }
++              <p class="portfolio-ai__projects">
++                Betroffene Projekte:
++                @for (name of insight.affectedProjectNames; track name; let idx = $index; let last = $last) {
++                  <a [routerLink]="['/projects', insight.affectedProjectIds[idx]]">{{ name }}</a>@if (!last) {, }
++                }
++              </p>
++              <details class="portfolio-ai__evidence">
++                <summary>Belege anzeigen</summary>
++                <ul>
++                  @for (item of insight.evidence; track item.label + item.value) {
++                    <li>
++                      <strong>{{ item.label }}:</strong> {{ item.value }}
++                      @if (item.reportDate) {
++                        <span> ({{ item.reportDate }})</span>
++                      }
++                    </li>
++                  }
++                </ul>
++              </details>
++              <p class="portfolio-ai__meta">
++                Konfidenz {{ insight.confidence }} ┬À Datenqualit├ñt {{ insight.dataQuality }}
++              </p>
+             </li>
+           }
+-        </ol>
+-      } @else {
+-        <p class="portfolio-ai__state" role="status">Keine priorisierten Projekte aus freigegebenen Fakten.</p>
++        </ul>
+       }
+-
+-      <p class="portfolio-ai__disclaimer">{{ data.disclaimer }}</p>
+     }
++
++    <p class="portfolio-ai__disclaimer">{{ data.disclaimer }}</p>
+   }
+ </aside>
+diff --git a/frontend/src/app/features/portfolio/portfolio-ai-panel.component.scss b/frontend/src/app/features/portfolio/portfolio-ai-panel.component.scss
+index 221a9f5..f4744b3 100644
+--- a/frontend/src/app/features/portfolio/portfolio-ai-panel.component.scss
++++ b/frontend/src/app/features/portfolio/portfolio-ai-panel.component.scss
+@@ -71,3 +71,65 @@
+   color: var(--cgi-gray-2);
+   font-size: 0.875rem;
+ }
++
++.portfolio-ai__insights {
++  margin: 0;
++  padding: 0;
++  list-style: none;
++  display: grid;
++  gap: 0.75rem;
++}
++
++.portfolio-ai__card {
++  padding: 0.85rem;
++  border: 1px solid var(--cgi-gray-7);
++  border-radius: 0.75rem;
++  background: var(--cgi-surface, #fff);
++}
++
++.portfolio-ai__card h3 {
++  margin: 0.25rem 0 0.45rem;
++  color: var(--cgi-primary-darkest);
++  font-size: 0.95rem;
++}
++
++.portfolio-ai__type {
++  margin: 0;
++  font-size: 0.7rem;
++  font-weight: 700;
++  letter-spacing: 0.03em;
++  text-transform: uppercase;
++  color: var(--cgi-primary);
++}
++
++.portfolio-ai__implication,
++.portfolio-ai__action,
++.portfolio-ai__projects,
++.portfolio-ai__meta {
++  margin: 0.45rem 0 0;
++  font-size: 0.85rem;
++  line-height: 1.4;
++  color: var(--cgi-gray-2);
++}
++
++.portfolio-ai__projects a {
++  font-weight: 700;
++  color: var(--cgi-primary);
++  text-decoration: none;
++}
++
++.portfolio-ai__projects a:hover,
++.portfolio-ai__projects a:focus-visible {
++  text-decoration: underline;
++}
++
++.portfolio-ai__evidence {
++  margin-top: 0.5rem;
++  font-size: 0.8rem;
++  color: var(--cgi-gray-3);
++}
++
++.portfolio-ai__evidence ul {
++  margin: 0.35rem 0 0;
++  padding-left: 1.1rem;
++}
+diff --git a/frontend/src/app/features/portfolio/portfolio-ai-panel.component.spec.ts b/frontend/src/app/features/portfolio/portfolio-ai-panel.component.spec.ts
+index ab12f68..f23aeda 100644
+--- a/frontend/src/app/features/portfolio/portfolio-ai-panel.component.spec.ts
++++ b/frontend/src/app/features/portfolio/portfolio-ai-panel.component.spec.ts
+@@ -4,9 +4,55 @@ import { HttpTestingController, provideHttpClientTesting } from '@angular/common
+ import { provideRouter } from '@angular/router';
+ 
+ import { PortfolioAiPanelComponent } from './portfolio-ai-panel.component';
++import { PortfolioFilterService } from './portfolio-filter.service';
+ 
+ describe('PortfolioAiPanelComponent', () => {
+   let httpMock: HttpTestingController;
++  let filterService: PortfolioFilterService;
++
++  const insightPayload = {
++    insights: [
++      {
++        id: 'deteriorating-1',
++        type: 'DETERIORATING_TREND',
++        title: 'Mehrere Projekte verschlechtern sich',
++        finding: 'Terminabweichung steigt in mehreren Projekten.',
++        managementImplication: 'Geb├╝ndelte Steuerung erforderlich.',
++        recommendedAction: 'Steering ansetzen.',
++        affectedProjectIds: [
++          'a0000000-0000-4000-8000-000000000001',
++          'a0000000-0000-4000-8000-000000000002',
++        ],
++        affectedProjectNames: ['Nexus Analytics Pilot', 'Atlas'],
++        evidence: [
++          { label: 'Nexus Terminabweichung', value: '10 ÔåÆ 14 Tage', projectId: 'a0000000-0000-4000-8000-000000000001' },
++          { label: 'Atlas Terminabweichung', value: '8 ÔåÆ 12 Tage', projectId: 'a0000000-0000-4000-8000-000000000002' },
++        ],
++        confidence: 'HIGH',
++        dataQuality: 'COMPLETE',
++        detectedAt: '2026-07-16T12:00:00Z',
++      },
++      {
++        id: 'single-reject',
++        type: 'DETERIORATING_TREND',
++        title: 'Einzelprojekt ohne Portfoliobezug',
++        finding: 'Nur ein Projekt',
++        managementImplication: 'n/a',
++        affectedProjectIds: ['a0000000-0000-4000-8000-000000000001'],
++        affectedProjectNames: ['Nexus'],
++        evidence: [
++          { label: 'A', value: '1' },
++          { label: 'B', value: '2' },
++        ],
++        confidence: 'LOW',
++        dataQuality: 'INSUFFICIENT',
++        detectedAt: '2026-07-16T12:00:00Z',
++      },
++    ],
++    aiGenerated: true,
++    disclaimer: 'Disclaimer',
++    generatedAt: '2026-07-16T12:00:00Z',
++  };
+ 
+   beforeEach(async () => {
+     await TestBed.configureTestingModule({
+@@ -14,38 +60,47 @@ describe('PortfolioAiPanelComponent', () => {
+       providers: [provideRouter([]), provideHttpClient(), provideHttpClientTesting()],
+     }).compileComponents();
+     httpMock = TestBed.inject(HttpTestingController);
++    filterService = TestBed.inject(PortfolioFilterService);
++    filterService.reset();
+   });
+ 
+   afterEach(() => httpMock.verify());
+ 
+-  it('should render trend text and top projects', () => {
++  it('should render portfolio pattern cards and hide single-project insights', () => {
++    const fixture = TestBed.createComponent(PortfolioAiPanelComponent);
++    fixture.detectChanges();
++
++    httpMock.expectOne('/api/portfolio/ai/trend-analysis').flush(insightPayload);
++    fixture.detectChanges();
++
++    const text = fixture.nativeElement.textContent as string;
++    expect(text).toContain('Portfolio-Muster und systemische Risiken');
++    expect(text).toContain('Mehrere Projekte verschlechtern sich');
++    expect(text).toContain('Nexus Analytics Pilot');
++    expect(text).toContain('Belege anzeigen');
++    expect(text).not.toContain('Einzelprojekt ohne Portfoliobezug');
++    expect(text).not.toContain('KI-Einsch├ñtzung');
++    expect(text).not.toContain('Top-3 Handlungsbedarf');
++  });
++
++  it('should show defined empty state when no insights exist', () => {
+     const fixture = TestBed.createComponent(PortfolioAiPanelComponent);
+     fixture.detectChanges();
+ 
+     httpMock.expectOne('/api/portfolio/ai/trend-analysis').flush({
+-      text: 'Drei Projekte ben├Âtigen Aufmerksamkeit.',
++      insights: [],
+       aiGenerated: true,
+       disclaimer: 'Disclaimer',
+       generatedAt: '2026-07-16T12:00:00Z',
+-      topProjects: [
+-        {
+-          projectId: 'a0000000-0000-4000-8000-000000000001',
+-          projectName: 'Nexus Analytics Pilot',
+-          reason: 'Status kritisch',
+-          evidenceFactIds: ['portfolio.criticalRiskCount'],
+-        },
+-      ],
+     });
+     fixture.detectChanges();
+ 
+-    const text = fixture.nativeElement.textContent as string;
+-    expect(text).toContain('KI-Einsch├ñtzung');
+-    expect(text).toContain('Drei Projekte ben├Âtigen Aufmerksamkeit.');
+-    expect(text).toContain('Nexus Analytics Pilot');
+-    expect(text).toContain('Top-3 Handlungsbedarf');
++    expect(fixture.nativeElement.textContent).toContain(
++      'F├╝r den gew├ñhlten Berichtsstand wurden keine belastbaren projekt├╝bergreifenden Muster erkannt.',
++    );
+   });
+ 
+-  it('should show retry on error', () => {
++  it('should show non-blocking error message and never Failed to fetch', () => {
+     const fixture = TestBed.createComponent(PortfolioAiPanelComponent);
+     fixture.detectChanges();
+ 
+@@ -55,7 +110,11 @@ describe('PortfolioAiPanelComponent', () => {
+     );
+     fixture.detectChanges();
+ 
+-    expect(fixture.nativeElement.textContent).toContain('KI nicht erreichbar');
++    const text = fixture.nativeElement.textContent as string;
++    expect(text).toContain(
++      'Die Portfolio-Musteranalyse ist derzeit nicht verf├╝gbar. KPIs und Projektdaten bleiben uneingeschr├ñnkt nutzbar.',
++    );
++    expect(text).not.toContain('Failed to fetch');
+   });
+ 
+   it('should show disabled only for AI_DISABLED', () => {
+@@ -72,21 +131,36 @@ describe('PortfolioAiPanelComponent', () => {
+     expect(fixture.nativeElement.textContent).toContain('Portfolio-Assistent ist deaktiviert.');
+   });
+ 
+-  it('should show provider error for AI_PROVIDER_ERROR', () => {
++  it('should pass active portfolio filters to the API and reload on filter change', () => {
+     const fixture = TestBed.createComponent(PortfolioAiPanelComponent);
+     fixture.detectChanges();
+ 
+-    httpMock.expectOne('/api/portfolio/ai/trend-analysis').flush(
+-      {
+-        code: 'AI_PROVIDER_ERROR',
+-        message: 'Gemini-Modell nicht gefunden. APP_AI_MODEL pr├╝fen.',
+-      },
+-      { status: 503, statusText: 'Service Unavailable' },
++    httpMock.expectOne('/api/portfolio/ai/trend-analysis').flush({
++      insights: [],
++      aiGenerated: true,
++      disclaimer: 'Disclaimer',
++      generatedAt: '2026-07-16T12:00:00Z',
++    });
++    fixture.detectChanges();
++
++    filterService.update({ customer: 'Acme GmbH' });
++    fixture.detectChanges();
++
++    const req = httpMock.expectOne(
++      (request) =>
++        request.url === '/api/portfolio/ai/trend-analysis' &&
++        request.params.get('customer') === 'Acme GmbH',
+     );
++    req.flush({
++      insights: [],
++      aiGenerated: true,
++      disclaimer: 'Disclaimer',
++      generatedAt: '2026-07-16T12:00:00Z',
++    });
+     fixture.detectChanges();
+ 
+-    expect(fixture.componentInstance.status()).toBe('error');
+-    expect(fixture.nativeElement.textContent).toContain('Gemini-Modell nicht gefunden');
+-    expect(fixture.nativeElement.textContent).toContain('AI_PROVIDER_ERROR');
++    expect(fixture.nativeElement.textContent).toContain(
++      'F├╝r den gew├ñhlten Berichtsstand wurden keine belastbaren projekt├╝bergreifenden Muster erkannt.',
++    );
+   });
+ });
+diff --git a/frontend/src/app/features/portfolio/portfolio-ai-panel.component.ts b/frontend/src/app/features/portfolio/portfolio-ai-panel.component.ts
+index cbf3386..1df9a77 100644
+--- a/frontend/src/app/features/portfolio/portfolio-ai-panel.component.ts
++++ b/frontend/src/app/features/portfolio/portfolio-ai-panel.component.ts
+@@ -1,13 +1,19 @@
+-import { Component, inject, signal } from '@angular/core';
++import { Component, effect, inject, signal } from '@angular/core';
+ import { RouterLink } from '@angular/router';
+ import { take } from 'rxjs';
+ 
+ import { AiApiService } from '../../core/api/ai-api.service';
+ import { resolveAiPanelError } from '../../shared/utils/ai-error.util';
+-import { PortfolioTrendAnalysis } from '../../shared/models/portfolio-ai.model';
++import { PortfolioInsight, PortfolioTrendAnalysis } from '../../shared/models/portfolio-ai.model';
++import { PortfolioFilterService } from './portfolio-filter.service';
+ 
+ type LoadStatus = 'loading' | 'success' | 'error' | 'disabled';
+ 
++const EMPTY_MESSAGE =
++  'F├╝r den gew├ñhlten Berichtsstand wurden keine belastbaren projekt├╝bergreifenden Muster erkannt.';
++const ERROR_MESSAGE =
++  'Die Portfolio-Musteranalyse ist derzeit nicht verf├╝gbar. KPIs und Projektdaten bleiben uneingeschr├ñnkt nutzbar.';
++
+ @Component({
+   selector: 'app-portfolio-ai-panel',
+   imports: [RouterLink],
+@@ -16,35 +22,69 @@ type LoadStatus = 'loading' | 'success' | 'error' | 'disabled';
+ })
+ export class PortfolioAiPanelComponent {
+   private readonly aiApi = inject(AiApiService);
++  private readonly filterService = inject(PortfolioFilterService);
++
++  private loadGeneration = 0;
+ 
+   readonly status = signal<LoadStatus>('loading');
+   readonly analysis = signal<PortfolioTrendAnalysis | null>(null);
+   readonly errorMessage = signal<string | null>(null);
++  readonly emptyMessage = EMPTY_MESSAGE;
+ 
+   constructor() {
+-    this.load();
++    effect(() => {
++      this.filterService.filters();
++      this.load();
++    });
+   }
+ 
+   load(): void {
++    const generation = ++this.loadGeneration;
+     this.status.set('loading');
+     this.errorMessage.set(null);
+     this.aiApi
+-      .getPortfolioTrend()
++      .getPortfolioTrend(this.filterService.toQueryParams())
+       .pipe(take(1))
+       .subscribe({
+         next: (payload) => {
++          if (generation !== this.loadGeneration) {
++            return;
++          }
+           this.analysis.set(payload);
+           this.status.set('success');
+         },
+         error: (error: unknown) => {
++          if (generation !== this.loadGeneration) {
++            return;
++          }
+           this.analysis.set(null);
+-          const resolved = resolveAiPanelError(
+-            error,
+-            'Die KI-Trendanalyse konnte nicht geladen werden.',
+-          );
++          const resolved = resolveAiPanelError(error, ERROR_MESSAGE);
+           this.status.set(resolved.status);
+-          this.errorMessage.set(resolved.message);
++          this.errorMessage.set(
++            resolved.status === 'disabled' ? resolved.message : ERROR_MESSAGE,
++          );
+         },
+       });
+   }
++
++  displayableInsights(insights: PortfolioInsight[] | null | undefined): PortfolioInsight[] {
++    return (insights ?? [])
++      .filter(
++        (insight) =>
++          (insight.evidence?.length ?? 0) >= 2 &&
++          (insight.affectedProjectIds?.length ?? 0) >= 2,
++      )
++      .slice(0, 5);
++  }
++
++  typeLabel(type: string): string {
++    switch (type) {
++      case 'DETERIORATING_TREND':
++        return 'Verschlechternder Trend';
++      case 'REPORTING_PATTERN':
++        return 'Berichtsmuster';
++      default:
++        return type;
++    }
++  }
+ }
+diff --git a/frontend/src/app/features/portfolio/portfolio-page.component.spec.ts b/frontend/src/app/features/portfolio/portfolio-page.component.spec.ts
+index 439e326..2982356 100644
+--- a/frontend/src/app/features/portfolio/portfolio-page.component.spec.ts
++++ b/frontend/src/app/features/portfolio/portfolio-page.component.spec.ts
+@@ -114,7 +114,7 @@ describe('PortfolioPageComponent', () => {
+         aiGenerated: true,
+         disclaimer: 'Disclaimer',
+         generatedAt: '2026-07-16T12:00:00Z',
+-        topProjects: [],
++        insights: [],
+       }),
+     );
+     httpMock.verify();
+@@ -135,11 +135,10 @@ describe('PortfolioPageComponent', () => {
+     httpMock.expectOne('/api/portfolio/projects').flush(mockTable);
+     httpMock.expectOne('/api/portfolio/trends').flush(mockTrends);
+     httpMock.expectOne('/api/portfolio/ai/trend-analysis').flush({
+-      text: 'Trendanalyse',
++      insights: [],
+       aiGenerated: true,
+       disclaimer: 'Disclaimer',
+       generatedAt: '2026-07-16T12:00:00Z',
+-      topProjects: [],
+     });
+     fixture.detectChanges();
+ 
+@@ -154,6 +153,6 @@ describe('PortfolioPageComponent', () => {
+     expect(fixture.nativeElement.querySelector('app-project-table')).toBeTruthy();
+     expect(fixture.nativeElement.querySelectorAll('app-kpi-card').length).toBe(5);
+     expect(fixture.nativeElement.querySelector('app-portfolio-ai-panel')).toBeTruthy();
+-    expect(fixture.nativeElement.textContent).toContain('KI-Einsch├ñtzung');
++    expect(fixture.nativeElement.textContent).toContain('Portfolio-Muster und systemische Risiken');
+   });
+ });
+diff --git a/frontend/src/app/shared/models/portfolio-ai.model.ts b/frontend/src/app/shared/models/portfolio-ai.model.ts
+index 78d0e35..1f9a494 100644
+--- a/frontend/src/app/shared/models/portfolio-ai.model.ts
++++ b/frontend/src/app/shared/models/portfolio-ai.model.ts
+@@ -1,14 +1,38 @@
+-export interface PortfolioTrendTopProject {
+-  projectId: string;
+-  projectName: string;
+-  reason: string;
+-  evidenceFactIds: string[];
++export type PortfolioInsightType =
++  | 'SHARED_DEPENDENCY'
++  | 'PHASE_VARIANCE'
++  | 'CAPACITY_CONFLICT'
++  | 'DETERIORATING_TREND'
++  | 'MEASURE_INEFFECTIVENESS'
++  | 'SYSTEMIC_RISK'
++  | 'REPORTING_PATTERN';
++
++export interface PortfolioInsightEvidence {
++  label: string;
++  value: string;
++  projectId?: string | null;
++  reportDate?: string | null;
++  sourceField?: string | null;
++}
++
++export interface PortfolioInsight {
++  id: string;
++  type: PortfolioInsightType | string;
++  title: string;
++  finding: string;
++  managementImplication: string;
++  recommendedAction?: string | null;
++  affectedProjectIds: string[];
++  affectedProjectNames: string[];
++  evidence: PortfolioInsightEvidence[];
++  confidence: 'HIGH' | 'MEDIUM' | 'LOW' | string;
++  dataQuality: 'COMPLETE' | 'PARTIAL' | 'INSUFFICIENT' | string;
++  detectedAt: string;
+ }
+ 
+ export interface PortfolioTrendAnalysis {
+-  text: string;
++  insights: PortfolioInsight[];
+   aiGenerated: boolean;
+   disclaimer: string;
+   generatedAt: string;
+-  topProjects: PortfolioTrendTopProject[];
+ }

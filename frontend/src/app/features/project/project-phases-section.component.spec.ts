@@ -17,7 +17,7 @@ describe('ProjectPhasesSectionComponent', () => {
 
   afterEach(() => httpMock.verify());
 
-  it('should render phases gantt and overdue milestone summary (Story 6.4)', () => {
+  it('should render project schedule heading, gantt markers and milestone cards (Story 6.4)', () => {
     const fixture = TestBed.createComponent(ProjectPhasesSectionComponent);
     fixture.componentRef.setInput('projectId', 'a0000000-0000-4000-8000-000000000001');
     fixture.detectChanges();
@@ -27,17 +27,17 @@ describe('ProjectPhasesSectionComponent', () => {
       projectName: 'Nexus Analytics Pilot',
       startDate: '2025-03-01',
       plannedEndDate: '2026-06-30',
-      forecastEndDate: '2026-06-30',
+      forecastEndDate: '2026-07-15',
       actualEndDate: null,
-      scheduleDeviationDays: 0,
+      scheduleDeviationDays: 15,
       status: 'ON_TRACK',
       statusLabel: 'Auf Kurs',
       phases: [
         {
           name: 'Umsetzung',
           phaseType: 'IMPLEMENTATION',
-          status: 'COMPLETED',
-          statusLabel: 'Abgeschlossen',
+          status: 'IN_PROGRESS',
+          statusLabel: 'Laufend',
           plannedStartDate: '2025-06-01',
           plannedEndDate: '2026-03-31',
           actualOrForecastStartDate: null,
@@ -54,8 +54,20 @@ describe('ProjectPhasesSectionComponent', () => {
           statusLabel: 'Überfällig',
           plannedDueDate: '2026-06-30',
           actualOrForecastDate: null,
-          deviationDays: 1,
+          deviationDays: null,
+          overdueDays: 1,
           overdue: true,
+          blockers: null,
+        },
+        {
+          name: 'Go-Live',
+          status: 'PLANNED',
+          statusLabel: 'Geplant',
+          plannedDueDate: '2026-09-01',
+          actualOrForecastDate: null,
+          deviationDays: null,
+          overdueDays: null,
+          overdue: false,
           blockers: null,
         },
       ],
@@ -64,9 +76,20 @@ describe('ProjectPhasesSectionComponent', () => {
     fixture.detectChanges();
 
     const text = fixture.nativeElement.textContent as string;
-    expect(text).toContain('Phasen & Meilensteine');
+    expect(text).toContain('Projektzeitplan & Meilensteine');
+    expect(text).not.toContain('Portfolio-Zeitleiste');
+    expect(text).not.toContain('Terminlage');
+    expect(text).toContain('Planende');
+    expect(text).toContain('Forecast-Ende');
+    expect(text).toContain('Heute');
     expect(text).toContain('Pilot-Release');
     expect(text).toContain('Überfällig');
+    expect(text).toContain('Go-Live');
+    expect(text).toContain('Überfällig seit 1 Tag');
+    expect(text).not.toContain('Abweichung');
+    expect(text).not.toContain('+1 Tag');
+    expect(fixture.nativeElement.querySelectorAll('.milestone-card').length).toBe(2);
+    expect(fixture.nativeElement.querySelector('.milestone-card--overdue')).toBeTruthy();
     expect(text).toContain('Überfällige Meilensteine: Pilot-Release.');
   });
 });

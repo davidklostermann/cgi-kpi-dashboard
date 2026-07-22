@@ -20,15 +20,31 @@ public record ProjectIssuesActionsDto(
             String itemTypeLabel,
             String category,
             String title,
-            String description,
+            String cause,
+            String impact,
             String severity,
             String severityLabel,
+            String priority,
             List<MetricDto> metrics,
             String owner,
             LocalDate dueDate,
+            Integer overdueDays,
+            String overdueLabel,
+            String nextAction,
+            boolean escalationNeeded,
             String actionKind,
             String actionLabel,
-            String actionText) {
+            String actionText,
+            RequiredDecisionDto requiredDecision) {
+    }
+
+    /**
+     * Management decision needed for an issue — only present when seed/action text indicates a decision gate.
+     */
+    public record RequiredDecisionDto(
+            String decideWho,
+            LocalDate decideBy,
+            String impactIfDeferred) {
     }
 
     public record MetricDto(String label, String value) {

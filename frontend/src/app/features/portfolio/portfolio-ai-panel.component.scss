@@ -22,21 +22,16 @@
   font-size: 1.05rem;
 }
 
-.portfolio-ai__subtitle {
-  margin: 0.25rem 0 0;
-  font-size: 0.9rem;
-  color: var(--cgi-primary-darkest);
+.portfolio-ai__sublabel {
+  margin: 0;
+  font-size: 0.8rem;
+  color: var(--cgi-gray-3);
 }
 
-.portfolio-ai__text,
 .portfolio-ai__state,
 .portfolio-ai__disclaimer {
   margin: 0;
   line-height: 1.45;
-}
-
-.portfolio-ai__state,
-.portfolio-ai__disclaimer {
   color: var(--cgi-gray-3);
   font-size: 0.85rem;
 }
@@ -48,26 +43,64 @@
   background: #ffcdd2;
 }
 
-.portfolio-ai__top {
+.portfolio-ai__insights {
   margin: 0;
-  padding-left: 1.1rem;
+  padding: 0;
+  list-style: none;
   display: grid;
-  gap: 0.65rem;
+  gap: 0.75rem;
 }
 
-.portfolio-ai__top a {
+.portfolio-ai__card {
+  padding: 0.85rem;
+  border: 1px solid var(--cgi-gray-7);
+  border-radius: 0.75rem;
+  background: var(--cgi-surface, #fff);
+}
+
+.portfolio-ai__card h3 {
+  margin: 0.25rem 0 0.45rem;
+  color: var(--cgi-primary-darkest);
+  font-size: 0.95rem;
+}
+
+.portfolio-ai__type {
+  margin: 0;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: var(--cgi-primary);
+}
+
+.portfolio-ai__implication,
+.portfolio-ai__action,
+.portfolio-ai__projects,
+.portfolio-ai__meta {
+  margin: 0.45rem 0 0;
+  font-size: 0.85rem;
+  line-height: 1.4;
+  color: var(--cgi-gray-2);
+}
+
+.portfolio-ai__projects a {
   font-weight: 700;
   color: var(--cgi-primary);
   text-decoration: none;
 }
 
-.portfolio-ai__top a:hover,
-.portfolio-ai__top a:focus-visible {
+.portfolio-ai__projects a:hover,
+.portfolio-ai__projects a:focus-visible {
   text-decoration: underline;
 }
 
-.portfolio-ai__top p {
-  margin: 0.2rem 0 0;
-  color: var(--cgi-gray-2);
-  font-size: 0.875rem;
+.portfolio-ai__evidence {
+  margin-top: 0.5rem;
+  font-size: 0.8rem;
+  color: var(--cgi-gray-3);
+}
+
+.portfolio-ai__evidence ul {
+  margin: 0.35rem 0 0;
+  padding-left: 1.1rem;
 }

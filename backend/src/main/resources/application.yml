@@ -41,3 +41,6 @@ app:
     # Never commit real keys. Bind only from environment (AD-8 / NFR-2).
     api-key: ${GEMINI_API_KEY:}
     gemini-api-base-url: ${GEMINI_API_BASE_URL:https://generativelanguage.googleapis.com}
+  bootstrap:
+    admin-username: ${BOOTSTRAP_ADMIN_USERNAME:}
+    admin-password: ${BOOTSTRAP_ADMIN_PASSWORD:}

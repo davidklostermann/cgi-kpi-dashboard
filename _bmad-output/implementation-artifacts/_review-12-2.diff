@@ -1,0 +1,1389 @@
+﻿diff --git a/backend/src/main/java/com/cgi/kpi/dashboard/security/config/SecurityConfig.java b/backend/src/main/java/com/cgi/kpi/dashboard/security/config/SecurityConfig.java
+new file mode 100644
+--- /dev/null
++++ b/backend/src/main/java/com/cgi/kpi/dashboard/security/config/SecurityConfig.java
++package com.cgi.kpi.dashboard.security.config;
++
++import org.springframework.context.annotation.Bean;
++import org.springframework.context.annotation.Configuration;
++import org.springframework.http.HttpMethod;
++import org.springframework.security.authentication.AuthenticationManager;
++import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
++import org.springframework.security.config.annotation.web.builders.HttpSecurity;
++import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
++import org.springframework.security.config.http.SessionCreationPolicy;
++import org.springframework.security.web.SecurityFilterChain;
++import org.springframework.security.web.access.intercept.AuthorizationFilter;
++import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
++import org.springframework.security.web.context.SecurityContextRepository;
++import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
++import org.springframework.security.web.csrf.CsrfTokenRequestAttributeHandler;
++
++import com.cgi.kpi.dashboard.security.web.ActiveAccountSessionFilter;
++import com.cgi.kpi.dashboard.security.web.JsonAccessDeniedHandler;
++import com.cgi.kpi.dashboard.security.web.JsonAuthenticationEntryPoint;
++import com.cgi.kpi.dashboard.security.web.MustChangePasswordFilter;
++
++@Configuration
++@EnableWebSecurity
++public class SecurityConfig {
++
++    private final JsonAuthenticationEntryPoint authenticationEntryPoint;
++    private final JsonAccessDeniedHandler accessDeniedHandler;
++    private final ActiveAccountSessionFilter activeAccountSessionFilter;
++    private final MustChangePasswordFilter mustChangePasswordFilter;
++
++    public SecurityConfig(
++            JsonAuthenticationEntryPoint authenticationEntryPoint,
++            JsonAccessDeniedHandler accessDeniedHandler,
++            ActiveAccountSessionFilter activeAccountSessionFilter,
++            MustChangePasswordFilter mustChangePasswordFilter) {
++        this.authenticationEntryPoint = authenticationEntryPoint;
++        this.accessDeniedHandler = accessDeniedHandler;
++        this.activeAccountSessionFilter = activeAccountSessionFilter;
++        this.mustChangePasswordFilter = mustChangePasswordFilter;
++    }
++
++    @Bean
++    AuthenticationManager authenticationManager(AuthenticationConfiguration configuration) throws Exception {
++        return configuration.getAuthenticationManager();
++    }
++
++    @Bean
++    SecurityContextRepository securityContextRepository() {
++        return new HttpSessionSecurityContextRepository();
++    }
++
++    @Bean
++    SecurityFilterChain securityFilterChain(
++            HttpSecurity http, SecurityContextRepository securityContextRepository) throws Exception {
++        CsrfTokenRequestAttributeHandler csrfHandler = new CsrfTokenRequestAttributeHandler();
++        csrfHandler.setCsrfRequestAttributeName("_csrf");
++
++        http.csrf(csrf -> csrf
++                        .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
++                        .csrfTokenRequestHandler(csrfHandler))
++                .sessionManagement(session -> session
++                        .sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED)
++                        .sessionFixation(fixation -> fixation.changeSessionId()))
++                .securityContext(securityContext -> securityContext.securityContextRepository(securityContextRepository))
++                .authorizeHttpRequests(auth -> auth
++                        .requestMatchers(HttpMethod.POST, "/api/auth/login")
++                        .permitAll()
++                        .requestMatchers("/actuator/health")
++                        .permitAll()
++                        .requestMatchers("/actuator/**")
++                        .authenticated()
++                        .requestMatchers("/api/admin/**")
++                        .hasRole("ADMIN")
++                        .requestMatchers("/api/portfolio/ai/**")
++                        .hasRole("ADMIN")
++                        .requestMatchers("/api/projects/*/ai/**")
++                        .hasRole("ADMIN")
++                        .requestMatchers("/api/**")
++                        .authenticated()
++                        .anyRequest()
++                        .permitAll())
++                .exceptionHandling(ex -> ex
++                        .authenticationEntryPoint(authenticationEntryPoint)
++                        .accessDeniedHandler(accessDeniedHandler))
++                .addFilterBefore(activeAccountSessionFilter, AuthorizationFilter.class)
++                .addFilterBefore(mustChangePasswordFilter, AuthorizationFilter.class);
++
++        return http.build();
++    }
++}
+diff --git a/backend/src/main/java/com/cgi/kpi/dashboard/security/user/CurrentUserService.java b/backend/src/main/java/com/cgi/kpi/dashboard/security/user/CurrentUserService.java
+new file mode 100644
+--- /dev/null
++++ b/backend/src/main/java/com/cgi/kpi/dashboard/security/user/CurrentUserService.java
++package com.cgi.kpi.dashboard.security.user;
++
++import java.util.UUID;
++
++import org.springframework.http.HttpStatus;
++import org.springframework.security.core.Authentication;
++import org.springframework.security.core.context.SecurityContextHolder;
++import org.springframework.stereotype.Service;
++
++import com.cgi.kpi.dashboard.api.error.ApiException;
++
++/**
++ * Resolves the authenticated {@link DashboardUserDetails} for service/reader layers (Story 12.1).
++ * AuthZ IDs always come from the security context â€” never from client input.
++ */
++@Service
++public class CurrentUserService {
++
++    public DashboardUserDetails requirePrincipal() {
++        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
++        if (authentication == null
++                || !authentication.isAuthenticated()
++                || !(authentication.getPrincipal() instanceof DashboardUserDetails details)) {
++            throw new ApiException("UNAUTHORIZED", "Authentication required", HttpStatus.UNAUTHORIZED);
++        }
++        return details;
++    }
++
++    public UUID requireUserId() {
++        return requirePrincipal().getUserId();
++    }
++
++    public UUID requireWorkspaceId() {
++        return requirePrincipal().getWorkspaceId();
++    }
++
++    /** Throws 403 if the authenticated principal does not have {@code ROLE_ADMIN} (Story 12.2). */
++    public void requireAdmin() {
++        DashboardUserDetails principal = requirePrincipal();
++        boolean isAdmin = principal.getAuthorities().stream()
++                .anyMatch(authority -> "ROLE_ADMIN".equals(authority.getAuthority()));
++        if (!isAdmin) {
++            throw new ApiException("FORBIDDEN", "Admin role required", HttpStatus.FORBIDDEN);
++        }
++    }
++}
+diff --git a/backend/src/main/java/com/cgi/kpi/dashboard/ai/service/PortfolioAiAnalysisService.java b/backend/src/main/java/com/cgi/kpi/dashboard/ai/service/PortfolioAiAnalysisService.java
+index fa850d2..1910ed9 100644
+--- a/backend/src/main/java/com/cgi/kpi/dashboard/ai/service/PortfolioAiAnalysisService.java
++++ b/backend/src/main/java/com/cgi/kpi/dashboard/ai/service/PortfolioAiAnalysisService.java
+@@ -1,9 +1,10 @@
+ package com.cgi.kpi.dashboard.ai.service;
+ 
+ import java.util.ArrayList;
+-import java.util.HashSet;
+ import java.util.List;
++import java.util.Map;
+ import java.util.Set;
++import java.util.UUID;
+ import java.util.stream.Collectors;
+ 
+ import org.springframework.http.HttpStatus;
+@@ -13,97 +14,281 @@ import com.cgi.kpi.dashboard.ai.client.AiModelClient;
+ import com.cgi.kpi.dashboard.ai.client.GeminiTransportException;
+ import com.cgi.kpi.dashboard.ai.config.AiProperties;
+ import com.cgi.kpi.dashboard.ai.dto.PortfolioTrendAnalysisResponseDto;
+-import com.cgi.kpi.dashboard.ai.dto.PortfolioTrendAnalysisResponseDto.TopProjectDto;
++import com.cgi.kpi.dashboard.ai.dto.PortfolioTrendAnalysisResponseDto.EvidenceDto;
++import com.cgi.kpi.dashboard.ai.dto.PortfolioTrendAnalysisResponseDto.PortfolioInsightDto;
+ import com.cgi.kpi.dashboard.api.error.ApiException;
+ import com.cgi.kpi.dashboard.kpi.dto.ApprovedPortfolioContextDto;
+ import com.cgi.kpi.dashboard.kpi.dto.PortfolioFilterCriteria;
++import com.cgi.kpi.dashboard.kpi.dto.ProjectReportTrendDto;
+ import com.cgi.kpi.dashboard.kpi.reader.PortfolioKpiReader;
++import com.cgi.kpi.dashboard.kpi.reader.PortfolioReportTrendReader;
+ import com.cgi.kpi.dashboard.kpi.reader.PortfolioTableReader;
++import com.cgi.kpi.dashboard.security.user.CurrentUserService;
+ 
+ @Service
+ public class PortfolioAiAnalysisService {
+ 
++    private static final int MAX_INSIGHTS = 5;
++    private static final Set<String> ACTIVE_TYPES = Set.of("DETERIORATING_TREND", "REPORTING_PATTERN");
++    private static final Set<String> ALLOWED_SOURCE_FIELDS = Set.of(
++            "snapshot.scheduleDeviationDays",
++            "snapshot.status",
++            "snapshot.openRiskCount",
++            "snapshot.actualBudget",
++            "snapshot.progressPercent");
++    private static final Set<String> CONFIDENCE_VALUES = Set.of("HIGH", "MEDIUM", "LOW");
++    private static final Set<String> DATA_QUALITY_VALUES = Set.of("COMPLETE", "PARTIAL", "INSUFFICIENT");
++    private static final String DISCLAIMER =
++            "KI-gest├╝tzte Formulierung auf Basis deterministischer Portfolio-Muster. Ersetzt keine Fachentscheidung.";
++
+     private final PortfolioKpiReader portfolioKpiReader;
+     private final PortfolioTableReader portfolioTableReader;
++    private final PortfolioReportTrendReader portfolioReportTrendReader;
+     private final ApprovedPortfolioContextAssembler contextAssembler;
++    private final PortfolioPatternDetector patternDetector;
+     private final AiModelClient aiModelClient;
+     private final AiProperties aiProperties;
++    private final CurrentUserService currentUserService;
+ 
+     public PortfolioAiAnalysisService(
+             PortfolioKpiReader portfolioKpiReader,
+             PortfolioTableReader portfolioTableReader,
++            PortfolioReportTrendReader portfolioReportTrendReader,
+             ApprovedPortfolioContextAssembler contextAssembler,
++            PortfolioPatternDetector patternDetector,
+             AiModelClient aiModelClient,
+-            AiProperties aiProperties) {
++            AiProperties aiProperties,
++            CurrentUserService currentUserService) {
+         this.portfolioKpiReader = portfolioKpiReader;
+         this.portfolioTableReader = portfolioTableReader;
++        this.portfolioReportTrendReader = portfolioReportTrendReader;
+         this.contextAssembler = contextAssembler;
++        this.patternDetector = patternDetector;
+         this.aiModelClient = aiModelClient;
+         this.aiProperties = aiProperties;
++        this.currentUserService = currentUserService;
+     }
+ 
+     public PortfolioTrendAnalysisResponseDto analyzeTrend(PortfolioFilterCriteria criteria) {
++        currentUserService.requireAdmin();
+         ensureEnabled();
+         PortfolioFilterCriteria safe = criteria == null ? PortfolioFilterCriteria.empty() : criteria;
+         ApprovedPortfolioContextDto context = contextAssembler.assemble(
+                 portfolioKpiReader.readPortfolioSummary(safe),
+                 portfolioTableReader.readTable(safe));
+ 
++        List<UUID> candidateIds = context.candidateProjects().stream()
++                .map(ApprovedPortfolioContextDto.CandidateProjectDto::projectId)
++                .toList();
++        List<ProjectReportTrendDto> trends = portfolioReportTrendReader.readTrendsForProjects(candidateIds);
++        List<PortfolioInsightDto> detected = patternDetector.detect(trends);
++
+         try {
++            // LLM may refine wording of detector insights; structure/evidence stay detector-owned.
+             PortfolioTrendAnalysisResponseDto raw = aiModelClient.analyzePortfolio(context);
+-            return validate(context, raw);
+-        } catch (GeminiTransportException ex) {
++            List<PortfolioInsightDto> merged = mergeInsights(detected, raw.insights());
++            return validate(
++                    context,
++                    new PortfolioTrendAnalysisResponseDto(
++                            merged,
++                            true,
++                            raw.disclaimer() == null || raw.disclaimer().isBlank() ? DISCLAIMER : raw.disclaimer(),
++                            raw.generatedAt()),
++                    true);
++        } catch (GeminiTransportException | IllegalStateException ex) {
++            return fallbackOrThrow(context, detected, ex);
++        } catch (RuntimeException ex) {
++            return fallbackOrThrow(context, detected, ex);
++        }
++    }
++
++    private PortfolioTrendAnalysisResponseDto fallbackOrThrow(
++            ApprovedPortfolioContextDto context,
++            List<PortfolioInsightDto> detected,
++            RuntimeException ex) {
++        if (!detected.isEmpty()) {
++            return validate(
++                    context,
++                    new PortfolioTrendAnalysisResponseDto(
++                            detected, false, DISCLAIMER, java.time.Instant.now()),
++                    false);
++        }
++        if (ex instanceof GeminiTransportException geminiEx) {
+             throw AiProviderExceptionMapper.toApiException(
+-                    ex, "Die KI-Trendanalyse ist derzeit nicht verf├╝gbar.");
+-        } catch (IllegalStateException ex) {
++                    geminiEx, "Die Portfolio-Musteranalyse ist derzeit nicht verf├╝gbar.");
++        }
++        if (ex instanceof IllegalStateException illegalState) {
+             throw AiProviderExceptionMapper.toApiException(
+-                    ex, "Die KI-Trendanalyse ist derzeit nicht verf├╝gbar.");
++                    illegalState, "Die Portfolio-Musteranalyse ist derzeit nicht verf├╝gbar.");
+         }
++        throw ex;
++    }
++
++    /**
++     * Detector insights are authoritative for structure/evidence. Matching LLM insights may refine
++     * wording only. LLM-only types are discarded.
++     */
++    static List<PortfolioInsightDto> mergeInsights(
++            List<PortfolioInsightDto> detected,
++            List<PortfolioInsightDto> fromModel) {
++        if (detected == null || detected.isEmpty()) {
++            return List.of();
++        }
++        Map<String, PortfolioInsightDto> modelByType = new java.util.HashMap<>();
++        if (fromModel != null) {
++            for (PortfolioInsightDto insight : fromModel) {
++                if (insight == null || insight.type() == null || insight.type().isBlank()) {
++                    continue;
++                }
++                modelByType.putIfAbsent(insight.type(), insight);
++            }
++        }
++        List<PortfolioInsightDto> merged = new ArrayList<>();
++        for (PortfolioInsightDto base : detected) {
++            PortfolioInsightDto refinement = modelByType.get(base.type());
++            if (refinement == null) {
++                merged.add(base);
++                continue;
++            }
++            merged.add(new PortfolioInsightDto(
++                    base.id(),
++                    base.type(),
++                    blankTo(base.title(), refinement.title()),
++                    blankTo(base.finding(), refinement.finding()),
++                    blankTo(base.managementImplication(), refinement.managementImplication()),
++                    refinement.recommendedAction() != null && !refinement.recommendedAction().isBlank()
++                            ? refinement.recommendedAction()
++                            : base.recommendedAction(),
++                    base.affectedProjectIds(),
++                    base.affectedProjectNames(),
++                    base.evidence(),
++                    base.confidence(),
++                    base.dataQuality(),
++                    base.detectedAt()));
++        }
++        return merged;
++    }
++
++    private static String blankTo(String fallback, String preferred) {
++        if (preferred != null && !preferred.isBlank()) {
++            return preferred.trim();
++        }
++        return fallback;
+     }
+ 
+     private PortfolioTrendAnalysisResponseDto validate(
+             ApprovedPortfolioContextDto context,
+-            PortfolioTrendAnalysisResponseDto raw) {
+-        Set<String> allowed = context.facts().stream()
+-                .map(ApprovedPortfolioContextDto.ApprovedPortfolioFactDto::factId)
+-                .collect(Collectors.toCollection(HashSet::new));
+-        Set<java.util.UUID> knownProjects = context.candidateProjects().stream()
+-                .map(ApprovedPortfolioContextDto.CandidateProjectDto::projectId)
+-                .collect(Collectors.toCollection(HashSet::new));
++            PortfolioTrendAnalysisResponseDto raw,
++            boolean aiGenerated) {
++        Map<UUID, String> projectNames = context.candidateProjects().stream()
++                .collect(Collectors.toMap(
++                        ApprovedPortfolioContextDto.CandidateProjectDto::projectId,
++                        ApprovedPortfolioContextDto.CandidateProjectDto::projectName,
++                        (left, right) -> left));
++        Set<UUID> knownProjects = projectNames.keySet();
+ 
+-        List<TopProjectDto> top = new ArrayList<>();
+-        if (raw.topProjects() != null) {
+-            for (TopProjectDto project : raw.topProjects()) {
+-                if (project.projectId() == null || !knownProjects.contains(project.projectId())) {
+-                    continue;
+-                }
+-                List<String> evidence = project.evidenceFactIds() == null
+-                        ? List.of()
+-                        : project.evidenceFactIds().stream().filter(allowed::contains).distinct().toList();
+-                if (evidence.isEmpty()) {
+-                    continue;
++        List<PortfolioInsightDto> insights = new ArrayList<>();
++        if (raw.insights() != null) {
++            for (PortfolioInsightDto insight : raw.insights()) {
++                PortfolioInsightDto validated = validateInsight(insight, knownProjects, projectNames);
++                if (validated != null) {
++                    insights.add(validated);
+                 }
+-                top.add(new TopProjectDto(
+-                        project.projectId(),
+-                        project.projectName(),
+-                        project.reason(),
+-                        evidence));
+-                if (top.size() == 3) {
++                if (insights.size() == MAX_INSIGHTS) {
+                     break;
+                 }
+             }
+         }
+ 
+-        String text = raw.text() == null || raw.text().isBlank()
+-                ? "Keine ausreichenden freigegebenen Portfolio-Fakten f├╝r eine Trendanalyse."
+-                : raw.text();
+-
+         return new PortfolioTrendAnalysisResponseDto(
+-                text,
+-                true,
++                List.copyOf(insights),
++                aiGenerated,
+                 raw.disclaimer(),
+-                raw.generatedAt(),
+-                List.copyOf(top));
++                raw.generatedAt());
++    }
++
++    private static PortfolioInsightDto validateInsight(
++            PortfolioInsightDto insight,
++            Set<UUID> knownProjects,
++            Map<UUID, String> projectNames) {
++        if (insight == null || insight.type() == null || !ACTIVE_TYPES.contains(insight.type())) {
++            return null;
++        }
++        if (insight.title() == null || insight.title().isBlank()
++                || insight.finding() == null || insight.finding().isBlank()
++                || insight.managementImplication() == null || insight.managementImplication().isBlank()) {
++            return null;
++        }
++        if (insight.evidence() == null || insight.evidence().size() < 2) {
++            return null;
++        }
++
++        List<UUID> affectedIds = new ArrayList<>();
++        if (insight.affectedProjectIds() != null) {
++            for (UUID id : insight.affectedProjectIds()) {
++                if (id != null && knownProjects.contains(id) && !affectedIds.contains(id)) {
++                    affectedIds.add(id);
++                }
++            }
++        }
++        if (affectedIds.size() < 2) {
++            return null;
++        }
++
++        List<String> names = affectedIds.stream()
++                .map(id -> projectNames.getOrDefault(id, id.toString()))
++                .toList();
++        Set<UUID> affectedSet = Set.copyOf(affectedIds);
++        List<EvidenceDto> evidence = new ArrayList<>();
++        for (EvidenceDto item : insight.evidence()) {
++            if (item == null || item.label() == null || item.label().isBlank()
++                    || item.value() == null || item.value().isBlank()) {
++                continue;
++            }
++            String source = item.sourceField();
++            if (source == null || source.isBlank() || !ALLOWED_SOURCE_FIELDS.contains(source)) {
++                continue;
++            }
++            if (item.projectId() == null || !affectedSet.contains(item.projectId())) {
++                continue;
++            }
++            evidence.add(item);
++        }
++        if (evidence.size() < 2) {
++            return null;
++        }
++
++        return new PortfolioInsightDto(
++                insight.id() == null || insight.id().isBlank()
++                        ? insight.type() + "-" + affectedIds.get(0)
++                        : insight.id(),
++                insight.type(),
++                insight.title(),
++                insight.finding(),
++                insight.managementImplication(),
++                insight.recommendedAction(),
++                List.copyOf(affectedIds),
++                List.copyOf(names),
++                List.copyOf(evidence),
++                normalizeConfidence(insight.confidence()),
++                normalizeDataQuality(insight.dataQuality()),
++                insight.detectedAt() == null ? java.time.Instant.now() : insight.detectedAt());
++    }
++
++    private static String normalizeConfidence(String value) {
++        if (value == null || value.isBlank()) {
++            return "MEDIUM";
++        }
++        String normalized = value.trim().toUpperCase();
++        return CONFIDENCE_VALUES.contains(normalized) ? normalized : "MEDIUM";
++    }
++
++    private static String normalizeDataQuality(String value) {
++        if (value == null || value.isBlank()) {
++            return "PARTIAL";
++        }
++        String normalized = value.trim().toUpperCase();
++        return DATA_QUALITY_VALUES.contains(normalized) ? normalized : "PARTIAL";
+     }
+ 
+     private void ensureEnabled() {
+diff --git a/backend/src/main/java/com/cgi/kpi/dashboard/ai/service/ProjectAiAnalysisService.java b/backend/src/main/java/com/cgi/kpi/dashboard/ai/service/ProjectAiAnalysisService.java
+index 35693f1..6dd2f67 100644
+--- a/backend/src/main/java/com/cgi/kpi/dashboard/ai/service/ProjectAiAnalysisService.java
++++ b/backend/src/main/java/com/cgi/kpi/dashboard/ai/service/ProjectAiAnalysisService.java
+@@ -1,14 +1,14 @@
+ package com.cgi.kpi.dashboard.ai.service;
+ 
+-import java.util.Map;
+ import java.util.UUID;
+-import java.util.concurrent.ConcurrentHashMap;
+ 
+ import org.springframework.http.HttpStatus;
+ import org.springframework.stereotype.Service;
+ 
++import com.cgi.kpi.dashboard.ai.cache.ProjectAiAnalysisCache;
+ import com.cgi.kpi.dashboard.ai.client.AiModelClient;
+ import com.cgi.kpi.dashboard.ai.config.AiProperties;
++import com.cgi.kpi.dashboard.ai.config.AiProviderConfigVersionProvider;
+ import com.cgi.kpi.dashboard.ai.dto.ProjectAiAnalysisResponseDto;
+ import com.cgi.kpi.dashboard.ai.dto.ProjectAiQuestionRequestDto;
+ import com.cgi.kpi.dashboard.ai.dto.ProjectAiQuestionResponseDto;
+@@ -16,31 +16,48 @@ import com.cgi.kpi.dashboard.ai.validation.AiEvidenceValidator;
+ import com.cgi.kpi.dashboard.api.error.ApiException;
+ import com.cgi.kpi.dashboard.kpi.dto.ApprovedProjectContextDto;
+ import com.cgi.kpi.dashboard.kpi.reader.ApprovedProjectDataReader;
++import com.cgi.kpi.dashboard.security.user.CurrentUserService;
+ 
+ @Service
+ public class ProjectAiAnalysisService {
+ 
++    static final int MAX_QUESTION_LENGTH = 2000;
++
+     private final ApprovedProjectDataReader approvedProjectDataReader;
+     private final AiModelClient aiModelClient;
+     private final AiEvidenceValidator aiEvidenceValidator;
+     private final AiProperties aiProperties;
+-    private final Map<String, ProjectAiAnalysisResponseDto> cache = new ConcurrentHashMap<>();
++    private final CurrentUserService currentUserService;
++    private final ProjectAiAnalysisCache cache;
++    private final AiProviderConfigVersionProvider configVersionProvider;
+ 
+     public ProjectAiAnalysisService(
+             ApprovedProjectDataReader approvedProjectDataReader,
+             AiModelClient aiModelClient,
+             AiEvidenceValidator aiEvidenceValidator,
+-            AiProperties aiProperties) {
++            AiProperties aiProperties,
++            CurrentUserService currentUserService,
++            ProjectAiAnalysisCache cache,
++            AiProviderConfigVersionProvider configVersionProvider) {
+         this.approvedProjectDataReader = approvedProjectDataReader;
+         this.aiModelClient = aiModelClient;
+         this.aiEvidenceValidator = aiEvidenceValidator;
+         this.aiProperties = aiProperties;
++        this.currentUserService = currentUserService;
++        this.cache = cache;
++        this.configVersionProvider = configVersionProvider;
+     }
+ 
+     public ProjectAiAnalysisResponseDto analyze(UUID projectId, boolean refresh) {
++        currentUserService.requireAdmin();
+         ensureEnabled();
++        UUID workspaceId = currentUserService.requireWorkspaceId();
+         ApprovedProjectContextDto context = loadContext(projectId);
+-        String cacheKey = projectId + "|" + context.factsAsOf();
++        String cacheKey = ProjectAiAnalysisCache.buildKey(
++                workspaceId,
++                projectId,
++                context.factsAsOf(),
++                configVersionProvider.currentVersion());
+         if (!refresh) {
+             ProjectAiAnalysisResponseDto cached = cache.get(cacheKey);
+             if (cached != null) {
+@@ -62,13 +79,21 @@ public class ProjectAiAnalysisService {
+     }
+ 
+     public ProjectAiQuestionResponseDto ask(UUID projectId, ProjectAiQuestionRequestDto request) {
++        currentUserService.requireAdmin();
+         ensureEnabled();
+         if (request == null || request.question() == null || request.question().isBlank()) {
+             throw new ApiException("BAD_REQUEST", "Question must not be empty", HttpStatus.BAD_REQUEST);
+         }
++        String question = request.question().trim();
++        if (question.length() > MAX_QUESTION_LENGTH) {
++            throw new ApiException(
++                    "BAD_REQUEST",
++                    "Question exceeds maximum length of " + MAX_QUESTION_LENGTH + " characters",
++                    HttpStatus.BAD_REQUEST);
++        }
+         ApprovedProjectContextDto context = loadContext(projectId);
+         try {
+-            ProjectAiQuestionResponseDto raw = aiModelClient.answer(context, request.question().trim());
++            ProjectAiQuestionResponseDto raw = aiModelClient.answer(context, question);
+             return aiEvidenceValidator.validateQuestion(context, raw);
+         } catch (com.cgi.kpi.dashboard.ai.client.GeminiTransportException ex) {
+             throw AiProviderExceptionMapper.toApiException(
+diff --git a/backend/src/test/java/com/cgi/kpi/dashboard/api/authz/AiEndpointAuthorizationIntegrationTest.java b/backend/src/test/java/com/cgi/kpi/dashboard/api/authz/AiEndpointAuthorizationIntegrationTest.java
+new file mode 100644
+--- /dev/null
++++ b/backend/src/test/java/com/cgi/kpi/dashboard/api/authz/AiEndpointAuthorizationIntegrationTest.java
++package com.cgi.kpi.dashboard.api.authz;
++
++import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
++import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
++import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
++import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
++import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
++import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
++
++import java.util.UUID;
++
++import org.junit.jupiter.api.BeforeEach;
++import org.junit.jupiter.api.Test;
++import org.springframework.beans.factory.annotation.Autowired;
++import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
++import org.springframework.boot.test.context.SpringBootTest;
++import org.springframework.http.MediaType;
++import org.springframework.mock.web.MockHttpSession;
++import org.springframework.security.crypto.password.PasswordEncoder;
++import org.springframework.test.context.ActiveProfiles;
++import org.springframework.test.context.DynamicPropertyRegistry;
++import org.springframework.test.context.DynamicPropertySource;
++import org.springframework.test.web.servlet.MockMvc;
++import org.springframework.transaction.annotation.Transactional;
++
++import com.cgi.kpi.dashboard.domain.model.AppUser;
++import com.cgi.kpi.dashboard.domain.model.WorkspaceIds;
++import com.cgi.kpi.dashboard.domain.model.WorkspaceMembership;
++import com.cgi.kpi.dashboard.domain.model.WorkspaceRole;
++import com.cgi.kpi.dashboard.infrastructure.persistence.AppUserRepository;
++import com.cgi.kpi.dashboard.infrastructure.persistence.WorkspaceMembershipRepository;
++
++@SpringBootTest
++@AutoConfigureMockMvc
++@ActiveProfiles("test")
++@Transactional
++class AiEndpointAuthorizationIntegrationTest {
++
++    private static final String PASSWORD = "AuthzPass1";
++    private static final UUID KNOWN_PROJECT_ID = UUID.fromString("a0000000-0000-4000-8000-000000000001");
++
++    @DynamicPropertySource
++    static void isolatedDatabase(DynamicPropertyRegistry registry) {
++        registry.add(
++                "spring.datasource.url",
++                () -> "jdbc:h2:mem:ai-authz-"
++                        + UUID.randomUUID()
++                        + ";MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE;DEFAULT_NULL_ORDERING=HIGH");
++        registry.add("app.bootstrap.admin-username", () -> "");
++        registry.add("app.bootstrap.admin-password", () -> "");
++    }
++
++    @Autowired
++    private MockMvc mockMvc;
++
++    @Autowired
++    private AppUserRepository appUserRepository;
++
++    @Autowired
++    private WorkspaceMembershipRepository workspaceMembershipRepository;
++
++    @Autowired
++    private PasswordEncoder passwordEncoder;
++
++    @BeforeEach
++    void seedUsers() {
++        createUser("authz-user", WorkspaceRole.USER);
++        createUser("authz-admin", WorkspaceRole.ADMIN);
++    }
++
++    @Test
++    void workspaceUserCanReadFactEndpoints() throws Exception {
++        MockHttpSession session = login("authz-user");
++
++        mockMvc.perform(get("/api/portfolio/kpis").session(session))
++                .andExpect(status().isOk())
++                .andExpect(jsonPath("$.activeProjectCount").exists());
++
++        mockMvc.perform(get("/api/projects/{id}", KNOWN_PROJECT_ID).session(session))
++                .andExpect(status().isOk())
++                .andExpect(jsonPath("$.name").exists());
++    }
++
++    @Test
++    void workspaceUserIsForbiddenOnAiEndpoints() throws Exception {
++        MockHttpSession session = login("authz-user");
++
++        mockMvc.perform(get("/api/portfolio/ai/trend-analysis").session(session))
++                .andExpect(status().isForbidden())
++                .andExpect(jsonPath("$.code").value("FORBIDDEN"));
++
++        mockMvc.perform(get("/api/projects/{id}/ai/analysis", KNOWN_PROJECT_ID).session(session))
++                .andExpect(status().isForbidden())
++                .andExpect(jsonPath("$.code").value("FORBIDDEN"));
++
++        mockMvc.perform(post("/api/projects/{id}/ai/questions", KNOWN_PROJECT_ID)
++                        .session(session)
++                        .with(csrf())
++                        .contentType(MediaType.APPLICATION_JSON)
++                        .content("{\"question\":\"Status?\"}"))
++                .andExpect(status().isForbidden())
++                .andExpect(jsonPath("$.code").value("FORBIDDEN"));
++    }
++
++    @Test
++    void adminCanAccessAiEndpoints() throws Exception {
++        MockHttpSession session = login("authz-admin");
++
++        mockMvc.perform(get("/api/portfolio/ai/trend-analysis").session(session))
++                .andExpect(status().isOk())
++                .andExpect(jsonPath("$.aiGenerated").exists());
++
++        mockMvc.perform(get("/api/projects/{id}/ai/analysis", KNOWN_PROJECT_ID).session(session))
++                .andExpect(status().isOk())
++                .andExpect(jsonPath("$.summary").exists());
++    }
++
++    @Test
++    void workspaceUserIsForbiddenOnAdminApiPrefix() throws Exception {
++        MockHttpSession session = login("authz-user");
++
++        mockMvc.perform(get("/api/admin/users").session(session))
++                .andExpect(status().isForbidden())
++                .andExpect(jsonPath("$.code").value("FORBIDDEN"));
++    }
++
++    @Test
++    void workspaceUserCanAccessOwnPreferences() throws Exception {
++        MockHttpSession session = login("authz-user");
++
++        mockMvc.perform(get("/api/me/preferences").session(session))
++                .andExpect(status().isOk())
++                .andExpect(jsonPath("$.preferences").exists());
++
++        mockMvc.perform(put("/api/me/preferences")
++                        .session(session)
++                        .with(csrf())
++                        .contentType(MediaType.APPLICATION_JSON)
++                        .content("{\"preferences\":{\"theme\":\"light\"}}"))
++                .andExpect(status().isOk())
++                .andExpect(jsonPath("$.preferences.theme").value("light"));
++    }
++
++    private MockHttpSession login(String username) throws Exception {
++        MockHttpSession session = new MockHttpSession();
++        mockMvc.perform(post("/api/auth/login")
++                        .session(session)
++                        .with(csrf())
++                        .contentType(MediaType.APPLICATION_JSON)
++                        .content("{\"username\":\"" + username + "\",\"password\":\"" + PASSWORD + "\"}"))
++                .andExpect(status().isOk());
++        return session;
++    }
++
++    private void createUser(String username, WorkspaceRole role) {
++        AppUser user = new AppUser();
++        user.setUsername(username);
++        user.setPasswordHash(passwordEncoder.encode(PASSWORD));
++        user.setActive(true);
++        user.setMustChangePassword(false);
++        appUserRepository.saveAndFlush(user);
++
++        WorkspaceMembership membership = new WorkspaceMembership();
++        membership.setWorkspaceId(WorkspaceIds.DEFAULT);
++        membership.setUserId(user.getId());
++        membership.setRole(role);
++        workspaceMembershipRepository.saveAndFlush(membership);
++    }
++}
+diff --git a/backend/src/test/java/com/cgi/kpi/dashboard/security/user/CurrentUserServiceTest.java b/backend/src/test/java/com/cgi/kpi/dashboard/security/user/CurrentUserServiceTest.java
+new file mode 100644
+--- /dev/null
++++ b/backend/src/test/java/com/cgi/kpi/dashboard/security/user/CurrentUserServiceTest.java
++package com.cgi.kpi.dashboard.security.user;
++
++import static org.junit.jupiter.api.Assertions.assertEquals;
++import static org.junit.jupiter.api.Assertions.assertThrows;
++
++import java.util.List;
++import java.util.UUID;
++
++import org.junit.jupiter.api.AfterEach;
++import org.junit.jupiter.api.Test;
++import org.springframework.http.HttpStatus;
++import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
++import org.springframework.security.core.authority.SimpleGrantedAuthority;
++import org.springframework.security.core.context.SecurityContextHolder;
++
++import com.cgi.kpi.dashboard.api.error.ApiException;
++import com.cgi.kpi.dashboard.domain.model.WorkspaceIds;
++
++class CurrentUserServiceTest {
++
++    private final CurrentUserService currentUserService = new CurrentUserService();
++
++    @AfterEach
++    void clear() {
++        SecurityContextHolder.clearContext();
++    }
++
++    @Test
++    void requireWorkspaceIdReturnsPrincipalWorkspace() {
++        UUID userId = UUID.fromString("11111111-1111-4111-8111-111111111111");
++        DashboardUserDetails principal = new DashboardUserDetails(
++                userId,
++                WorkspaceIds.DEFAULT,
++                "admin",
++                "hash",
++                true,
++                false,
++                List.of());
++        SecurityContextHolder.getContext()
++                .setAuthentication(new UsernamePasswordAuthenticationToken(principal, null, principal.getAuthorities()));
++
++        assertEquals(WorkspaceIds.DEFAULT, currentUserService.requireWorkspaceId());
++        assertEquals(userId, currentUserService.requireUserId());
++    }
++
++    @Test
++    void requirePrincipalFailsWithoutDashboardUserDetails() {
++        SecurityContextHolder.getContext()
++                .setAuthentication(new UsernamePasswordAuthenticationToken("plain-user", "n/a", List.of()));
++
++        assertThrows(ApiException.class, currentUserService::requirePrincipal);
++    }
++
++    @Test
++    void requireAdminAllowsAdminPrincipal() {
++        DashboardUserDetails principal = new DashboardUserDetails(
++                UUID.randomUUID(),
++                WorkspaceIds.DEFAULT,
++                "admin",
++                "hash",
++                true,
++                false,
++                List.of(new SimpleGrantedAuthority("ROLE_ADMIN")));
++        SecurityContextHolder.getContext()
++                .setAuthentication(new UsernamePasswordAuthenticationToken(principal, null, principal.getAuthorities()));
++
++        currentUserService.requireAdmin();
++    }
++
++    @Test
++    void requireAdminRejectsUserPrincipal() {
++        DashboardUserDetails principal = new DashboardUserDetails(
++                UUID.randomUUID(),
++                WorkspaceIds.DEFAULT,
++                "user",
++                "hash",
++                true,
++                false,
++                List.of(new SimpleGrantedAuthority("ROLE_USER")));
++        SecurityContextHolder.getContext()
++                .setAuthentication(new UsernamePasswordAuthenticationToken(principal, null, principal.getAuthorities()));
++
++        ApiException ex = assertThrows(ApiException.class, currentUserService::requireAdmin);
++        assertEquals(HttpStatus.FORBIDDEN, ex.getStatus());
++        assertEquals("FORBIDDEN", ex.getCode());
++    }
++}
+diff --git a/backend/src/test/java/com/cgi/kpi/dashboard/ai/service/PortfolioAiAnalysisServiceTest.java b/backend/src/test/java/com/cgi/kpi/dashboard/ai/service/PortfolioAiAnalysisServiceTest.java
+index 380dd46..2561552 100644
+--- a/backend/src/test/java/com/cgi/kpi/dashboard/ai/service/PortfolioAiAnalysisServiceTest.java
++++ b/backend/src/test/java/com/cgi/kpi/dashboard/ai/service/PortfolioAiAnalysisServiceTest.java
+@@ -2,8 +2,13 @@ package com.cgi.kpi.dashboard.ai.service;
+ 
+ import static org.junit.jupiter.api.Assertions.assertEquals;
+ import static org.junit.jupiter.api.Assertions.assertTrue;
++import static org.mockito.Mockito.doNothing;
++import static org.mockito.Mockito.mock;
+ 
++import java.math.BigDecimal;
+ import java.time.Instant;
++import java.time.LocalDate;
++import java.util.Collection;
+ import java.util.List;
+ import java.util.UUID;
+ 
+@@ -12,7 +17,8 @@ import org.junit.jupiter.api.Test;
+ import com.cgi.kpi.dashboard.ai.client.AiModelClient;
+ import com.cgi.kpi.dashboard.ai.config.AiProperties;
+ import com.cgi.kpi.dashboard.ai.dto.PortfolioTrendAnalysisResponseDto;
+-import com.cgi.kpi.dashboard.ai.dto.PortfolioTrendAnalysisResponseDto.TopProjectDto;
++import com.cgi.kpi.dashboard.ai.dto.PortfolioTrendAnalysisResponseDto.EvidenceDto;
++import com.cgi.kpi.dashboard.ai.dto.PortfolioTrendAnalysisResponseDto.PortfolioInsightDto;
+ import com.cgi.kpi.dashboard.ai.dto.ProjectAiAnalysisResponseDto;
+ import com.cgi.kpi.dashboard.ai.dto.ProjectAiQuestionResponseDto;
+ import com.cgi.kpi.dashboard.kpi.dto.ApprovedPortfolioContextDto;
+@@ -23,16 +29,160 @@ import com.cgi.kpi.dashboard.kpi.dto.PortfolioKpiSummaryDto;
+ import com.cgi.kpi.dashboard.kpi.dto.PortfolioStatusDistributionDto;
+ import com.cgi.kpi.dashboard.kpi.dto.PortfolioTableDto;
+ import com.cgi.kpi.dashboard.kpi.dto.PortfolioTableRowDto;
++import com.cgi.kpi.dashboard.kpi.dto.ProjectReportTrendDto;
+ import com.cgi.kpi.dashboard.kpi.reader.PortfolioKpiReader;
++import com.cgi.kpi.dashboard.kpi.reader.PortfolioReportTrendReader;
+ import com.cgi.kpi.dashboard.kpi.reader.PortfolioTableReader;
++import com.cgi.kpi.dashboard.security.user.CurrentUserService;
+ 
+ class PortfolioAiAnalysisServiceTest {
+ 
++    private static final UUID PROJECT_A = UUID.fromString("a0000000-0000-4000-8000-000000000001");
++    private static final UUID PROJECT_B = UUID.fromString("a0000000-0000-4000-8000-000000000002");
++    private static final UUID PROJECT_UNKNOWN = UUID.fromString("a0000000-0000-4000-8000-000000000099");
++
++    @Test
++    void acceptsDeterministicMultiProjectInsightsAndDropsSingleProjectOnes() {
++        AiModelClient client = emptyModelClient(List.of(
++                singleProjectInsight(),
++                validInsightFromModel()));
++
++        PortfolioAiAnalysisService service = new PortfolioAiAnalysisService(
++                summaryReader(),
++                tableReader(PROJECT_A, PROJECT_B),
++                trendsFor(PROJECT_A, PROJECT_B),
++                new ApprovedPortfolioContextAssembler(),
++                new PortfolioPatternDetector(),
++                client,
++                enabledProperties(),
++                adminUserService());
++
++        PortfolioTrendAnalysisResponseDto dto = service.analyzeTrend(PortfolioFilterCriteria.empty());
++        assertTrue(dto.insights().stream().noneMatch(i -> i.affectedProjectIds().size() < 2));
++        assertTrue(dto.insights().stream().anyMatch(i -> "DETERIORATING_TREND".equals(i.type())));
++        assertTrue(dto.aiGenerated());
++    }
++
++    @Test
++    void dropsInsightsWithoutEvidence() {
++        AiModelClient client = emptyModelClient(List.of(new PortfolioInsightDto(
++                "no-evidence",
++                "REPORTING_PATTERN",
++                "Titel",
++                "Finding",
++                "Implication",
++                null,
++                List.of(PROJECT_A, PROJECT_B),
++                List.of("A", "B"),
++                List.of(),
++                "HIGH",
++                "COMPLETE",
++                Instant.now())));
++
++        PortfolioAiAnalysisService service = new PortfolioAiAnalysisService(
++                summaryReader(),
++                tableReader(PROJECT_A, PROJECT_B),
++                ids -> List.of(),
++                new ApprovedPortfolioContextAssembler(),
++                new PortfolioPatternDetector(),
++                client,
++                enabledProperties(),
++                adminUserService());
++
++        PortfolioTrendAnalysisResponseDto dto = service.analyzeTrend(PortfolioFilterCriteria.empty());
++        assertTrue(dto.insights().stream().noneMatch(i -> "no-evidence".equals(i.id())));
++    }
++
+     @Test
+-    void dropsUnknownFactIdsAndUnknownProjects() {
+-        UUID known = UUID.fromString("a0000000-0000-4000-8000-000000000001");
+-        UUID unknown = UUID.fromString("a0000000-0000-4000-8000-000000000099");
++    void usesCanonicalProjectNamesFromBackend() {
++        AiModelClient client = emptyModelClient(List.of());
++
++        PortfolioAiAnalysisService service = new PortfolioAiAnalysisService(
++                summaryReader(),
++                tableReader(PROJECT_A, PROJECT_B),
++                trendsFor(PROJECT_A, PROJECT_B),
++                new ApprovedPortfolioContextAssembler(),
++                new PortfolioPatternDetector(),
++                client,
++                enabledProperties(),
++                adminUserService());
++
++        PortfolioTrendAnalysisResponseDto dto = service.analyzeTrend(PortfolioFilterCriteria.empty());
++        assertTrue(dto.insights().size() >= 1);
++        PortfolioInsightDto first = dto.insights().get(0);
++        assertTrue(first.affectedProjectNames().contains("Nexus"));
++        assertTrue(first.affectedProjectNames().contains("Atlas"));
++    }
++
++    @Test
++    void refinesDetectorWordingFromMatchingModelInsightAndDropsLlmOnlyTypes() {
++        AiModelClient client = emptyModelClient(List.of(
++                new PortfolioInsightDto(
++                        "llm-det",
++                        "DETERIORATING_TREND",
++                        "LLM-Titel",
++                        "LLM-Finding",
++                        "LLM-Implication",
++                        "LLM-Action",
++                        List.of(PROJECT_A, PROJECT_B),
++                        List.of("X", "Y"),
++                        List.of(
++                                new EvidenceDto("fake", "999", PROJECT_A, LocalDate.of(2026, 7, 1), "fake.field"),
++                                new EvidenceDto("fake2", "998", PROJECT_B, LocalDate.of(2026, 7, 1), "fake.field")),
++                        "LOW",
++                        "INSUFFICIENT",
++                        Instant.now()),
++                new PortfolioInsightDto(
++                        "llm-only",
++                        "REPORTING_PATTERN",
++                        "Nur Modell",
++                        "Finding",
++                        "Implication",
++                        null,
++                        List.of(PROJECT_A, PROJECT_B),
++                        List.of("Nexus", "Atlas"),
++                        List.of(
++                                new EvidenceDto(
++                                        "a",
++                                        "1",
++                                        PROJECT_A,
++                                        LocalDate.of(2026, 7, 1),
++                                        "snapshot.openRiskCount"),
++                                new EvidenceDto(
++                                        "b",
++                                        "2",
++                                        PROJECT_B,
++                                        LocalDate.of(2026, 7, 1),
++                                        "snapshot.progressPercent")),
++                        "HIGH",
++                        "COMPLETE",
++                        Instant.now())));
++
++        // Trends produce DETERIORATING + REPORTING; LLM may refine DETERIORATING wording only.
++        PortfolioAiAnalysisService service = new PortfolioAiAnalysisService(
++                summaryReader(),
++                tableReader(PROJECT_A, PROJECT_B),
++                trendsFor(PROJECT_A, PROJECT_B),
++                new ApprovedPortfolioContextAssembler(),
++                new PortfolioPatternDetector(),
++                client,
++                enabledProperties(),
++                adminUserService());
++
++        PortfolioTrendAnalysisResponseDto dto = service.analyzeTrend(PortfolioFilterCriteria.empty());
++        PortfolioInsightDto deteriorating = dto.insights().stream()
++                .filter(i -> "DETERIORATING_TREND".equals(i.type()))
++                .findFirst()
++                .orElseThrow();
++        assertEquals("LLM-Titel", deteriorating.title());
++        assertEquals("LLM-Finding", deteriorating.finding());
++        assertTrue(deteriorating.evidence().stream()
++                .anyMatch(e -> "snapshot.scheduleDeviationDays".equals(e.sourceField())));
++        assertTrue(dto.insights().stream().anyMatch(i -> "REPORTING_PATTERN".equals(i.type())));
++    }
+ 
++    @Test
++    void detectorFallbackSetsAiGeneratedFalse() {
+         AiModelClient client = new AiModelClient() {
+             @Override
+             public ProjectAiAnalysisResponseDto analyze(ApprovedProjectContextDto context) {
+@@ -46,29 +196,78 @@ class PortfolioAiAnalysisServiceTest {
+ 
+             @Override
+             public PortfolioTrendAnalysisResponseDto analyzePortfolio(ApprovedPortfolioContextDto context) {
+-                return new PortfolioTrendAnalysisResponseDto(
+-                        "Text",
+-                        true,
+-                        "Disclaimer",
+-                        Instant.now(),
+-                        List.of(
+-                                new TopProjectDto(unknown, "X", "reason", List.of("portfolio.criticalRiskCount")),
+-                                new TopProjectDto(known, "Nexus", "reason", List.of("unknown.fact", "portfolio.criticalRiskCount"))));
++                throw new RuntimeException("boom");
+             }
+         };
+ 
+         PortfolioAiAnalysisService service = new PortfolioAiAnalysisService(
+                 summaryReader(),
+-                tableReader(known),
++                tableReader(PROJECT_A, PROJECT_B),
++                trendsFor(PROJECT_A, PROJECT_B),
+                 new ApprovedPortfolioContextAssembler(),
++                new PortfolioPatternDetector(),
+                 client,
+-                enabledProperties());
++                enabledProperties(),
++                adminUserService());
+ 
+         PortfolioTrendAnalysisResponseDto dto = service.analyzeTrend(PortfolioFilterCriteria.empty());
+-        assertEquals(1, dto.topProjects().size());
+-        assertEquals(known, dto.topProjects().get(0).projectId());
+-        assertEquals(List.of("portfolio.criticalRiskCount"), dto.topProjects().get(0).evidenceFactIds());
+-        assertTrue(dto.aiGenerated());
++        assertTrue(dto.insights().size() >= 1);
++        assertTrue(!dto.aiGenerated());
++    }
++
++    private static PortfolioInsightDto singleProjectInsight() {
++        return new PortfolioInsightDto(
++                "single",
++                "DETERIORATING_TREND",
++                "Einzelprojekt",
++                "Nur ein Projekt",
++                "Implication",
++                null,
++                List.of(PROJECT_A),
++                List.of("Nexus"),
++                List.of(
++                        new EvidenceDto("a", "1", PROJECT_A, LocalDate.of(2026, 7, 1), "x"),
++                        new EvidenceDto("b", "2", PROJECT_A, LocalDate.of(2026, 7, 1), "y")),
++                "HIGH",
++                "COMPLETE",
++                Instant.now());
++    }
++
++    private static PortfolioInsightDto validInsightFromModel() {
++        return new PortfolioInsightDto(
++                "model-reporting",
++                "REPORTING_PATTERN",
++                "Modell-Muster",
++                "Finding",
++                "Implication",
++                null,
++                List.of(PROJECT_A, PROJECT_UNKNOWN),
++                List.of("Nexus", "Unknown"),
++                List.of(
++                        new EvidenceDto("a", "1", PROJECT_A, LocalDate.of(2026, 7, 1), "x"),
++                        new EvidenceDto("b", "2", PROJECT_B, LocalDate.of(2026, 7, 1), "y")),
++                "MEDIUM",
++                "PARTIAL",
++                Instant.now());
++    }
++
++    private static AiModelClient emptyModelClient(List<PortfolioInsightDto> insights) {
++        return new AiModelClient() {
++            @Override
++            public ProjectAiAnalysisResponseDto analyze(ApprovedProjectContextDto context) {
++                throw new UnsupportedOperationException();
++            }
++
++            @Override
++            public ProjectAiQuestionResponseDto answer(ApprovedProjectContextDto context, String question) {
++                throw new UnsupportedOperationException();
++            }
++
++            @Override
++            public PortfolioTrendAnalysisResponseDto analyzePortfolio(ApprovedPortfolioContextDto context) {
++                return new PortfolioTrendAnalysisResponseDto(insights, true, "Disclaimer", Instant.now());
++            }
++        };
+     }
+ 
+     private static AiProperties enabledProperties() {
+@@ -78,6 +277,12 @@ class PortfolioAiAnalysisServiceTest {
+         return properties;
+     }
+ 
++    private static CurrentUserService adminUserService() {
++        CurrentUserService currentUserService = mock(CurrentUserService.class);
++        doNothing().when(currentUserService).requireAdmin();
++        return currentUserService;
++    }
++
+     private static PortfolioKpiReader summaryReader() {
+         return new PortfolioKpiReader() {
+             @Override
+@@ -93,26 +298,62 @@ class PortfolioAiAnalysisServiceTest {
+         };
+     }
+ 
+-    private static PortfolioTableReader tableReader(UUID projectId) {
++    private static PortfolioTableReader tableReader(UUID first, UUID second) {
+         return criteria -> new PortfolioTableDto(
+-                List.of(new PortfolioTableRowDto(
+-                        projectId,
+-                        "Nexus",
+-                        "Acme",
+-                        "Lead",
+-                        "CRITICAL",
+-                        "Kritisch",
+-                        "Umsetzung",
+-                        40,
+-                        null,
+-                        null,
+-                        12,
+-                        100.0,
+-                        8.0,
+-                        0.0,
+-                        2,
+-                        1,
+-                        Instant.parse("2026-07-10T08:00:00Z"))),
++                List.of(row(first, "Nexus", "CRITICAL"), row(second, "Atlas", "AT_RISK")),
+                 false);
+     }
++
++    private static PortfolioTableRowDto row(UUID id, String name, String status) {
++        return new PortfolioTableRowDto(
++                id,
++                name,
++                "Acme",
++                "Lead",
++                status,
++                status,
++                "Umsetzung",
++                40,
++                null,
++                null,
++                12,
++                100.0,
++                8.0,
++                0.0,
++                2,
++                1,
++                Instant.parse("2026-07-10T08:00:00Z"));
++    }
++
++    private static PortfolioReportTrendReader trendsFor(UUID first, UUID second) {
++        return (Collection<UUID> ids) -> List.of(
++                trend(first, "Nexus", 10, 14, "ON_TRACK", "AT_RISK", 0, 1),
++                trend(second, "Atlas", 8, 12, "AT_RISK", "CRITICAL", 1, 2));
++    }
++
++    private static ProjectReportTrendDto trend(
++            UUID id,
++            String name,
++            int prevDev,
++            int currDev,
++            String prevStatus,
++            String currStatus,
++            int prevRisks,
++            int currRisks) {
++        return new ProjectReportTrendDto(
++                id,
++                name,
++                LocalDate.of(2026, 6, 1),
++                LocalDate.of(2026, 7, 1),
++                prevDev,
++                currDev,
++                prevStatus,
++                currStatus,
++                prevRisks,
++                currRisks,
++                new BigDecimal("100"),
++                new BigDecimal("120"),
++                40,
++                45);
++    }
+ }
+diff --git a/backend/src/test/java/com/cgi/kpi/dashboard/ai/service/ProjectAiAnalysisServiceTest.java b/backend/src/test/java/com/cgi/kpi/dashboard/ai/service/ProjectAiAnalysisServiceTest.java
+index beacd9a..3bd02a2 100644
+--- a/backend/src/test/java/com/cgi/kpi/dashboard/ai/service/ProjectAiAnalysisServiceTest.java
++++ b/backend/src/test/java/com/cgi/kpi/dashboard/ai/service/ProjectAiAnalysisServiceTest.java
+@@ -1,9 +1,13 @@
+ package com.cgi.kpi.dashboard.ai.service;
+ 
+ import static org.junit.jupiter.api.Assertions.assertEquals;
++import static org.junit.jupiter.api.Assertions.assertSame;
+ import static org.junit.jupiter.api.Assertions.assertThrows;
+ import static org.mockito.ArgumentMatchers.any;
++import static org.mockito.Mockito.doNothing;
+ import static org.mockito.Mockito.mock;
++import static org.mockito.Mockito.times;
++import static org.mockito.Mockito.verify;
+ import static org.mockito.Mockito.when;
+ 
+ import java.time.Instant;
+@@ -15,22 +19,31 @@ import org.junit.jupiter.api.BeforeEach;
+ import org.junit.jupiter.api.Test;
+ import org.springframework.http.HttpStatus;
+ 
++import com.cgi.kpi.dashboard.ai.cache.ProjectAiAnalysisCache;
+ import com.cgi.kpi.dashboard.ai.client.AiModelClient;
+ import com.cgi.kpi.dashboard.ai.client.GeminiTransportException;
+ import com.cgi.kpi.dashboard.ai.config.AiProperties;
++import com.cgi.kpi.dashboard.ai.config.AiProviderConfigVersionProvider;
++import com.cgi.kpi.dashboard.ai.dto.ProjectAiAnalysisResponseDto;
+ import com.cgi.kpi.dashboard.ai.validation.AiEvidenceValidator;
+ import com.cgi.kpi.dashboard.api.error.ApiException;
+ import com.cgi.kpi.dashboard.kpi.dto.ApprovedProjectContextDto;
+ import com.cgi.kpi.dashboard.kpi.dto.ApprovedProjectContextDto.ApprovedProjectFactDto;
+ import com.cgi.kpi.dashboard.kpi.reader.ApprovedProjectDataReader;
++import com.cgi.kpi.dashboard.security.user.CurrentUserService;
+ 
+ class ProjectAiAnalysisServiceTest {
+ 
+     private static final UUID PROJECT_ID = UUID.fromString("a0000000-0000-4000-8000-000000000001");
++    private static final UUID WORKSPACE_A = UUID.fromString("10000000-0000-4000-8000-000000000001");
++    private static final UUID WORKSPACE_B = UUID.fromString("20000000-0000-4000-8000-000000000002");
+ 
+     private ApprovedProjectDataReader reader;
+     private AiModelClient modelClient;
+     private AiProperties properties;
++    private CurrentUserService currentUserService;
++    private ProjectAiAnalysisCache cache;
++    private AiProviderConfigVersionProvider configVersionProvider;
+     private ProjectAiAnalysisService service;
+ 
+     @BeforeEach
+@@ -39,9 +52,21 @@ class ProjectAiAnalysisServiceTest {
+         modelClient = mock(AiModelClient.class);
+         properties = new AiProperties();
+         properties.setEnabled(true);
++        currentUserService = mock(CurrentUserService.class);
++        doNothing().when(currentUserService).requireAdmin();
++        when(currentUserService.requireWorkspaceId()).thenReturn(WORKSPACE_A);
++        cache = new ProjectAiAnalysisCache();
++        configVersionProvider = new AiProviderConfigVersionProvider(properties);
+         service = new ProjectAiAnalysisService(
+-                reader, modelClient, new AiEvidenceValidator(), properties);
++                reader,
++                modelClient,
++                new AiEvidenceValidator(),
++                properties,
++                currentUserService,
++                cache,
++                configVersionProvider);
+         when(reader.readApprovedContext(PROJECT_ID)).thenReturn(Optional.of(context()));
++        when(modelClient.analyze(any())).thenReturn(validAnalysis());
+     }
+ 
+     @Test
+@@ -72,6 +97,65 @@ class ProjectAiAnalysisServiceTest {
+         assertEquals("AI_PROVIDER_ERROR", ex.getCode());
+     }
+ 
++    @Test
++    void rejectsQuestionExceedingMaxLength() {
++        String longQuestion = "x".repeat(ProjectAiAnalysisService.MAX_QUESTION_LENGTH + 1);
++
++        ApiException ex = assertThrows(
++                ApiException.class,
++                () -> service.ask(PROJECT_ID, new com.cgi.kpi.dashboard.ai.dto.ProjectAiQuestionRequestDto(longQuestion)));
++
++        assertEquals("BAD_REQUEST", ex.getCode());
++        assertEquals(HttpStatus.BAD_REQUEST, ex.getStatus());
++    }
++
++    @Test
++    void cachesAnalysisWithinSameWorkspace() {
++        ProjectAiAnalysisResponseDto first = service.analyze(PROJECT_ID, false);
++        ProjectAiAnalysisResponseDto second = service.analyze(PROJECT_ID, false);
++
++        assertSame(first, second);
++        verify(modelClient, times(1)).analyze(any());
++    }
++
++    @Test
++    void refreshBypassesCache() {
++        service.analyze(PROJECT_ID, false);
++        service.analyze(PROJECT_ID, true);
++
++        verify(modelClient, times(2)).analyze(any());
++    }
++
++    @Test
++    void differentWorkspacesDoNotShareCache() {
++        service.analyze(PROJECT_ID, false);
++
++        when(currentUserService.requireWorkspaceId()).thenReturn(WORKSPACE_B);
++        service.analyze(PROJECT_ID, false);
++
++        verify(modelClient, times(2)).analyze(any());
++    }
++
++    @Test
++    void configVersionChangeBypassesStaleCache() {
++        service.analyze(PROJECT_ID, false);
++
++        properties.setProviderConfigVersion(1L);
++        service.analyze(PROJECT_ID, false);
++
++        verify(modelClient, times(2)).analyze(any());
++    }
++
++    @Test
++    void invalidateAllForcesFreshAnalysis() {
++        service.analyze(PROJECT_ID, false);
++
++        cache.invalidateAll();
++        service.analyze(PROJECT_ID, false);
++
++        verify(modelClient, times(2)).analyze(any());
++    }
++
+     private static ApprovedProjectContextDto context() {
+         return new ApprovedProjectContextDto(
+                 PROJECT_ID,
+@@ -88,4 +172,27 @@ class ProjectAiAnalysisServiceTest {
+                         "fact-kpis")),
+                 List.of());
+     }
++
++    private static ProjectAiAnalysisResponseDto validAnalysis() {
++        Instant factsAsOf = Instant.parse("2026-07-01T08:00:00Z");
++        return new ProjectAiAnalysisResponseDto(
++                PROJECT_ID,
++                factsAsOf,
++                Instant.parse("2026-07-01T09:00:00Z"),
++                "OK",
++                List.of("kpi"),
++                "Summary based on approved facts.",
++                List.of(new ProjectAiAnalysisResponseDto.PriorityDto(
++                        1,
++                        "Fortschritt pr├╝fen",
++                        "Management should review progress.",
++                        "Review KPI trend",
++                        List.of(new ProjectAiAnalysisResponseDto.EvidenceItemDto(
++                                "Fortschritt", "62 %", "kpi.progressPercent")),
++                        List.of("fact-kpis"))),
++                List.of(),
++                List.of(),
++                true,
++                "Disclaimer");
++    }
+ }

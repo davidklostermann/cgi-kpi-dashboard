@@ -1,0 +1,16 @@
+- Die Template-Schleife koppelt `affectedProjectNames[i]` blind an `affectedProjectIds[i]` ohne Längenabgleich; bei Drift entstehen Links mit `undefined`, abgeschnittene Listen oder falsche Projektzuordnung.
+- `@for (... track name)` über Projektnamen bricht bei gleichnamigen Projekten die Change-Detection/DOM-Zuordnung; Tracking über die ID wäre zwingend.
+- Evidence-Tracking über `item.label + item.value` kollidiert bei identischen Belegzeilen und kann Einträge verschlucken oder falsch aktualisieren.
+- `typeLabel()` lokalisiert nur `DETERIORATING_TREND` und `REPORTING_PATTERN`; alle übrigen im Modell definierten Typen erscheinen als rohe Enum-Strings in der UI.
+- Konfidenz und Datenqualität werden unverändert als `HIGH`/`COMPLETE` usw. ausgegeben, obwohl die restliche Oberfläche deutsch ist — ohne Mapping für Nutzer:innen unlesbar.
+- `reportDate` wird roh gerendert; ISO-Timestamps aus dem Backend landen unformatiert im Panel.
+- `detectedAt` und `aiGenerated` sind im Modell vorhanden, werden aber nirgends angezeigt — Zeitbezug und KI-/Regel-Unterscheidung fehlen vollständig.
+- Clientseitiges `displayableInsights()` filtert Insights stillschweigend weg; der Empty-State behauptet dann fälschlich, es seien „keine Muster erkannt“, obwohl die API welche geliefert hat.
+- Der Filter prüft nur `affectedProjectIds.length >= 2`, nicht die Namensliste — möglich ist die Zeile „Betroffene Projekte:“ ohne sichtbare Links bzw. mit leeren Ankern.
+- Bei Filterwechseln werden parallele HTTP-Calls nicht abgebrochen (`switchMap`/`AbortSignal` fehlen); `loadGeneration` verwirft nur Antworten, die KI-Endpoint-Last bleibt.
+- Nicht-`disabled`-Fehler überschreiben immer die generische `ERROR_MESSAGE` und verwerfen die von `resolveAiPanelError` aufbereiteten Diagnosecodes (`AI_PROVIDER_ERROR` o. ä.).
+- Der Spec-Fall für `AI_PROVIDER_ERROR` wurde entfernt; die neue Fehlerbehandlung ist regressionsanfällig und nicht mehr abgesichert.
+- Bei `AI_DISABLED` bleibt „Erneut versuchen“ sichtbar, obwohl ein Retry denselben Deaktiviert-Zustand liefert — irreführende Aktion.
+- Verwaiste Styles (`.portfolio-ai__top`, `.portfolio-ai__text`, `.portfolio-ai__subtitle`) blieben nach dem Umbau stehen und täuschen noch genutzte Markup-Struktur vor.
+- `displayableInsights()` wird im Template bei jedem Change-Detection-Zyklus neu berechnet und allokiert; ohne Memoization unnötige Arbeit und erschwerte Testbarkeit der Anzeigelogik.
+- Es fehlen Tests für Array-Drift (Names/IDs), unbekannte Insight-Typen und Roh-Metadaten — genau die Stellen, an denen die neue Karten-UI am ehesten bricht.

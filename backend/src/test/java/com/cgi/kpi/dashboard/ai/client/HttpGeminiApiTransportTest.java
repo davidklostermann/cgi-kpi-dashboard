@@ -159,6 +159,34 @@ class HttpGeminiApiTransportTest {
         }
     }
 
+    @Test
+    void rejectsUnsupportedGeminiBaseUrlHost() {
+        AiProperties properties = geminiProperties(9999);
+        properties.setApiKey("test-key");
+        properties.setModel(MODEL);
+        properties.setGeminiApiBaseUrl("https://evil.example.com");
+
+        IllegalStateException ex = assertThrows(
+                IllegalStateException.class,
+                () -> new HttpGeminiApiTransport(properties, objectMapper));
+        assertTrue(ex.getMessage().contains("Unsupported Gemini API base URL host"));
+    }
+
+    @Test
+    void rejectsSchemeLessGoogleGeminiBaseUrl() {
+        assertThrows(
+                IllegalStateException.class,
+                () -> HttpGeminiApiTransport.validateGeminiBaseUrl("//generativelanguage.googleapis.com"));
+    }
+
+    @Test
+    void rejectsHttpGoogleGeminiBaseUrl() {
+        IllegalStateException ex = assertThrows(
+                IllegalStateException.class,
+                () -> HttpGeminiApiTransport.validateGeminiBaseUrl("http://generativelanguage.googleapis.com"));
+        assertTrue(ex.getMessage().contains("HTTPS"));
+    }
+
     private static AiProperties geminiProperties(int port) {
         AiProperties properties = new AiProperties();
         properties.setProvider("gemini");

@@ -26,7 +26,8 @@ public class AiProperties {
 
     private String geminiApiBaseUrl = "https://generativelanguage.googleapis.com";
 
-
+    /** Bump when AI provider config changes; included in cache keys (AD-18). Epic 13.4 will manage this. */
+    private long providerConfigVersion = 0;
 
     public boolean isEnabled() {
 
@@ -119,6 +120,18 @@ public class AiProperties {
     public void setGeminiApiBaseUrl(String geminiApiBaseUrl) {
 
         this.geminiApiBaseUrl = geminiApiBaseUrl;
+
+    }
+
+    public long getProviderConfigVersion() {
+
+        return providerConfigVersion;
+
+    }
+
+    public void setProviderConfigVersion(long providerConfigVersion) {
+
+        this.providerConfigVersion = providerConfigVersion;
 
     }
 

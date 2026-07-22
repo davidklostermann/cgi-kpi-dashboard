@@ -78,6 +78,12 @@ cp backend/.env.example backend/.env
 # GEMINI_API_KEY etc. in backend/.env eintragen (wird von Git ignoriert)
 ```
 
+**Erster Admin (Story 11.2):** Wenn noch kein Benutzer in der Datenbank existiert, legt das Backend beim Start optional einen Admin an — nur wenn `BOOTSTRAP_ADMIN_USERNAME` und `BOOTSTRAP_ADMIN_PASSWORD` in der Umgebung gesetzt sind (z. B. in `backend/.env`). Es gibt kein Default-Passwort im Code oder in Flyway. Ohne diese Variablen startet die App normal, Login ist erst nach Konfiguration möglich (ab Story 11.4).
+
+**API-Authentifizierung (Story 11.3/11.4):** Alle `/api/**`-Endpunkte erfordern eine gültige Session (Cookie-basiert). Login via `POST /api/auth/login` (CSRF-Token erforderlich), Logout via `POST /api/auth/logout`, Identität via `GET /api/auth/me`. Bootstrap-Admin muss Initialpasswort über `POST /api/auth/change-password` ändern. Sessions sind JVM-lokal (Single-Backend-Instance v1); horizontale Skalierung erfordert später Spring Session JDBC/Redis.
+
+**Frontend-Authentifizierung (Story 11.5):** Login unter `/login`; Session-Cookie (kein Token in `localStorage`). CSRF-Header für schreibende Requests automatisch via Interceptor.
+
 ## 3. Frontend starten
 
 In einem zweiten Terminal:

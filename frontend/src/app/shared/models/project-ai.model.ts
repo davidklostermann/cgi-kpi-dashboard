@@ -1,7 +1,15 @@
+export interface ProjectAiEvidenceItem {
+  label: string;
+  value: string;
+  sourceField?: string | null;
+}
+
 export interface ProjectAiPriority {
   rank: number;
   title: string;
-  reason: string;
+  managementImplication: string;
+  requiredDecision: string;
+  evidence: ProjectAiEvidenceItem[];
   evidenceFactIds: string[];
 }
 
