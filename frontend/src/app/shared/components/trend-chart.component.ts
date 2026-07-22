@@ -192,8 +192,8 @@ export class TrendChartComponent {
     valueFormatter: (value: number) => string,
   ): TrendChartModel {
     const width = 440;
-    const height = 220;
-    const padding = { top: 22, right: 18, bottom: 46, left: 64 };
+    const height = 160;
+    const padding = { top: 16, right: 18, bottom: 34, left: 64 };
     const plotWidth = width - padding.left - padding.right;
     const plotHeight = height - padding.top - padding.bottom;
     const range = Math.max(max - min, 1);

@@ -125,7 +125,7 @@ describe('PortfolioPageComponent', () => {
     expect(fixture.componentInstance).toBeTruthy();
   });
 
-  it('should render filter bar, KPI section and facts-ai layout (Story 4.4)', () => {
+  it('should render the full-width dashboard with the AI drawer initially closed', () => {
     const fixture = TestBed.createComponent(PortfolioPageComponent);
     fixture.detectChanges();
 
@@ -134,6 +134,46 @@ describe('PortfolioPageComponent', () => {
     httpMock.expectOne('/api/portfolio/timeline').flush(mockTimeline);
     httpMock.expectOne('/api/portfolio/projects').flush(mockTable);
     httpMock.expectOne('/api/portfolio/trends').flush(mockTrends);
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.textContent).toContain('Portfolio');
+    expect(fixture.nativeElement.querySelector('app-portfolio-filter-bar')).toBeTruthy();
+    expect(fixture.nativeElement.querySelector('app-portfolio-kpi-section')).toBeTruthy();
+    expect(fixture.nativeElement.querySelector('app-portfolio-trends-section')).toBeTruthy();
+    expect(fixture.nativeElement.querySelector('.portfolio-main')).toBeTruthy();
+    expect(fixture.nativeElement.querySelector('.portfolio-main__visualizations')).toBeTruthy();
+    expect(fixture.nativeElement.querySelector('app-trend-chart')).toBeTruthy();
+    expect(fixture.nativeElement.querySelector('app-portfolio-gantt-section')).toBeTruthy();
+    expect(fixture.nativeElement.querySelector('app-portfolio-table-section')).toBeTruthy();
+    expect(fixture.nativeElement.querySelector('app-project-table')).toBeTruthy();
+    expect(fixture.nativeElement.querySelectorAll('app-kpi-card').length).toBe(5);
+    expect(fixture.nativeElement.querySelector('app-facts-ai-layout')).toBeFalsy();
+    expect(fixture.nativeElement.querySelector('.portfolio-ai-drawer')).toBeFalsy();
+    expect(fixture.nativeElement.querySelector('.portfolio-ai-launcher')).toBeTruthy();
+  });
+
+  it('should open and close the AI drawer while restoring focus to its launcher', () => {
+    const fixture = TestBed.createComponent(PortfolioPageComponent);
+    fixture.detectChanges();
+
+    httpMock.expectOne('/api/portfolio/filters/options').flush(mockOptions);
+    httpMock.expectOne('/api/portfolio/kpis').flush(mockSummary);
+    httpMock.expectOne('/api/portfolio/timeline').flush(mockTimeline);
+    httpMock.expectOne('/api/portfolio/projects').flush(mockTable);
+    httpMock.expectOne('/api/portfolio/trends').flush(mockTrends);
+    fixture.detectChanges();
+
+    const main = fixture.nativeElement.querySelector('.portfolio-main') as HTMLElement;
+    const launcher = fixture.nativeElement.querySelector('.portfolio-ai-launcher') as HTMLButtonElement;
+    expect(main).toBeTruthy();
+    expect(main.contains(fixture.nativeElement.querySelector('app-portfolio-kpi-section'))).toBe(true);
+    expect(main.contains(fixture.nativeElement.querySelector('app-portfolio-trends-section'))).toBe(true);
+    expect(main.contains(fixture.nativeElement.querySelector('app-portfolio-gantt-section'))).toBe(true);
+    expect(main.contains(fixture.nativeElement.querySelector('app-portfolio-table-section'))).toBe(true);
+    launcher.focus();
+    launcher.click();
+    fixture.detectChanges();
+
     httpMock.expectOne('/api/portfolio/ai/trend-analysis').flush({
       insights: [],
       aiGenerated: true,
@@ -142,17 +182,37 @@ describe('PortfolioPageComponent', () => {
     });
     fixture.detectChanges();
 
-    expect(fixture.nativeElement.textContent).toContain('Portfolio');
-    expect(fixture.nativeElement.querySelector('app-portfolio-filter-bar')).toBeTruthy();
-    expect(fixture.nativeElement.querySelector('app-portfolio-kpi-section')).toBeTruthy();
-    expect(fixture.nativeElement.querySelector('app-portfolio-trends-section')).toBeTruthy();
-    expect(fixture.nativeElement.querySelector('.page__visualizations')).toBeTruthy();
-    expect(fixture.nativeElement.querySelector('app-trend-chart')).toBeTruthy();
-    expect(fixture.nativeElement.querySelector('app-portfolio-gantt-section')).toBeTruthy();
-    expect(fixture.nativeElement.querySelector('app-portfolio-table-section')).toBeTruthy();
-    expect(fixture.nativeElement.querySelector('app-project-table')).toBeTruthy();
-    expect(fixture.nativeElement.querySelectorAll('app-kpi-card').length).toBe(5);
+    expect(fixture.nativeElement.querySelector('.portfolio-ai-drawer')).toBeTruthy();
     expect(fixture.nativeElement.querySelector('app-portfolio-ai-panel')).toBeTruthy();
-    expect(fixture.nativeElement.textContent).toContain('Portfolio-Muster und systemische Risiken');
+    expect(document.body.style.overflow).toBe('hidden');
+
+    (fixture.nativeElement.querySelector('.portfolio-ai-drawer__close') as HTMLButtonElement).click();
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('.portfolio-ai-drawer')).toBeFalsy();
+    expect(document.activeElement).toBe(launcher);
+    expect(document.body.style.overflow).toBe('');
+  });
+
+  it('should close the AI drawer when Escape is pressed', () => {
+    const fixture = TestBed.createComponent(PortfolioPageComponent);
+    fixture.detectChanges();
+
+    const launcher = fixture.nativeElement.querySelector('.portfolio-ai-launcher') as HTMLButtonElement;
+    launcher.click();
+    fixture.detectChanges();
+
+    httpMock.expectOne('/api/portfolio/ai/trend-analysis').flush({
+      insights: [],
+      aiGenerated: true,
+      disclaimer: 'Disclaimer',
+      generatedAt: '2026-07-16T12:00:00Z',
+    });
+    fixture.detectChanges();
+
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('.portfolio-ai-drawer')).toBeFalsy();
   });
 });

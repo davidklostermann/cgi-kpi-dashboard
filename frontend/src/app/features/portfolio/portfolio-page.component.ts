@@ -1,6 +1,7 @@
-import { Component } from '@angular/core';
+import { DOCUMENT } from '@angular/common';
+import { CdkTrapFocus } from '@angular/cdk/a11y';
+import { Component, ElementRef, HostListener, inject, signal, viewChild } from '@angular/core';
 
-import { FactsAiLayoutComponent } from '../../core/layout/facts-ai-layout.component';
 import { PortfolioAiPanelComponent } from './portfolio-ai-panel.component';
 import { PortfolioGanttSectionComponent } from './portfolio-gantt-section.component';
 import { PortfolioTableSectionComponent } from './portfolio-table-section.component';
@@ -12,7 +13,7 @@ import { PortfolioKpiSectionComponent } from './portfolio-kpi-section.component'
 @Component({
   selector: 'app-portfolio-page',
   imports: [
-    FactsAiLayoutComponent,
+    CdkTrapFocus,
     PortfolioAiPanelComponent,
     PortfolioFilterBarComponent,
     PortfolioKpiSectionComponent,
@@ -23,4 +24,31 @@ import { PortfolioKpiSectionComponent } from './portfolio-kpi-section.component'
   templateUrl: './portfolio-page.component.html',
   styleUrl: './portfolio-page.component.scss',
 })
-export class PortfolioPageComponent {}
+export class PortfolioPageComponent {
+  private readonly document = inject(DOCUMENT);
+  private readonly launcher = viewChild<ElementRef<HTMLButtonElement>>('aiLauncher');
+
+  readonly portfolioAiOpen = signal(false);
+  private previousBodyOverflow = '';
+
+  openPortfolioAi(): void {
+    this.previousBodyOverflow = this.document.body.style.overflow;
+    this.document.body.style.overflow = 'hidden';
+    this.portfolioAiOpen.set(true);
+  }
+
+  closePortfolioAi(): void {
+    if (!this.portfolioAiOpen()) {
+      return;
+    }
+
+    this.portfolioAiOpen.set(false);
+    this.document.body.style.overflow = this.previousBodyOverflow;
+    this.launcher()?.nativeElement.focus();
+  }
+
+  @HostListener('document:keydown.escape')
+  onEscape(): void {
+    this.closePortfolioAi();
+  }
+}

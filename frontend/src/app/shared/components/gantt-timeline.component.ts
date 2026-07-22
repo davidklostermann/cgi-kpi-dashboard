@@ -52,7 +52,7 @@ export interface GanttRowLayout {
 }
 
 const MS_PER_DAY = 86_400_000;
-const MONTH_COL_REM_PORTFOLIO = 5.5;
+const MONTH_COL_REM_PORTFOLIO = 4;
 const MONTH_COL_REM_PROJECT = 4.25;
 
 /** Portfolio/Project Gantt timeline — CGI-konforme HTML/CSS presentation (FR-3 / Story 5.2 / 6.4). */

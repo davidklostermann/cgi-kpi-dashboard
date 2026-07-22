@@ -49,9 +49,13 @@ describe('TrendChartComponent', () => {
     const fixture = TestBed.createComponent(TestHostComponent);
     fixture.detectChanges();
 
-    expect(
-      fixture.nativeElement.querySelectorAll('.trend-chart__svg').length,
-    ).toBe(2);
+    const charts = fixture.nativeElement.querySelectorAll(
+      '.trend-chart__svg',
+    ) as NodeListOf<SVGElement>;
+    expect(charts.length).toBe(2);
+    charts.forEach((chart) =>
+      expect(chart.getAttribute('viewBox')).toBe('0 0 440 160'),
+    );
     expect(fixture.nativeElement.textContent).toContain(
       'Portfolio-Fortschritt',
     );

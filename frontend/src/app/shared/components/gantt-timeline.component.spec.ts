@@ -74,6 +74,10 @@ describe('GanttTimelineComponent', () => {
     );
   });
 
+  it('should use compact month columns in the portfolio timeline', () => {
+    expect(fixture.componentInstance.monthColRem()).toBe(4);
+  });
+
   it('should expose accessible handover summary', () => {
     const summary = fixture.nativeElement.querySelector(
       '#gantt-timeline-summary',
