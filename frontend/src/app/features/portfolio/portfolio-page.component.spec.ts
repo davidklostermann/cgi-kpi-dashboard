@@ -144,6 +144,9 @@ describe('PortfolioPageComponent', () => {
     expect(fixture.nativeElement.querySelector('.portfolio-main__visualizations')).toBeTruthy();
     expect(fixture.nativeElement.querySelector('app-trend-chart')).toBeTruthy();
     expect(fixture.nativeElement.querySelector('app-portfolio-gantt-section')).toBeTruthy();
+    expect(fixture.nativeElement.querySelector('.trend-chart__grid')).toBeTruthy();
+    expect(fixture.nativeElement.querySelectorAll('.trend-chart__panel').length).toBe(3);
+    expect(fixture.nativeElement.querySelector('.gantt-timeline__frame')).toBeTruthy();
     expect(fixture.nativeElement.querySelector('app-portfolio-table-section')).toBeTruthy();
     expect(fixture.nativeElement.querySelector('app-project-table')).toBeTruthy();
     expect(fixture.nativeElement.querySelectorAll('app-kpi-card').length).toBe(5);
@@ -164,12 +167,22 @@ describe('PortfolioPageComponent', () => {
     fixture.detectChanges();
 
     const main = fixture.nativeElement.querySelector('.portfolio-main') as HTMLElement;
-    const launcher = fixture.nativeElement.querySelector('.portfolio-ai-launcher') as HTMLButtonElement;
+    const launcher = fixture.nativeElement.querySelector(
+      '.portfolio-ai-launcher',
+    ) as HTMLButtonElement;
     expect(main).toBeTruthy();
-    expect(main.contains(fixture.nativeElement.querySelector('app-portfolio-kpi-section'))).toBe(true);
-    expect(main.contains(fixture.nativeElement.querySelector('app-portfolio-trends-section'))).toBe(true);
-    expect(main.contains(fixture.nativeElement.querySelector('app-portfolio-gantt-section'))).toBe(true);
-    expect(main.contains(fixture.nativeElement.querySelector('app-portfolio-table-section'))).toBe(true);
+    expect(main.contains(fixture.nativeElement.querySelector('app-portfolio-kpi-section'))).toBe(
+      true,
+    );
+    expect(main.contains(fixture.nativeElement.querySelector('app-portfolio-trends-section'))).toBe(
+      true,
+    );
+    expect(main.contains(fixture.nativeElement.querySelector('app-portfolio-gantt-section'))).toBe(
+      true,
+    );
+    expect(main.contains(fixture.nativeElement.querySelector('app-portfolio-table-section'))).toBe(
+      true,
+    );
     launcher.focus();
     launcher.click();
     fixture.detectChanges();
@@ -186,7 +199,9 @@ describe('PortfolioPageComponent', () => {
     expect(fixture.nativeElement.querySelector('app-portfolio-ai-panel')).toBeTruthy();
     expect(document.body.style.overflow).toBe('hidden');
 
-    (fixture.nativeElement.querySelector('.portfolio-ai-drawer__close') as HTMLButtonElement).click();
+    (
+      fixture.nativeElement.querySelector('.portfolio-ai-drawer__close') as HTMLButtonElement
+    ).click();
     fixture.detectChanges();
 
     expect(fixture.nativeElement.querySelector('.portfolio-ai-drawer')).toBeFalsy();
@@ -198,7 +213,9 @@ describe('PortfolioPageComponent', () => {
     const fixture = TestBed.createComponent(PortfolioPageComponent);
     fixture.detectChanges();
 
-    const launcher = fixture.nativeElement.querySelector('.portfolio-ai-launcher') as HTMLButtonElement;
+    const launcher = fixture.nativeElement.querySelector(
+      '.portfolio-ai-launcher',
+    ) as HTMLButtonElement;
     launcher.click();
     fixture.detectChanges();
 

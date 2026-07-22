@@ -1,5 +1,13 @@
+:host {
+  display: block;
+  width: 100%;
+  min-width: 0;
+}
+
 .gantt-timeline {
-  margin-top: 2rem;
+  margin-top: 0;
+  width: 100%;
+  min-width: 0;
 }
 
 .gantt-timeline--project {
@@ -39,7 +47,8 @@
 
 .gantt-timeline__frame {
   display: flex;
-  max-height: min(34rem, 72vh);
+  width: 100%;
+  min-width: 0;
   overflow: hidden;
   border: 1px solid var(--cgi-gray-6);
   border-radius: 0.5rem;
@@ -50,6 +59,10 @@
   &:focus-visible {
     box-shadow: 0 0 0 3px var(--cgi-purple-5);
   }
+}
+
+.gantt-timeline:not(.gantt-timeline--project) .gantt-timeline__frame {
+  height: clamp(22.5rem, 50vh, 26.25rem);
 }
 
 .gantt-timeline__names {
@@ -316,7 +329,8 @@
 }
 
 .gantt-timeline__handover--delayed.gantt-timeline__handover--current .gantt-timeline__handover-line,
-.gantt-timeline__handover--delayed.gantt-timeline__handover--forecast .gantt-timeline__handover-line {
+.gantt-timeline__handover--delayed.gantt-timeline__handover--forecast
+  .gantt-timeline__handover-line {
   background: var(--cgi-error);
 }
 
@@ -373,8 +387,10 @@
   background: var(--cgi-orange-3, #e65100);
 }
 
-.gantt-timeline__handover--delayed.gantt-timeline__handover--current .gantt-timeline__handover-label,
-.gantt-timeline__handover--delayed.gantt-timeline__handover--forecast .gantt-timeline__handover-label {
+.gantt-timeline__handover--delayed.gantt-timeline__handover--current
+  .gantt-timeline__handover-label,
+.gantt-timeline__handover--delayed.gantt-timeline__handover--forecast
+  .gantt-timeline__handover-label {
   background: var(--cgi-error);
 }
 
@@ -446,9 +462,9 @@
 
 @media (max-width: 720px) {
   .gantt-timeline__names {
-    flex-basis: 10rem;
-    width: 10rem;
-    min-width: 10rem;
+    flex-basis: clamp(4.5rem, 32%, 10rem);
+    width: auto;
+    min-width: 4.5rem;
   }
 }
 

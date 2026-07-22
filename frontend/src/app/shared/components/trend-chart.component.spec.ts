@@ -28,10 +28,7 @@ const mockDistribution: PortfolioStatusDistribution = {
 @Component({
   selector: 'app-test-host',
   imports: [TrendChartComponent],
-  template: `<app-trend-chart
-    [points]="points"
-    [statusDistribution]="distribution"
-  />`,
+  template: `<app-trend-chart [points]="points" [statusDistribution]="distribution" />`,
 })
 class TestHostComponent {
   readonly points = mockPoints;
@@ -49,49 +46,34 @@ describe('TrendChartComponent', () => {
     const fixture = TestBed.createComponent(TestHostComponent);
     fixture.detectChanges();
 
+    expect(fixture.nativeElement.querySelectorAll('.trend-chart__panel').length).toBe(3);
     const charts = fixture.nativeElement.querySelectorAll(
       '.trend-chart__svg',
     ) as NodeListOf<SVGElement>;
     expect(charts.length).toBe(2);
-    charts.forEach((chart) =>
-      expect(chart.getAttribute('viewBox')).toBe('0 0 440 160'),
-    );
-    expect(fixture.nativeElement.textContent).toContain(
-      'Portfolio-Fortschritt',
-    );
-    expect(fixture.nativeElement.textContent).toContain(
-      'Ist-Kosten des Portfolios',
-    );
-    expect(
-      fixture.nativeElement.querySelector('.trend-chart__line--progress'),
-    ).toBeTruthy();
-    expect(
-      fixture.nativeElement.querySelector('.trend-chart__line--budget'),
-    ).toBeTruthy();
+    charts.forEach((chart) => expect(chart.getAttribute('viewBox')).toBe('0 0 440 160'));
+    expect(fixture.nativeElement.textContent).toContain('Portfolio-Fortschritt');
+    expect(fixture.nativeElement.textContent).toContain('Ist-Kosten des Portfolios');
+    expect(fixture.nativeElement.querySelector('.trend-chart__line--progress')).toBeTruthy();
+    expect(fixture.nativeElement.querySelector('.trend-chart__line--budget')).toBeTruthy();
   });
 
   it('should render status distribution as labeled bars, not a donut (Story 5.4)', () => {
     const fixture = TestBed.createComponent(TestHostComponent);
     fixture.detectChanges();
 
-    expect(
-      fixture.nativeElement.querySelector('.trend-chart__status-bars'),
-    ).toBeTruthy();
+    expect(fixture.nativeElement.querySelector('.trend-chart__status-bars')).toBeTruthy();
     expect(fixture.nativeElement.textContent).toContain('Auf Kurs');
     expect(fixture.nativeElement.textContent).toContain('Beobachten');
     expect(fixture.nativeElement.textContent).toContain('Kritisch');
-    expect(
-      fixture.nativeElement.querySelector('circle[role="img"]'),
-    ).toBeNull();
+    expect(fixture.nativeElement.querySelector('circle[role="img"]')).toBeNull();
   });
 
   it('should expose screen-reader summary and aria-pressed horizon buttons', () => {
     const fixture = TestBed.createComponent(TestHostComponent);
     fixture.detectChanges();
 
-    const summary = fixture.nativeElement.querySelector(
-      '#trend-chart-summary',
-    ) as HTMLElement;
+    const summary = fixture.nativeElement.querySelector('#trend-chart-summary') as HTMLElement;
     expect(summary.classList.contains('visually-hidden')).toBe(true);
     expect(summary.textContent).toContain('Fortschritt');
 
@@ -105,10 +87,7 @@ describe('TrendChartComponent', () => {
     @Component({
       selector: 'app-horizon-host',
       imports: [TrendChartComponent],
-      template: `<app-trend-chart
-        [points]="points"
-        [statusDistribution]="distribution"
-      />`,
+      template: `<app-trend-chart [points]="points" [statusDistribution]="distribution" />`,
     })
     class HorizonHostComponent {
       readonly points: PortfolioTrendPoint[] = [
@@ -178,8 +157,7 @@ describe('TrendChartComponent', () => {
 
     const fixture = TestBed.createComponent(HorizonHostComponent);
     fixture.detectChanges();
-    const chart = fixture.debugElement.children[0]
-      .componentInstance as TrendChartComponent;
+    const chart = fixture.debugElement.children[0].componentInstance as TrendChartComponent;
 
     chart.setHorizon('3M');
     fixture.detectChanges();
@@ -191,22 +169,50 @@ describe('TrendChartComponent', () => {
     expect(chart.filteredPoints().length).toBe(12);
   });
 
+  it('should keep all horizon controls functional with compact chart geometry', () => {
+    const fixture = TestBed.createComponent(TestHostComponent);
+    fixture.detectChanges();
+
+    const chart = fixture.debugElement.children[0].componentInstance as TrendChartComponent;
+    const buttons = fixture.nativeElement.querySelectorAll(
+      '.trend-chart__horizon-btn',
+    ) as NodeListOf<HTMLButtonElement>;
+
+    expect(Array.from(buttons, (button) => button.textContent?.trim())).toEqual([
+      '3M',
+      '6M',
+      '12M',
+    ]);
+    expect(chart.progressChart().width).toBe(440);
+    expect(chart.progressChart().height).toBe(160);
+    expect(chart.budgetChart().width).toBe(440);
+    expect(chart.budgetChart().height).toBe(160);
+
+    buttons[0].click();
+    fixture.detectChanges();
+    expect(chart.horizon()).toBe('3M');
+
+    buttons[1].click();
+    fixture.detectChanges();
+    expect(chart.horizon()).toBe('6M');
+
+    buttons[2].click();
+    fixture.detectChanges();
+    expect(chart.horizon()).toBe('12M');
+  });
+
   it('should explain insufficient historical data instead of implying a full period', () => {
     const fixture = TestBed.createComponent(TestHostComponent);
     fixture.detectChanges();
 
-    expect(fixture.nativeElement.textContent).toContain(
-      'liegen aktuell 2 Monatsstände vor',
-    );
+    expect(fixture.nativeElement.textContent).toContain('liegen aktuell 2 Monatsstände vor');
   });
 
   it('should hide status bars when count is zero', () => {
     const fixture = TestBed.createComponent(TestHostComponent);
     fixture.detectChanges();
 
-    expect(
-      fixture.nativeElement.querySelectorAll('.trend-chart__status-bar').length,
-    ).toBe(3);
+    expect(fixture.nativeElement.querySelectorAll('.trend-chart__status-bar').length).toBe(3);
     expect(fixture.nativeElement.textContent).toContain('Abgeschlossen');
   });
 });

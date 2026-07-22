@@ -1,6 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { vi } from 'vitest';
 
-import { GanttTimelineComponent } from './gantt-timeline.component';
+import { GanttTimelineComponent, syncScrollTops } from './gantt-timeline.component';
 import { PortfolioTimelineProject } from '../models/portfolio-timeline.model';
 
 const mockProjects: PortfolioTimelineProject[] = [
@@ -62,16 +63,9 @@ describe('GanttTimelineComponent', () => {
   });
 
   it('should render one aligned row per project (Story 5.2)', () => {
-    expect(
-      fixture.nativeElement.querySelectorAll('.gantt-timeline__row').length,
-    ).toBe(2);
-    expect(
-      fixture.nativeElement.querySelectorAll('.gantt-timeline__name-cell')
-        .length,
-    ).toBe(2);
-    expect(fixture.nativeElement.textContent).toContain(
-      'Nexus Analytics Pilot',
-    );
+    expect(fixture.nativeElement.querySelectorAll('.gantt-timeline__row').length).toBe(2);
+    expect(fixture.nativeElement.querySelectorAll('.gantt-timeline__name-cell').length).toBe(2);
+    expect(fixture.nativeElement.textContent).toContain('Nexus Analytics Pilot');
   });
 
   it('should use compact month columns in the portfolio timeline', () => {
@@ -79,35 +73,62 @@ describe('GanttTimelineComponent', () => {
   });
 
   it('should expose accessible handover summary', () => {
-    const summary = fixture.nativeElement.querySelector(
-      '#gantt-timeline-summary',
-    ) as HTMLElement;
+    const summary = fixture.nativeElement.querySelector('#gantt-timeline-summary') as HTMLElement;
     expect(summary.classList.contains('visually-hidden')).toBe(true);
     expect(summary.textContent).toContain('geplante Kundenübergabe');
     expect(summary.textContent).toContain('15 Tage Verzug');
   });
 
   it('should provide keyboard-focusable frame region', () => {
-    const frame = fixture.nativeElement.querySelector(
-      '.gantt-timeline__frame',
-    ) as HTMLElement;
+    const frame = fixture.nativeElement.querySelector('.gantt-timeline__frame') as HTMLElement;
     expect(frame.getAttribute('tabindex')).toBe('0');
     expect(frame.getAttribute('role')).toBe('region');
   });
 
+  it('should constrain the portfolio frame while keeping its scroll areas', () => {
+    const frame = fixture.nativeElement.querySelector('.gantt-timeline__frame') as HTMLElement;
+    const names = fixture.nativeElement.querySelector('.gantt-timeline__names') as HTMLElement;
+    const timeline = fixture.nativeElement.querySelector('.gantt-timeline__scroll') as HTMLElement;
+
+    expect(frame.closest('.gantt-timeline--project')).toBeNull();
+    expect(getComputedStyle(names).overflowY).toBe('auto');
+    expect(timeline.classList.contains('gantt-timeline__scroll')).toBe(true);
+  });
+
+  it('should synchronize vertical scrolling from either portfolio pane', () => {
+    const names = fixture.nativeElement.querySelector('.gantt-timeline__names') as HTMLElement;
+    const timeline = fixture.nativeElement.querySelector('.gantt-timeline__scroll') as HTMLElement;
+
+    timeline.scrollTop = 84;
+    timeline.dispatchEvent(new Event('scroll'));
+    expect(names.scrollTop).toBe(84);
+
+    names.scrollTop = 132;
+    names.dispatchEvent(new Event('scroll'));
+    expect(timeline.scrollTop).toBe(132);
+  });
+
+  it('should avoid redundant scroll writes during synchronization', () => {
+    const source = document.createElement('div');
+    const target = document.createElement('div');
+    source.scrollTop = 24;
+    target.scrollTop = 24;
+    const setter = vi.spyOn(target, 'scrollTop', 'set');
+
+    syncScrollTops(source, target);
+
+    expect(setter).not.toHaveBeenCalled();
+  });
+
   it('should render one continuous today marker and a legend', () => {
-    expect(
-      fixture.nativeElement.querySelector('.gantt-timeline__legend'),
-    ).toBeTruthy();
+    expect(fixture.nativeElement.querySelector('.gantt-timeline__legend')).toBeTruthy();
     expect(
       fixture.nativeElement.querySelectorAll('.gantt-timeline__today').length,
     ).toBeLessThanOrEqual(1);
   });
 
   it('should not render milestone diamonds', () => {
-    expect(
-      fixture.nativeElement.querySelector('.gantt-timeline__milestone'),
-    ).toBeNull();
+    expect(fixture.nativeElement.querySelector('.gantt-timeline__milestone')).toBeNull();
   });
 
   it('should display Kundenübergabe and delayed plan marker', () => {
@@ -117,16 +138,12 @@ describe('GanttTimelineComponent', () => {
   });
 
   it('should render sticky two-level year and month header', () => {
+    expect(fixture.nativeElement.querySelectorAll('.gantt-timeline__month').length).toBeGreaterThan(
+      6,
+    );
+    expect(fixture.nativeElement.querySelector('.gantt-timeline__year')).toBeTruthy();
     expect(
-      fixture.nativeElement.querySelectorAll('.gantt-timeline__month').length,
-    ).toBeGreaterThan(6);
-    expect(
-      fixture.nativeElement.querySelector('.gantt-timeline__year'),
-    ).toBeTruthy();
-    expect(
-      getComputedStyle(
-        fixture.nativeElement.querySelector('.gantt-timeline__head'),
-      ).position,
+      getComputedStyle(fixture.nativeElement.querySelector('.gantt-timeline__head')).position,
     ).toBe('sticky');
   });
 
@@ -140,5 +157,7 @@ describe('GanttTimelineComponent', () => {
     expect(text).toContain('Planende');
     expect(text).toContain('Forecast-Ende');
     expect(fixture.nativeElement.querySelector('.gantt-timeline__names')).toBeNull();
+    const frame = fixture.nativeElement.querySelector('.gantt-timeline__frame') as HTMLElement;
+    expect(frame.closest('.gantt-timeline--project')).toBeTruthy();
   });
 });

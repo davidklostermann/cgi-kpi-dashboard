@@ -22,6 +22,17 @@ describe('AppShellComponent', () => {
     expect(element.querySelector('mat-sidenav')).toBeTruthy();
   });
 
+  it('should keep the shell content chain shrinkable for wide child widgets', () => {
+    const fixture = TestBed.createComponent(AppShellComponent);
+    fixture.detectChanges();
+
+    const content = fixture.nativeElement.querySelector('.app-shell__content') as HTMLElement;
+    const main = fixture.nativeElement.querySelector('.app-shell__main') as HTMLElement;
+
+    expect(getComputedStyle(content).minWidth).toMatch(/^0/);
+    expect(getComputedStyle(main).minWidth).toMatch(/^0/);
+  });
+
   it('should render the quiet CGI text brand in the top nav', () => {
     const fixture = TestBed.createComponent(AppShellComponent);
     fixture.detectChanges();

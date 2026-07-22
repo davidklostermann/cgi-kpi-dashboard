@@ -1,3 +1,11 @@
+:host {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+}
+
 .portfolio-gantt-section__loading,
 .portfolio-gantt-section__empty {
   margin: 0;

@@ -1,5 +1,17 @@
+:host {
+  box-sizing: border-box;
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+}
+
 .project-table {
-  margin-top: 2rem;
+  box-sizing: border-box;
+  margin-top: 0;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
 }
 
 .project-table__head {
@@ -34,6 +46,9 @@
 }
 
 .project-table__scroll {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
   max-height: 34rem;
   overflow: auto;
   border: 1px solid var(--cgi-gray-6);

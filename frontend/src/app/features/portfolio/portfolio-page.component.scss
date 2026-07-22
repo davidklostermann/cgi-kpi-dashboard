@@ -4,7 +4,7 @@
 }
 
 .page__header {
-  margin-bottom: 1.25rem;
+  margin-bottom: 0.75rem;
 }
 
 .page__header h1 {
@@ -21,16 +21,25 @@
 
 .portfolio-main {
   display: grid;
-  gap: 1.5rem;
+  gap: 1rem;
   width: 100%;
   min-width: 0;
 }
 
 .portfolio-main__visualizations {
   display: grid;
-  gap: 1.5rem;
+  gap: 1rem;
   width: 100%;
+  max-width: 100%;
   min-width: 0;
+  box-sizing: border-box;
+
+  > * {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+  }
 }
 
 .visually-hidden {

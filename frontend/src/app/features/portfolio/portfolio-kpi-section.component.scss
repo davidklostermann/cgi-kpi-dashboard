@@ -1,7 +1,30 @@
+:host {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  container-type: inline-size;
+}
+
 .portfolio-kpi-section__grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(10.5rem, 1fr));
-  gap: 1rem;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 0.625rem;
+  min-width: 0;
+}
+
+.portfolio-kpi-section__grid app-kpi-card {
+  min-width: 0;
+}
+
+.portfolio-kpi-section__grid ::ng-deep .kpi-card {
+  min-height: 0;
+  height: 100%;
+  padding: 0.75rem;
+}
+
+.portfolio-kpi-section__grid ::ng-deep .kpi-card__number {
+  font-size: 1.45rem;
 }
 
 .portfolio-kpi-section__loading {
@@ -45,6 +68,18 @@
 .portfolio-kpi-section__retry:hover {
   border-color: var(--cgi-purple-1);
   background: var(--cgi-purple-1);
+}
+
+@container (max-width: 46rem) {
+  .portfolio-kpi-section__grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@container (max-width: 32rem) {
+  .portfolio-kpi-section__grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 
 .visually-hidden {

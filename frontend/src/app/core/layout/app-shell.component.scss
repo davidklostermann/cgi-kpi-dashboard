@@ -13,12 +13,14 @@
 .app-shell__content {
   display: flex;
   flex-direction: column;
+  min-width: 0;
   min-height: 100vh;
   background: #f7f7f8;
 }
 
 .app-shell__main {
   flex: 1;
+  min-width: 0;
   padding: 2rem;
 }
 
