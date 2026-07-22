@@ -155,9 +155,9 @@ development_status:
   12-4-fremdzugriffs-isolationstests: done
   epic-12-retrospective: optional
 
-  epic-13: backlog
-  13-1-benutzerverwaltung-api: backlog
-  13-2-benutzerverwaltung-ui: backlog
+  epic-13: in-progress
+  13-1-benutzerverwaltung-api: done
+  13-2-benutzerverwaltung-ui: done
   13-3-ai-config-encryption: backlog
   13-4-admin-ai-test-rotation: backlog
   epic-13-retrospective: optional

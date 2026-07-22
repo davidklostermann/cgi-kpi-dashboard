@@ -20,6 +20,7 @@ export class AuthService {
 
   readonly currentUser = this.user.asReadonly();
   readonly isAuthenticated = computed(() => this.user() !== null);
+  readonly isAdmin = computed(() => this.user()?.roles.includes('ROLE_ADMIN') ?? false);
   readonly mustChangePassword = computed(() => this.user()?.mustChangePassword ?? false);
 
   sessionInitialized(): boolean {

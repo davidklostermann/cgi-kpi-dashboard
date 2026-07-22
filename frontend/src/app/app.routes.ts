@@ -34,6 +34,11 @@ export const routes: Routes = [
         loadChildren: () =>
           import('./features/project/project.routes').then((m) => m.PROJECT_ROUTES),
       },
+      {
+        path: 'admin',
+        loadChildren: () =>
+          import('./features/admin/admin.routes').then((m) => m.ADMIN_ROUTES),
+      },
     ],
   },
   { path: '**', redirectTo: 'portfolio' },

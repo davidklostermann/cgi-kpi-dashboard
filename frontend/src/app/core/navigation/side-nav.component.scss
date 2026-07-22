@@ -20,3 +20,19 @@ a[mat-list-item].cgi-side-nav__link--active {
   border-left-color: var(--cgi-red-3);
   font-weight: 700;
 }
+
+.cgi-side-nav__divider {
+  height: 1px;
+  background-color: var(--cgi-gray-6);
+  margin: 1.5rem 0.5rem 1rem;
+}
+
+.cgi-side-nav__subheader {
+  padding: 0 1rem 0.5rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--cgi-gray-4);
+  text-transform: uppercase;
+  letter-spacing: 0.05rem;
+  margin: 0;
+}

@@ -23,6 +23,14 @@ export class ApiClient {
     return this.http.post<T>(`${this.baseUrl}${path}`, body);
   }
 
+  protected put<T>(path: string, body: unknown) {
+    return this.http.put<T>(`${this.baseUrl}${path}`, body);
+  }
+
+  protected delete<T>(path: string) {
+    return this.http.delete<T>(`${this.baseUrl}${path}`);
+  }
+
   private toHttpParams(query?: Record<string, string | string[] | null | undefined>): HttpParams | undefined {
     if (!query) {
       return undefined;

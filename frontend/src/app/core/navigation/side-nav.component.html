@@ -15,5 +15,18 @@
     >
       Projekte
     </a>
+
+    @if (authService.isAdmin()) {
+      <div class="cgi-side-nav__divider"></div>
+      <h3 class="cgi-side-nav__subheader">Administration</h3>
+      <a
+        mat-list-item
+        routerLink="/admin/users"
+        routerLinkActive="cgi-side-nav__link--active"
+      >
+        <mat-icon matListItemIcon>people</mat-icon>
+        Benutzer
+      </a>
+    }
   </mat-nav-list>
 </nav>
