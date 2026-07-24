@@ -112,7 +112,7 @@ public class MockAiModelClient implements AiModelClient {
                 priorities,
                 actions,
                 missing,
-                true,
+                false,
                 DISCLAIMER);
     }
 
@@ -145,8 +145,8 @@ public class MockAiModelClient implements AiModelClient {
                     List.of(),
                     context.factsAsOf(),
                     Instant.now(),
-                    true,
-                    true,
+                    false,
+                    false,
                     DISCLAIMER);
         }
 
@@ -157,7 +157,7 @@ public class MockAiModelClient implements AiModelClient {
                 context.factsAsOf(),
                 Instant.now(),
                 false,
-                true,
+                false,
                 DISCLAIMER);
     }
 
@@ -167,7 +167,7 @@ public class MockAiModelClient implements AiModelClient {
         // Mock returns an empty insight list so the DTO contract stays consistent without fabricated patterns.
         return new PortfolioTrendAnalysisResponseDto(
                 List.of(),
-                true,
+                false,
                 DISCLAIMER,
                 Instant.now());
     }

@@ -1,4 +1,4 @@
-import { Component, input } from '@angular/core';
+import { Component } from '@angular/core';
 
 /** Two-column layout: facts main area + KI sidebar (AD-7, FR-10). */
 @Component({
@@ -6,6 +6,4 @@ import { Component, input } from '@angular/core';
   templateUrl: './facts-ai-layout.component.html',
   styleUrl: './facts-ai-layout.component.scss',
 })
-export class FactsAiLayoutComponent {
-  readonly hasAiContent = input<boolean>(false);
-}
+export class FactsAiLayoutComponent {}

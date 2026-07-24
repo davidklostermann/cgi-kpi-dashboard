@@ -10,9 +10,12 @@ import java.util.stream.Collectors;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
+import com.cgi.kpi.dashboard.ai.cache.PortfolioAiAnalysisCache;
 import com.cgi.kpi.dashboard.ai.client.AiModelClient;
 import com.cgi.kpi.dashboard.ai.client.GeminiTransportException;
+import com.cgi.kpi.dashboard.ai.config.AiActiveConfigProvider;
 import com.cgi.kpi.dashboard.ai.config.AiProperties;
+import com.cgi.kpi.dashboard.ai.config.AiProviderConfigVersionProvider;
 import com.cgi.kpi.dashboard.ai.dto.PortfolioTrendAnalysisResponseDto;
 import com.cgi.kpi.dashboard.ai.dto.PortfolioTrendAnalysisResponseDto.EvidenceDto;
 import com.cgi.kpi.dashboard.ai.dto.PortfolioTrendAnalysisResponseDto.PortfolioInsightDto;
@@ -49,6 +52,9 @@ public class PortfolioAiAnalysisService {
     private final AiModelClient aiModelClient;
     private final AiProperties aiProperties;
     private final CurrentUserService currentUserService;
+    private final PortfolioAiAnalysisCache cache;
+    private final AiProviderConfigVersionProvider configVersionProvider;
+    private final AiActiveConfigProvider aiActiveConfigProvider;
 
     public PortfolioAiAnalysisService(
             PortfolioKpiReader portfolioKpiReader,
@@ -58,7 +64,10 @@ public class PortfolioAiAnalysisService {
             PortfolioPatternDetector patternDetector,
             AiModelClient aiModelClient,
             AiProperties aiProperties,
-            CurrentUserService currentUserService) {
+            CurrentUserService currentUserService,
+            PortfolioAiAnalysisCache cache,
+            AiProviderConfigVersionProvider configVersionProvider,
+            AiActiveConfigProvider aiActiveConfigProvider) {
         this.portfolioKpiReader = portfolioKpiReader;
         this.portfolioTableReader = portfolioTableReader;
         this.portfolioReportTrendReader = portfolioReportTrendReader;
@@ -67,12 +76,23 @@ public class PortfolioAiAnalysisService {
         this.aiModelClient = aiModelClient;
         this.aiProperties = aiProperties;
         this.currentUserService = currentUserService;
+        this.cache = cache;
+        this.configVersionProvider = configVersionProvider;
+        this.aiActiveConfigProvider = aiActiveConfigProvider;
     }
 
     public PortfolioTrendAnalysisResponseDto analyzeTrend(PortfolioFilterCriteria criteria) {
         currentUserService.requireAdmin();
-        ensureEnabled();
+        UUID userId = currentUserService.requireUserId();
+        ensureEnabled(userId);
+        UUID workspaceId = currentUserService.requireWorkspaceId();
         PortfolioFilterCriteria safe = criteria == null ? PortfolioFilterCriteria.empty() : criteria;
+        String cacheKey = PortfolioAiAnalysisCache.buildKey(
+                userId, workspaceId, safe, configVersionProvider.currentVersion());
+        PortfolioTrendAnalysisResponseDto cached = cache.get(cacheKey);
+        if (cached != null) {
+            return cached;
+        }
         ApprovedPortfolioContextDto context = contextAssembler.assemble(
                 portfolioKpiReader.readPortfolioSummary(safe),
                 portfolioTableReader.readTable(safe));
@@ -87,7 +107,7 @@ public class PortfolioAiAnalysisService {
             // LLM may refine wording of detector insights; structure/evidence stay detector-owned.
             PortfolioTrendAnalysisResponseDto raw = aiModelClient.analyzePortfolio(context);
             List<PortfolioInsightDto> merged = mergeInsights(detected, raw.insights());
-            return validate(
+            PortfolioTrendAnalysisResponseDto validated = validate(
                     context,
                     new PortfolioTrendAnalysisResponseDto(
                             merged,
@@ -95,10 +115,16 @@ public class PortfolioAiAnalysisService {
                             raw.disclaimer() == null || raw.disclaimer().isBlank() ? DISCLAIMER : raw.disclaimer(),
                             raw.generatedAt()),
                     true);
+            cache.put(cacheKey, validated);
+            return validated;
         } catch (GeminiTransportException | IllegalStateException ex) {
-            return fallbackOrThrow(context, detected, ex);
+            PortfolioTrendAnalysisResponseDto fallback = fallbackOrThrow(context, detected, ex);
+            cache.put(cacheKey, fallback);
+            return fallback;
         } catch (RuntimeException ex) {
-            return fallbackOrThrow(context, detected, ex);
+            PortfolioTrendAnalysisResponseDto fallback = fallbackOrThrow(context, detected, ex);
+            cache.put(cacheKey, fallback);
+            return fallback;
         }
     }
 
@@ -291,8 +317,25 @@ public class PortfolioAiAnalysisService {
         return DATA_QUALITY_VALUES.contains(normalized) ? normalized : "PARTIAL";
     }
 
-    private void ensureEnabled() {
-        if (!aiProperties.isEnabled()) {
+    private void ensureEnabled(UUID userId) {
+        if (aiActiveConfigProvider.getActiveApiKey("gemini") == null) {
+            throw AiProviderExceptionMapper.toApiException(new ApiException(
+                    "AI_KEY_MISSING",
+                    "Für Ihren Benutzer ist noch kein KI-API-Key hinterlegt.",
+                    HttpStatus.FORBIDDEN));
+        }
+
+        String provider = aiProperties.getProvider();
+        if ("gemini".equalsIgnoreCase(provider)) {
+            if (!aiActiveConfigProvider.isEnabled(provider)) {
+                throw new ApiException(
+                        "AI_DISABLED",
+                        "Portfolio-Assistent ist deaktiviert.",
+                        HttpStatus.SERVICE_UNAVAILABLE);
+            }
+            return;
+        }
+        if (!aiActiveConfigProvider.isEnabled(provider)) {
             throw new ApiException(
                     "AI_DISABLED",
                     "Portfolio-Assistent ist deaktiviert.",

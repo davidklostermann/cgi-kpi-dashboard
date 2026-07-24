@@ -16,11 +16,13 @@
     </section>
   </main>
 
-  <button #aiLauncher class="portfolio-ai-launcher" type="button" (click)="openPortfolioAi()">
-    KI-Analyse
-  </button>
+  @if (authService.isAdmin()) {
+    <button #aiLauncher class="portfolio-ai-launcher" type="button" (click)="openPortfolioAi()">
+      KI-Analyse
+    </button>
+  }
 
-  @if (portfolioAiOpen()) {
+  @if (portfolioAiOpen() && authService.isAdmin()) {
     <div class="portfolio-ai-drawer-backdrop" (click)="closePortfolioAi()">
       <aside
         class="portfolio-ai-drawer"

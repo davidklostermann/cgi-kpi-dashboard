@@ -2,8 +2,10 @@ import { TestBed } from '@angular/core/testing';
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { provideRouter } from '@angular/router';
+import { computed, signal, Signal, WritableSignal } from '@angular/core';
 
 import { PortfolioPageComponent } from './portfolio-page.component';
+import { AuthService } from '../../core/auth/auth.service';
 import { PortfolioKpiSummary } from '../../shared/models/portfolio-kpi.model';
 import { PortfolioFilterOptions } from '../../shared/models/portfolio-filter.model';
 import { PortfolioTimeline } from '../../shared/models/portfolio-timeline.model';
@@ -92,11 +94,23 @@ const mockOptions: PortfolioFilterOptions = {
 
 describe('PortfolioPageComponent', () => {
   let httpMock: HttpTestingController;
+  let isAdminSignal: WritableSignal<boolean>;
 
   beforeEach(async () => {
+    isAdminSignal = signal(true);
+    const authServiceMock = {
+      currentUser: signal({ id: 'admin-user', roles: ['ROLE_ADMIN'] }),
+      isAdmin: computed(() => isAdminSignal()) as Signal<boolean>,
+    };
+
     await TestBed.configureTestingModule({
       imports: [PortfolioPageComponent],
-      providers: [provideRouter([]), provideHttpClient(), provideHttpClientTesting()],
+      providers: [
+        provideRouter([]),
+        provideHttpClient(),
+        provideHttpClientTesting(),
+        { provide: AuthService, useValue: authServiceMock },
+      ],
     }).compileComponents();
 
     httpMock = TestBed.inject(HttpTestingController);
@@ -117,6 +131,7 @@ describe('PortfolioPageComponent', () => {
         insights: [],
       }),
     );
+    httpMock.match('/api/me/ai/readiness').forEach((req) => req.flush({ ready: true }));
     httpMock.verify();
   });
 
@@ -187,6 +202,7 @@ describe('PortfolioPageComponent', () => {
     launcher.click();
     fixture.detectChanges();
 
+    httpMock.expectOne('/api/me/ai/readiness').flush({ ready: true });
     httpMock.expectOne('/api/portfolio/ai/trend-analysis').flush({
       insights: [],
       aiGenerated: true,
@@ -210,7 +226,15 @@ describe('PortfolioPageComponent', () => {
   });
 
   it('should close the AI drawer when Escape is pressed', () => {
+    isAdminSignal.set(true);
     const fixture = TestBed.createComponent(PortfolioPageComponent);
+    fixture.detectChanges();
+
+    httpMock.expectOne('/api/portfolio/filters/options').flush(mockOptions);
+    httpMock.expectOne('/api/portfolio/kpis').flush(mockSummary);
+    httpMock.expectOne('/api/portfolio/timeline').flush(mockTimeline);
+    httpMock.expectOne('/api/portfolio/projects').flush(mockTable);
+    httpMock.expectOne('/api/portfolio/trends').flush(mockTrends);
     fixture.detectChanges();
 
     const launcher = fixture.nativeElement.querySelector(
@@ -219,6 +243,7 @@ describe('PortfolioPageComponent', () => {
     launcher.click();
     fixture.detectChanges();
 
+    httpMock.expectOne('/api/me/ai/readiness').flush({ ready: true });
     httpMock.expectOne('/api/portfolio/ai/trend-analysis').flush({
       insights: [],
       aiGenerated: true,
@@ -231,5 +256,36 @@ describe('PortfolioPageComponent', () => {
     fixture.detectChanges();
 
     expect(fixture.nativeElement.querySelector('.portfolio-ai-drawer')).toBeFalsy();
+  });
+
+  it('should hide the AI launcher for USER users', () => {
+    isAdminSignal.set(false);
+    const fixture = TestBed.createComponent(PortfolioPageComponent);
+    fixture.detectChanges();
+
+    httpMock.expectOne('/api/portfolio/filters/options').flush(mockOptions);
+    httpMock.expectOne('/api/portfolio/kpis').flush(mockSummary);
+    httpMock.expectOne('/api/portfolio/timeline').flush(mockTimeline);
+    httpMock.expectOne('/api/portfolio/projects').flush(mockTable);
+    httpMock.expectOne('/api/portfolio/trends').flush(mockTrends);
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('.portfolio-ai-launcher')).toBeNull();
+    expect(fixture.nativeElement.querySelector('.portfolio-ai-drawer')).toBeNull();
+  });
+
+  it('should hide the AI launcher when no authenticated user is available', () => {
+    isAdminSignal.set(false);
+    const fixture = TestBed.createComponent(PortfolioPageComponent);
+    fixture.detectChanges();
+
+    httpMock.expectOne('/api/portfolio/filters/options').flush(mockOptions);
+    httpMock.expectOne('/api/portfolio/kpis').flush(mockSummary);
+    httpMock.expectOne('/api/portfolio/timeline').flush(mockTimeline);
+    httpMock.expectOne('/api/portfolio/projects').flush(mockTable);
+    httpMock.expectOne('/api/portfolio/trends').flush(mockTrends);
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('.portfolio-ai-launcher')).toBeNull();
   });
 });

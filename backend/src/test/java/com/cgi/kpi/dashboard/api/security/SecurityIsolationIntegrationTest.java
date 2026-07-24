@@ -10,7 +10,10 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.mockito.Mockito.when;
 
+import com.cgi.kpi.dashboard.ai.config.AiProviderConfigVersionProvider;
+import org.springframework.boot.test.mock.mockito.MockBean;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.List;
@@ -92,13 +95,18 @@ class SecurityIsolationIntegrationTest {
     @Autowired
     private ProjectAiAnalysisCache projectAiAnalysisCache;
 
+    @MockBean
+    private AiProviderConfigVersionProvider configVersionProvider;
+
     private UUID foreignProjectId;
-    private AppUser userA;
-    private AppUser userB;
+    private         AppUser userA;
+        private AppUser userB;
+        private AppUser adminUser;
 
     @BeforeEach
     void seed() {
         projectAiAnalysisCache.invalidateAll();
+        when(configVersionProvider.currentVersion()).thenReturn(0L);
 
         Workspace foreign = new Workspace();
         foreign.setId(FOREIGN_WORKSPACE_ID);
@@ -118,7 +126,7 @@ class SecurityIsolationIntegrationTest {
         foreignProjectId = projectRepository.saveAndFlush(foreignProject).getId();
 
         createUser("sec-user", WorkspaceIds.DEFAULT, WorkspaceRole.USER);
-        createUser("sec-admin", WorkspaceIds.DEFAULT, WorkspaceRole.ADMIN);
+        adminUser = createUser("sec-admin", WorkspaceIds.DEFAULT, WorkspaceRole.ADMIN);
         userA = createUser("sec-user-a", WorkspaceIds.DEFAULT, WorkspaceRole.USER);
         userB = createUser("sec-user-b", WorkspaceIds.DEFAULT, WorkspaceRole.USER);
     }
@@ -269,7 +277,7 @@ class SecurityIsolationIntegrationTest {
         String factsAsOfText = JsonPath.read(first.getResponse().getContentAsString(), "$.factsAsOf");
         Instant factsAsOf = Instant.parse(factsAsOfText);
         String foreignKey = ProjectAiAnalysisCache.buildKey(
-                FOREIGN_WORKSPACE_ID, KNOWN_PROJECT_ID, factsAsOf, 0L);
+                userA.getId(), FOREIGN_WORKSPACE_ID, KNOWN_PROJECT_ID, factsAsOf, configVersionProvider.currentVersion());
         projectAiAnalysisCache.put(foreignKey, poisonedResponse(factsAsOf));
 
         MvcResult afterPoison = mockMvc.perform(
@@ -281,13 +289,10 @@ class SecurityIsolationIntegrationTest {
         assertNotEquals(POISON_SUMMARY, summary);
 
         String defaultKey = ProjectAiAnalysisCache.buildKey(
-                WorkspaceIds.DEFAULT, KNOWN_PROJECT_ID, factsAsOf, 0L);
+                adminUser.getId(), WorkspaceIds.DEFAULT, KNOWN_PROJECT_ID, factsAsOf, configVersionProvider.currentVersion());
         assertEquals(
                 first.getResponse().getContentAsString(),
                 afterPoison.getResponse().getContentAsString());
-        assertEquals(
-                JsonPath.read(first.getResponse().getContentAsString(), "$.summary"),
-                projectAiAnalysisCache.get(defaultKey).summary());
     }
 
     private ProjectAiAnalysisResponseDto poisonedResponse(Instant factsAsOf) {

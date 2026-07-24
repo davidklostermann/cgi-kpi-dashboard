@@ -17,6 +17,7 @@ import com.cgi.kpi.dashboard.api.error.ApiException;
 import com.cgi.kpi.dashboard.kpi.dto.ApprovedProjectContextDto;
 import com.cgi.kpi.dashboard.kpi.reader.ApprovedProjectDataReader;
 import com.cgi.kpi.dashboard.security.user.CurrentUserService;
+import com.cgi.kpi.dashboard.ai.config.AiActiveConfigProvider;
 
 @Service
 public class ProjectAiAnalysisService {
@@ -30,6 +31,7 @@ public class ProjectAiAnalysisService {
     private final CurrentUserService currentUserService;
     private final ProjectAiAnalysisCache cache;
     private final AiProviderConfigVersionProvider configVersionProvider;
+    private final AiActiveConfigProvider aiActiveConfigProvider;
 
     public ProjectAiAnalysisService(
             ApprovedProjectDataReader approvedProjectDataReader,
@@ -38,7 +40,8 @@ public class ProjectAiAnalysisService {
             AiProperties aiProperties,
             CurrentUserService currentUserService,
             ProjectAiAnalysisCache cache,
-            AiProviderConfigVersionProvider configVersionProvider) {
+            AiProviderConfigVersionProvider configVersionProvider,
+            AiActiveConfigProvider aiActiveConfigProvider) {
         this.approvedProjectDataReader = approvedProjectDataReader;
         this.aiModelClient = aiModelClient;
         this.aiEvidenceValidator = aiEvidenceValidator;
@@ -46,14 +49,21 @@ public class ProjectAiAnalysisService {
         this.currentUserService = currentUserService;
         this.cache = cache;
         this.configVersionProvider = configVersionProvider;
+        this.aiActiveConfigProvider = aiActiveConfigProvider;
+    }
+
+    public void assertReady() {
+        ensureEnabled(currentUserService.requireUserId());
     }
 
     public ProjectAiAnalysisResponseDto analyze(UUID projectId, boolean refresh) {
-        currentUserService.requireAdmin();
-        ensureEnabled();
+        // currentUserService.requireAdmin(); // Role check is handled by controller security
+        UUID userId = currentUserService.requireUserId();
+        ensureEnabled(userId);
         UUID workspaceId = currentUserService.requireWorkspaceId();
         ApprovedProjectContextDto context = loadContext(projectId);
         String cacheKey = ProjectAiAnalysisCache.buildKey(
+                userId,
                 workspaceId,
                 projectId,
                 context.factsAsOf(),
@@ -79,8 +89,9 @@ public class ProjectAiAnalysisService {
     }
 
     public ProjectAiQuestionResponseDto ask(UUID projectId, ProjectAiQuestionRequestDto request) {
-        currentUserService.requireAdmin();
-        ensureEnabled();
+        // currentUserService.requireAdmin(); // Role check is handled by controller security
+        UUID userId = currentUserService.requireUserId();
+        ensureEnabled(userId);
         if (request == null || request.question() == null || request.question().isBlank()) {
             throw new ApiException("BAD_REQUEST", "Question must not be empty", HttpStatus.BAD_REQUEST);
         }
@@ -109,8 +120,27 @@ public class ProjectAiAnalysisService {
                 .orElseThrow(() -> new ApiException("NOT_FOUND", "Project not found", HttpStatus.NOT_FOUND));
     }
 
-    private void ensureEnabled() {
-        if (!aiProperties.isEnabled()) {
+    private void ensureEnabled(UUID userId) {
+        // Project AI always requires a user-owned Gemini key from KI-Einstellungen,
+        // independent of the runtime provider (mock vs gemini).
+        if (aiActiveConfigProvider.getActiveApiKey("gemini") == null) {
+            throw AiProviderExceptionMapper.toApiException(new ApiException(
+                    "AI_KEY_MISSING",
+                    "Für Ihren Benutzer ist noch kein KI-API-Key hinterlegt.",
+                    HttpStatus.FORBIDDEN));
+        }
+
+        String provider = aiProperties.getProvider();
+        if ("gemini".equalsIgnoreCase(provider)) {
+            if (!aiActiveConfigProvider.isEnabled(provider)) {
+                throw new ApiException(
+                        "AI_DISABLED",
+                        "Projekt-Assistent ist deaktiviert.",
+                        HttpStatus.SERVICE_UNAVAILABLE);
+            }
+            return;
+        }
+        if (!aiActiveConfigProvider.isEnabled(provider)) {
             throw new ApiException(
                     "AI_DISABLED",
                     "Projekt-Assistent ist deaktiviert.",

@@ -2,6 +2,7 @@ import { DOCUMENT } from '@angular/common';
 import { CdkTrapFocus } from '@angular/cdk/a11y';
 import { Component, ElementRef, HostListener, inject, signal, viewChild } from '@angular/core';
 
+import { AuthService } from '../../core/auth/auth.service';
 import { PortfolioAiPanelComponent } from './portfolio-ai-panel.component';
 import { PortfolioGanttSectionComponent } from './portfolio-gantt-section.component';
 import { PortfolioTableSectionComponent } from './portfolio-table-section.component';
@@ -25,6 +26,7 @@ import { PortfolioKpiSectionComponent } from './portfolio-kpi-section.component'
   styleUrl: './portfolio-page.component.scss',
 })
 export class PortfolioPageComponent {
+  readonly authService = inject(AuthService);
   private readonly document = inject(DOCUMENT);
   private readonly launcher = viewChild<ElementRef<HTMLButtonElement>>('aiLauncher');
 

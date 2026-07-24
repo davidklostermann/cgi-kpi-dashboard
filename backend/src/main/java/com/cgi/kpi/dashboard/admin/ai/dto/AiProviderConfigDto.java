@@ -10,7 +10,8 @@ public record AiProviderConfigDto(
         String provider,
         String model,
         String apiKeyMasked,
-        boolean enabled
+        boolean enabled,
+        UUID userId
 ) {
     public static String maskApiKey(String apiKey) {
         if (apiKey == null || apiKey.isBlank()) {

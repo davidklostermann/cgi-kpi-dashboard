@@ -4,273 +4,284 @@
       <p class="project-ai-panel__badge">KI-Einschätzung</p>
       <h2 id="project-ai-heading">Projekt-Assistent</h2>
     </div>
-    @if (analysis(); as data) {
+    @if (status() !== 'key_missing' && analysis(); as data) {
       <p class="project-ai-panel__meta">
         Datenstand {{ formatInstant(data.factsAsOf) }} · erzeugt {{ formatInstant(data.generatedAt) }}
       </p>
     }
   </header>
 
-  <div class="project-ai-panel__tabs" role="tablist" aria-label="Projekt-Assistent Tabs" (keydown)="onTabKeydown($event)">
-    <button
-      type="button"
-      role="tab"
-      id="tab-overview"
-      [attr.aria-selected]="activeTab() === 'overview'"
-      [class.project-ai-panel__tab--active]="activeTab() === 'overview'"
-      (click)="selectTab('overview')"
-    >
-      Überblick
-    </button>
-    <button
-      type="button"
-      role="tab"
-      id="tab-actions"
-      [attr.aria-selected]="activeTab() === 'actions'"
-      [class.project-ai-panel__tab--active]="activeTab() === 'actions'"
-      (click)="selectTab('actions')"
-    >
-      Maßnahmen
-    </button>
-    <button
-      type="button"
-      role="tab"
-      id="tab-questions"
-      [attr.aria-selected]="activeTab() === 'questions'"
-      [class.project-ai-panel__tab--active]="activeTab() === 'questions'"
-      (click)="selectTab('questions')"
-    >
-      Fragen
-    </button>
-  </div>
+  @if (status() === 'key_missing') {
+    <div class="project-ai-panel__key-missing" role="alert">
+      <p>{{ keyMissingMessage }}</p>
+      @if (authService.isAdmin()) {
+        <a class="project-ai-panel__settings-link" routerLink="/admin/ai-config">KI-Einstellungen öffnen</a>
+      }
+    </div>
+  } @else if (status() === 'loading' || status() === 'idle') {
+    <p class="project-ai-panel__loading" aria-live="polite">Verfügbarkeit wird geprüft …</p>
+  } @else {
+    <div class="project-ai-panel__tabs" role="tablist" aria-label="Projekt-Assistent Tabs" (keydown)="onTabKeydown($event)">
+      <button
+        type="button"
+        role="tab"
+        id="tab-overview"
+        [attr.aria-selected]="activeTab() === 'overview'"
+        [class.project-ai-panel__tab--active]="activeTab() === 'overview'"
+        (click)="selectTab('overview')"
+      >
+        Überblick
+      </button>
+      <button
+        type="button"
+        role="tab"
+        id="tab-actions"
+        [attr.aria-selected]="activeTab() === 'actions'"
+        [class.project-ai-panel__tab--active]="activeTab() === 'actions'"
+        (click)="selectTab('actions')"
+      >
+        Maßnahmen
+      </button>
+      <button
+        type="button"
+        role="tab"
+        id="tab-questions"
+        [attr.aria-selected]="activeTab() === 'questions'"
+        [class.project-ai-panel__tab--active]="activeTab() === 'questions'"
+        (click)="selectTab('questions')"
+      >
+        Fragen
+      </button>
+    </div>
 
-  @if (activeTab() === 'overview') {
-    <div role="tabpanel" aria-labelledby="tab-overview" class="project-ai-panel__panel">
-      @if (status() === 'loading') {
-        <p class="project-ai-panel__loading" aria-live="polite">Analyse wird geladen …</p>
-      } @else if (status() === 'disabled' || status() === 'error') {
-        <div class="project-ai-panel__error" role="alert">
-          <p>{{ errorMessage() }}</p>
-          <button type="button" (click)="loadAnalysis(true)">Erneut versuchen</button>
-        </div>
-      } @else if (analysis(); as data) {
-        <article class="project-ai-panel__summary">
-          <h3>Managementbewertung</h3>
-          <p>{{ data.summary }}</p>
-        </article>
-
-        <h3>Priorisierte Erkenntnisse</h3>
-        @if (displayablePriorities(data.priorities); as priorities) {
-          @if (priorities.length === 0) {
-            <p class="project-ai-panel__hint" role="status">
-              Keine ausreichend belegten Erkenntnisse aus den freigegebenen Projektdaten.
-            </p>
-          } @else {
-            <ol class="project-ai-panel__priorities">
-              @for (priority of priorities; track priority.title + '-' + $index; let displayRank = $index) {
-                <li>
-                  <p class="project-ai-panel__rank">#{{ displayRank + 1 }}</p>
-                  <h4>{{ priority.title }}</h4>
-                  <dl class="project-ai-panel__priority-facts">
-                    <div>
-                      <dt>Wichtigste Auswirkung</dt>
-                      <dd>{{ formatOptionalField(priority.managementImplication) }}</dd>
-                    </div>
-                    <div>
-                      <dt>Nötige Entscheidung oder Handlung</dt>
-                      <dd>{{ formatOptionalField(priority.requiredDecision) }}</dd>
-                    </div>
-                  </dl>
-                  <ul class="project-ai-panel__evidence-list">
-                    @for (item of priority.evidence; track $index) {
-                      <li>{{ formatEvidence(item) }}</li>
-                    }
-                  </ul>
-                  <details class="project-ai-panel__tech-detail">
-                    <summary>Technische Feldnamen</summary>
-                    <div class="project-ai-panel__evidence">
-                      @for (factId of priority.evidenceFactIds ?? []; track factId) {
-                        <button type="button" class="project-ai-panel__chip" (click)="jumpToFact(factId)">
-                          {{ factId }}
-                        </button>
-                      }
-                    </div>
-                  </details>
-                </li>
-              }
-            </ol>
-          }
-        }
-
-        @if (data.missingData.length > 0) {
-          <div class="project-ai-panel__missing">
-            <h3>Fehlende Daten</h3>
-            <ul>
-              @for (item of data.missingData; track item.area + item.description) {
-                <li><strong>{{ item.area }}:</strong> {{ item.description }}</li>
-              }
-            </ul>
+    @if (activeTab() === 'overview') {
+      <div role="tabpanel" aria-labelledby="tab-overview" class="project-ai-panel__panel">
+        @if (status() === 'loading') {
+          <p class="project-ai-panel__loading" aria-live="polite">Analyse wird geladen …</p>
+        } @else if (status() === 'disabled' || status() === 'error') {
+          <div class="project-ai-panel__error" role="alert">
+            <p>{{ errorMessage() }}</p>
+            <button type="button" (click)="loadAnalysis(true)">Erneut versuchen</button>
           </div>
-        }
+        } @else if (analysis(); as data) {
+          <article class="project-ai-panel__summary">
+            <h3>Managementbewertung</h3>
+            <p>{{ data.summary }}</p>
+          </article>
 
-        <button type="button" class="project-ai-panel__refresh" (click)="loadAnalysis(true)">
-          Neu analysieren
-        </button>
-      }
-    </div>
-  }
-
-  @if (activeTab() === 'actions') {
-    <div role="tabpanel" aria-labelledby="tab-actions" class="project-ai-panel__panel">
-      @if (status() === 'loading') {
-        <p class="project-ai-panel__loading" aria-live="polite">Analyse wird geladen …</p>
-      } @else if (status() === 'disabled' || status() === 'error') {
-        <div class="project-ai-panel__error" role="alert">
-          <p>{{ errorMessage() }}</p>
-          <button type="button" (click)="loadAnalysis(true)">Erneut versuchen</button>
-        </div>
-      } @else if (analysis(); as data) {
-        <p class="project-ai-panel__hint">
-          Nur konkrete, belegte Handlungsvorschläge. Generische Maßnahmenlisten werden nicht angezeigt.
-          Nötige Entscheidungen stehen im Überblick.
-        </p>
-        @if (displayableActions(data.suggestedActions); as actions) {
-          @if (actions.length === 0) {
-            <p class="project-ai-panel__empty" role="status">
-              Keine konkreten Maßnahmenvorschläge — die nötigen Entscheidungen sind im Überblick genannt.
-            </p>
-          } @else {
-            <ul class="project-ai-panel__actions">
-              @for (action of actions; track action.title + '-' + $index) {
-                <li>
-                  <span class="project-ai-panel__proposal-badge">KI-Vorschlag</span>
-                  <h4>{{ action.title }}</h4>
-                  <p>{{ action.reason }}</p>
-                  <dl>
-                    <div>
-                      <dt>Owner</dt>
-                      <dd>{{ formatOptionalField(action.suggestedOwner) }}</dd>
-                    </div>
-                    <div>
-                      <dt>Zieltermin</dt>
-                      <dd>{{ formatOptionalField(action.suggestedDueDate) }}</dd>
-                    </div>
-                    <div>
-                      <dt>Erwartete Wirkung</dt>
-                      <dd>{{ formatOptionalField(action.expectedEffect) }}</dd>
-                    </div>
-                  </dl>
-                  <details class="project-ai-panel__tech-detail">
-                    <summary>Technische Feldnamen</summary>
-                    <div class="project-ai-panel__evidence">
-                      @for (factId of action.evidenceFactIds ?? []; track factId) {
-                        <button type="button" class="project-ai-panel__chip" (click)="jumpToFact(factId)">
-                          {{ factId }}
-                        </button>
+          <h3>Priorisierte Erkenntnisse</h3>
+          @if (displayablePriorities(data.priorities); as priorities) {
+            @if (priorities.length === 0) {
+              <p class="project-ai-panel__hint" role="status">
+                Keine ausreichend belegten Erkenntnisse aus den freigegebenen Projektdaten.
+              </p>
+            } @else {
+              <ol class="project-ai-panel__priorities">
+                @for (priority of priorities; track priority.title + '-' + $index; let displayRank = $index) {
+                  <li>
+                    <p class="project-ai-panel__rank">#{{ displayRank + 1 }}</p>
+                    <h4>{{ priority.title }}</h4>
+                    <dl class="project-ai-panel__priority-facts">
+                      <div>
+                        <dt>Wichtigste Auswirkung</dt>
+                        <dd>{{ formatOptionalField(priority.managementImplication) }}</dd>
+                      </div>
+                      <div>
+                        <dt>Nötige Entscheidung oder Handlung</dt>
+                        <dd>{{ formatOptionalField(priority.requiredDecision) }}</dd>
+                      </div>
+                    </dl>
+                    <ul class="project-ai-panel__evidence-list">
+                      @for (item of priority.evidence; track $index) {
+                        <li>{{ formatEvidence(item) }}</li>
                       }
-                    </div>
-                  </details>
-                  <button type="button" (click)="prepareDraft(action)">Als Entwurf vorbereiten</button>
-                </li>
-              }
-            </ul>
+                    </ul>
+                    <details class="project-ai-panel__tech-detail">
+                      <summary>Technische Feldnamen</summary>
+                      <div class="project-ai-panel__evidence">
+                        @for (factId of priority.evidenceFactIds ?? []; track factId) {
+                          <button type="button" class="project-ai-panel__chip" (click)="jumpToFact(factId)">
+                            {{ factId }}
+                          </button>
+                        }
+                      </div>
+                    </details>
+                  </li>
+                }
+              </ol>
+            }
           }
-        }
 
-        @if (draft(); as currentDraft) {
-          <form class="project-ai-panel__draft" aria-label="Bearbeitbarer Maßnahmenentwurf">
-            <h3>Entwurf (nur lokal, nicht gespeichert)</h3>
-            <label>
-              Titel
-              <input [(ngModel)]="currentDraft.title" name="draftTitle" />
-            </label>
-            <label>
-              Inhalt
-              <textarea [(ngModel)]="currentDraft.body" name="draftBody" rows="5"></textarea>
-            </label>
-            <label>
-              Owner
-              <input [(ngModel)]="currentDraft.owner" name="draftOwner" />
-            </label>
-            <label>
-              Zieltermin
-              <input [(ngModel)]="currentDraft.dueDate" name="draftDueDate" />
-            </label>
-            <button type="button" (click)="clearDraft()">Entwurf verwerfen</button>
-          </form>
-        }
-      }
-    </div>
-  }
+          @if (data.missingData.length > 0) {
+            <div class="project-ai-panel__missing">
+              <h3>Fehlende Daten</h3>
+              <ul>
+                @for (item of data.missingData; track item.area + item.description) {
+                  <li><strong>{{ item.area }}:</strong> {{ item.description }}</li>
+                }
+              </ul>
+            </div>
+          }
 
-  @if (activeTab() === 'questions') {
-    <div role="tabpanel" aria-labelledby="tab-questions" class="project-ai-panel__panel">
-      <div class="project-ai-panel__chips" aria-label="Vorgeschlagene Fragen">
-        @for (chip of suggestedQuestions; track chip) {
-          <button
-            type="button"
-            class="project-ai-panel__chip"
-            [disabled]="chatInputDisabled()"
-            (click)="sendQuestion(chip)"
-          >
-            {{ chip }}
+          <button type="button" class="project-ai-panel__refresh" (click)="loadAnalysis(true)">
+            Neu analysieren
           </button>
         }
       </div>
+    }
 
-      <div class="project-ai-panel__chat" aria-live="polite">
-        @for (message of chatMessages(); track $index) {
-          <p [class.project-ai-panel__chat-user]="message.role === 'user'">
-            <strong>{{ message.role === 'user' ? 'Sie' : 'Assistent' }}:</strong>
-            {{ message.text }}
-            @if (message.insufficientEvidence) {
-              <span class="project-ai-panel__hint">
-                Hinweis: Die verfügbaren Projektdaten reichen für eine belastbare Antwort nicht aus.
-              </span>
-            }
-            @if (message.evidenceFactIds?.length) {
-              <details class="project-ai-panel__tech-detail">
-                <summary>Technische Feldnamen</summary>
-                <span class="project-ai-panel__evidence">
-                  @for (factId of message.evidenceFactIds; track factId) {
-                    <button type="button" class="project-ai-panel__chip" (click)="jumpToFact(factId)">
-                      {{ factId }}
-                    </button>
-                  }
-                </span>
-              </details>
-            }
-          </p>
-        }
-        @if (chatStatus() === 'sending') {
-          <p>Antwort wird erzeugt …</p>
-        }
-        @if (chatStatus() === 'error' || chatStatus() === 'disabled') {
-          <div class="project-ai-panel__chat-error" role="alert">
-            <p>{{ chatError() }}</p>
-            @if (chatStatus() === 'error') {
-              <button type="button" (click)="retryLastQuestion()">Erneut versuchen</button>
-            }
+    @if (activeTab() === 'actions') {
+      <div role="tabpanel" aria-labelledby="tab-actions" class="project-ai-panel__panel">
+        @if (status() === 'loading') {
+          <p class="project-ai-panel__loading" aria-live="polite">Analyse wird geladen …</p>
+        } @else if (status() === 'disabled' || status() === 'error') {
+          <div class="project-ai-panel__error" role="alert">
+            <p>{{ errorMessage() }}</p>
+            <button type="button" (click)="loadAnalysis(true)">Erneut versuchen</button>
           </div>
+        } @else if (analysis(); as data) {
+          <p class="project-ai-panel__hint">
+            Nur konkrete, belegte Handlungsvorschläge. Generische Maßnahmenlisten werden nicht angezeigt.
+            Nötige Entscheidungen stehen im Überblick.
+          </p>
+          @if (displayableActions(data.suggestedActions); as actions) {
+            @if (actions.length === 0) {
+              <p class="project-ai-panel__empty" role="status">
+                Keine konkreten Maßnahmenvorschläge — die nötigen Entscheidungen sind im Überblick genannt.
+              </p>
+            } @else {
+              <ul class="project-ai-panel__actions">
+                @for (action of actions; track action.title + '-' + $index) {
+                  <li>
+                    <span class="project-ai-panel__proposal-badge">KI-Vorschlag</span>
+                    <h4>{{ action.title }}</h4>
+                    <p>{{ action.reason }}</p>
+                    <dl>
+                      <div>
+                        <dt>Owner</dt>
+                        <dd>{{ formatOptionalField(action.suggestedOwner) }}</dd>
+                      </div>
+                      <div>
+                        <dt>Zieltermin</dt>
+                        <dd>{{ formatOptionalField(action.suggestedDueDate) }}</dd>
+                      </div>
+                      <div>
+                        <dt>Erwartete Wirkung</dt>
+                        <dd>{{ formatOptionalField(action.expectedEffect) }}</dd>
+                      </div>
+                    </dl>
+                    <details class="project-ai-panel__tech-detail">
+                      <summary>Technische Feldnamen</summary>
+                      <div class="project-ai-panel__evidence">
+                        @for (factId of action.evidenceFactIds ?? []; track factId) {
+                          <button type="button" class="project-ai-panel__chip" (click)="jumpToFact(factId)">
+                            {{ factId }}
+                          </button>
+                        }
+                      </div>
+                    </details>
+                    <button type="button" (click)="prepareDraft(action)">Als Entwurf vorbereiten</button>
+                  </li>
+                }
+              </ul>
+            }
+          }
+
+          @if (draft(); as currentDraft) {
+            <form class="project-ai-panel__draft" aria-label="Bearbeitbarer Maßnahmenentwurf">
+              <h3>Entwurf (nur lokal, nicht gespeichert)</h3>
+              <label>
+                Titel
+                <input [(ngModel)]="currentDraft.title" name="draftTitle" />
+              </label>
+              <label>
+                Inhalt
+                <textarea [(ngModel)]="currentDraft.body" name="draftBody" rows="5"></textarea>
+              </label>
+              <label>
+                Owner
+                <input [(ngModel)]="currentDraft.owner" name="draftOwner" />
+              </label>
+              <label>
+                Zieltermin
+                <input [(ngModel)]="currentDraft.dueDate" name="draftDueDate" />
+              </label>
+              <button type="button" (click)="clearDraft()">Entwurf verwerfen</button>
+            </form>
+          }
         }
       </div>
+    }
 
-      <form class="project-ai-panel__ask" (submit)="$event.preventDefault(); sendQuestion()">
-        <label class="visually-hidden" for="project-ai-question">Frage zum Projekt</label>
-        <input
-          id="project-ai-question"
-          [ngModel]="chatInput()"
-          (ngModelChange)="chatInput.set($event)"
-          name="question"
-          placeholder="Frage zu freigegebenen Projektdaten …"
-          [disabled]="chatInputDisabled()"
-        />
-        <button type="submit" [disabled]="chatInputDisabled()">Fragen</button>
-      </form>
-    </div>
-  }
+    @if (activeTab() === 'questions') {
+      <div role="tabpanel" aria-labelledby="tab-questions" class="project-ai-panel__panel">
+        <div class="project-ai-panel__chips" aria-label="Vorgeschlagene Fragen">
+          @for (chip of suggestedQuestions; track chip) {
+            <button
+              type="button"
+              class="project-ai-panel__chip"
+              [disabled]="chatInputDisabled()"
+              (click)="sendQuestion(chip)"
+            >
+              {{ chip }}
+            </button>
+          }
+        </div>
 
-  @if (analysis(); as data) {
-    <p class="project-ai-panel__disclaimer">{{ data.disclaimer }}</p>
+        <div class="project-ai-panel__chat" aria-live="polite">
+          @for (message of chatMessages(); track $index) {
+            <p [class.project-ai-panel__chat-user]="message.role === 'user'">
+              <strong>{{ message.role === 'user' ? 'Sie' : 'Assistent' }}:</strong>
+              {{ message.text }}
+              @if (message.insufficientEvidence) {
+                <span class="project-ai-panel__hint">
+                  Hinweis: Die verfügbaren Projektdaten reichen für eine belastbare Antwort nicht aus.
+                </span>
+              }
+              @if (message.evidenceFactIds?.length) {
+                <details class="project-ai-panel__tech-detail">
+                  <summary>Technische Feldnamen</summary>
+                  <span class="project-ai-panel__evidence">
+                    @for (factId of message.evidenceFactIds; track factId) {
+                      <button type="button" class="project-ai-panel__chip" (click)="jumpToFact(factId)">
+                        {{ factId }}
+                      </button>
+                    }
+                  </span>
+                </details>
+              }
+            </p>
+          }
+          @if (chatStatus() === 'sending') {
+            <p>Antwort wird erzeugt …</p>
+          }
+          @if (chatStatus() === 'error' || chatStatus() === 'disabled') {
+            <div class="project-ai-panel__chat-error" role="alert">
+              <p>{{ chatError() }}</p>
+              @if (chatStatus() === 'error') {
+                <button type="button" (click)="retryLastQuestion()">Erneut versuchen</button>
+              }
+            </div>
+          }
+        </div>
+
+        <form class="project-ai-panel__ask" (submit)="$event.preventDefault(); sendQuestion()">
+          <label class="visually-hidden" for="project-ai-question">Frage zum Projekt</label>
+          <input
+            id="project-ai-question"
+            [ngModel]="chatInput()"
+            (ngModelChange)="chatInput.set($event)"
+            name="question"
+            placeholder="Frage zu freigegebenen Projektdaten …"
+            [disabled]="chatInputDisabled()"
+          />
+          <button type="submit" [disabled]="chatInputDisabled()">Fragen</button>
+        </form>
+      </div>
+    }
+
+    @if (analysis(); as data) {
+      <p class="project-ai-panel__disclaimer">{{ data.disclaimer }}</p>
+    }
   }
 </section>

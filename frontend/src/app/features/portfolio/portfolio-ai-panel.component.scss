@@ -36,11 +36,20 @@
   font-size: 0.85rem;
 }
 
-.portfolio-ai__error {
+.portfolio-ai__error,
+.portfolio-ai__key-missing {
   padding: 0.75rem;
   border: 1px solid var(--cgi-error);
   border-radius: 0.5rem;
   background: #ffcdd2;
+}
+
+.portfolio-ai__settings-link {
+  display: inline-block;
+  margin-top: 0.75rem;
+  color: var(--cgi-primary-darkest);
+  font-weight: 700;
+  text-decoration: underline;
 }
 
 .portfolio-ai__insights {

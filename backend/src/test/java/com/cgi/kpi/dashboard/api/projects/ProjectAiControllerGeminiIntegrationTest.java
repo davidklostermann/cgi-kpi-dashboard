@@ -10,6 +10,7 @@ import java.io.UncheckedIOException;
 import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
 import java.util.UUID;
+import java.util.Optional;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Test;
@@ -17,7 +18,25 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import com.cgi.kpi.dashboard.security.user.WithDashboardUser;
+import org.springframework.boot.test.mock.mockito.MockBean;
+import static org.mockito.Mockito.when;
+import static org.mockito.ArgumentMatchers.anyString;
+import com.cgi.kpi.dashboard.admin.ai.AiConfigService;
+import com.cgi.kpi.dashboard.security.user.CurrentUserService;
+import com.cgi.kpi.dashboard.security.crypto.EncryptionService;
+import com.cgi.kpi.dashboard.infrastructure.persistence.AppUserRepository;
+import com.cgi.kpi.dashboard.domain.model.AppUser;
+import com.cgi.kpi.dashboard.domain.model.Project;
+import com.cgi.kpi.dashboard.domain.model.WorkspaceIds;
+import com.cgi.kpi.dashboard.infrastructure.persistence.ProjectRepository;
+import java.time.LocalDate;
+import com.cgi.kpi.dashboard.admin.ai.AiProviderConfig;
+import com.cgi.kpi.dashboard.infrastructure.persistence.AiProviderConfigRepository;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.AfterEach;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
@@ -32,6 +51,7 @@ import com.sun.net.httpserver.HttpServer;
 class ProjectAiControllerGeminiIntegrationTest {
 
     private static final UUID KNOWN_PROJECT_ID = UUID.fromString("a0000000-0000-4000-8000-000000000001");
+    private static final UUID TEST_USER_ID = UUID.fromString("e17f4b8c-5a6e-4e7d-9c0a-1b2c3d4e5f6b");
 
     private static final HttpServer server;
 
@@ -50,6 +70,59 @@ class ProjectAiControllerGeminiIntegrationTest {
     @Autowired
     private MockMvc mockMvc;
 
+    @Autowired
+    private AiConfigService aiConfigService;
+    @MockBean
+    private CurrentUserService currentUserService;
+    @MockBean
+    private EncryptionService encryptionService;
+    @Autowired
+    private AppUserRepository appUserRepository;
+    @Autowired
+    private PasswordEncoder passwordEncoder;
+    @Autowired
+    private ProjectRepository projectRepository;
+
+    @BeforeEach
+    void setup() {
+        when(currentUserService.requireUserId()).thenReturn(TEST_USER_ID);
+        when(currentUserService.requireWorkspaceId()).thenReturn(WorkspaceIds.DEFAULT);
+
+        when(encryptionService.encrypt(anyString())).thenAnswer(invocation -> invocation.getArgument(0));
+        when(encryptionService.decrypt(anyString())).thenAnswer(invocation -> invocation.getArgument(0));
+        // Check if user already exists
+        AppUser user = appUserRepository.findById(TEST_USER_ID).orElseGet(() -> {
+            AppUser newUser = new AppUser();
+            newUser.setId(TEST_USER_ID);
+            newUser.setUsername("testgeminiadmin");
+            newUser.setPasswordHash(passwordEncoder.encode("password"));
+            newUser.setActive(true);
+            newUser.setMustChangePassword(false);
+            return appUserRepository.saveAndFlush(newUser); // use saveAndFlush to ensure immediate persistence
+        });
+
+        aiConfigService.saveConfig("gemini", "gemini-2.5-flash", "test-key", true);
+
+        // Projekt für den Test anlegen
+        Project project = new Project();
+        project.setId(KNOWN_PROJECT_ID);
+        project.setWorkspaceId(WorkspaceIds.DEFAULT);
+        project.setName("Test Project for AI");
+        project.setCustomerName("Test Customer");
+        project.setStatus("ON_TRACK");
+        project.setStartDate(LocalDate.of(2026, 1, 1));
+        project.setPlannedEndDate(LocalDate.of(2026, 12, 31));
+        project.setProgressPercent(50);
+        projectRepository.saveAndFlush(project);
+    }
+
+    @AfterEach
+    void cleanup() {
+        aiConfigService.deleteConfig(TEST_USER_ID, "gemini");
+        appUserRepository.deleteById(TEST_USER_ID);
+        projectRepository.deleteById(KNOWN_PROJECT_ID);
+    }
+
     @AfterAll
     static void stopServer() {
         if (server != null) {
@@ -61,7 +134,7 @@ class ProjectAiControllerGeminiIntegrationTest {
     static void geminiProperties(DynamicPropertyRegistry registry) {
         registry.add("app.ai.provider", () -> "gemini");
         registry.add("app.ai.model", () -> "gemini-2.5-flash");
-        registry.add("app.ai.api-key", () -> "test-key");
+        registry.add("app.ai.api-key", () -> "env-test-key");
         registry.add("app.ai.gemini-api-base-url", () -> "http://localhost:" + server.getAddress().getPort());
     }
 

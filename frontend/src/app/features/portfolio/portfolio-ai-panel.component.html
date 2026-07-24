@@ -2,7 +2,14 @@
   <span class="portfolio-ai__badge">Musteranalyse</span>
   <h2 class="portfolio-ai__title">Portfolio-Muster und systemische Risiken</h2>
 
-  @if (status() === 'loading') {
+  @if (status() === 'key_missing') {
+    <div class="portfolio-ai__key-missing" role="alert">
+      <p>{{ keyMissingMessage }}</p>
+      @if (authService.isAdmin()) {
+        <a class="portfolio-ai__settings-link" routerLink="/admin/ai-config">KI-Einstellungen öffnen</a>
+      }
+    </div>
+  } @else if (status() === 'loading') {
     <p class="portfolio-ai__state" aria-live="polite">Musteranalyse wird geladen …</p>
   } @else if (status() === 'disabled') {
     <div class="portfolio-ai__error" role="alert">

@@ -19,11 +19,12 @@ public class ProjectAiAnalysisCache {
     private final Map<String, ProjectAiAnalysisResponseDto> entries = new ConcurrentHashMap<>();
 
     public static String buildKey(
+            UUID userId,
             UUID workspaceId,
             UUID projectId,
             Instant factsAsOf,
             long providerConfigVersion) {
-        return workspaceId + "|" + projectId + "|" + factsAsOf + "|" + providerConfigVersion;
+        return userId + "|" + workspaceId + "|" + projectId + "|" + factsAsOf + "|" + providerConfigVersion;
     }
 
     public ProjectAiAnalysisResponseDto get(String key) {

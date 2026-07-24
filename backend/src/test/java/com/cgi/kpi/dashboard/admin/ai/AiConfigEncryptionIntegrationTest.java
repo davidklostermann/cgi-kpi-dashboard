@@ -5,6 +5,7 @@ import com.cgi.kpi.dashboard.security.crypto.EncryptionService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.DynamicPropertyRegistry;
@@ -12,8 +13,15 @@ import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Map;
+import java.util.UUID;
+import com.cgi.kpi.dashboard.security.user.CurrentUserService;
+import com.cgi.kpi.dashboard.domain.model.AppUser;
+import com.cgi.kpi.dashboard.infrastructure.persistence.AppUserRepository;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.junit.jupiter.api.BeforeEach;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.when;
 
 @SpringBootTest
 @ActiveProfiles("test")
@@ -32,6 +40,28 @@ class AiConfigEncryptionIntegrationTest {
     @Autowired
     private JdbcTemplate jdbcTemplate;
 
+    @MockBean
+    private CurrentUserService currentUserService;
+
+    private final UUID TEST_USER_ID = UUID.randomUUID();
+
+    @Autowired
+    private AppUserRepository appUserRepository;
+    @Autowired
+    private PasswordEncoder passwordEncoder;
+
+    @BeforeEach
+    void setup() {
+        when(currentUserService.requireUserId()).thenReturn(TEST_USER_ID);
+        AppUser user = new AppUser();
+        user.setId(TEST_USER_ID);
+        user.setUsername("testencryptuser");
+        user.setPasswordHash(passwordEncoder.encode("password"));
+        user.setActive(true);
+        user.setMustChangePassword(false);
+        appUserRepository.save(user);
+    }
+
     @DynamicPropertySource
     static void properties(DynamicPropertyRegistry registry) {
         registry.add("app.ai.master-key", () -> "test-master-key-32-chars-long-abc");
@@ -39,13 +69,15 @@ class AiConfigEncryptionIntegrationTest {
 
     @Test
     void shouldStoreEncryptedApiKeyInDatabaseViaService() {
+        when(currentUserService.requireUserId()).thenReturn(TEST_USER_ID);
+
         String originalKey = "secret-gemini-key";
         String provider = "gemini-test";
         
         // Use service to save config
         aiConfigService.saveConfig(provider, "gemini-1.5-pro", originalKey, true);
         
-        AiProviderConfig entity = repository.findByProvider(provider).orElseThrow();
+        AiProviderConfig entity = repository.findByUserIdAndProvider(TEST_USER_ID, provider).orElseThrow();
         
         // 1. Verify via JDBC (direct DB access)
         Map<String, Object> dbRow = jdbcTemplate.queryForMap(
@@ -61,6 +93,8 @@ class AiConfigEncryptionIntegrationTest {
 
     @Test
     void shouldReturnMaskedKeyInDto() {
+        when(currentUserService.requireUserId()).thenReturn(TEST_USER_ID);
+
         String originalKey = "secret-gemini-key-123456";
         String provider = "gemini-mask-test";
         

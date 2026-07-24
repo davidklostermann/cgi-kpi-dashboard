@@ -51,4 +51,22 @@ describe('resolveAiPanelError', () => {
     expect(result.message).toContain('(AI_UNAVAILABLE)');
     expect(result.code).toBe('AI_UNAVAILABLE');
   });
+
+  it('maps AI_KEY_MISSING to key_missing status', () => {
+    const result = resolveAiPanelError(
+      new HttpErrorResponse({
+        status: 403,
+        error: {
+          code: 'AI_KEY_MISSING',
+          message:
+            'Für Ihren Benutzer ist noch kein KI-API-Key hinterlegt. Bitte hinterlegen Sie den API-Key unter KI-Einstellungen.',
+        },
+      }),
+      'Fallback',
+    );
+
+    expect(result.status).toBe('key_missing');
+    expect(result.message).toContain('KI-API-Key');
+    expect(result.code).toBe('AI_KEY_MISSING');
+  });
 });

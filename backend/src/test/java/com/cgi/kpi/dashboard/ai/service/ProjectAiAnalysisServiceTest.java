@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
@@ -39,6 +40,7 @@ class ProjectAiAnalysisServiceTest {
     private static final UUID PROJECT_ID = UUID.fromString("a0000000-0000-4000-8000-000000000001");
     private static final UUID WORKSPACE_A = UUID.fromString("10000000-0000-4000-8000-000000000001");
     private static final UUID WORKSPACE_B = UUID.fromString("20000000-0000-4000-8000-000000000002");
+    private static final UUID TEST_USER_ID = UUID.fromString("40000000-0000-4000-8000-000000000004");
 
     private ApprovedProjectDataReader reader;
     private AiModelClient modelClient;
@@ -55,12 +57,16 @@ class ProjectAiAnalysisServiceTest {
         modelClient = mock(AiModelClient.class);
         properties = new AiProperties();
         properties.setEnabled(true);
+        properties.setProvider("mock"); // Set default provider for tests
         currentUserService = mock(CurrentUserService.class);
-        doNothing().when(currentUserService).requireAdmin();
+        when(currentUserService.requireUserId()).thenReturn(TEST_USER_ID);
         when(currentUserService.requireWorkspaceId()).thenReturn(WORKSPACE_A);
         cache = new ProjectAiAnalysisCache();
         configProvider = mock(AiActiveConfigProvider.class);
         when(configProvider.getCurrentVersion()).thenReturn(0L);
+        when(configProvider.isEnabled(anyString())).thenReturn(true); // Enable AI for tests
+        when(configProvider.getActiveApiKey("gemini")).thenReturn("mock-api-key"); // Provide a mock API key for gemini by default
+        when(configProvider.getActiveApiKey("mock")).thenReturn("mock-api-key"); // Provide a mock API key for mock by default
         configVersionProvider = new AiProviderConfigVersionProvider(configProvider);
         service = new ProjectAiAnalysisService(
                 reader,
@@ -69,41 +75,60 @@ class ProjectAiAnalysisServiceTest {
                 properties,
                 currentUserService,
                 cache,
-                configVersionProvider);
+                configVersionProvider,
+                configProvider);
         when(reader.readApprovedContext(PROJECT_ID)).thenReturn(Optional.of(context()));
         when(modelClient.analyze(any())).thenReturn(validAnalysis());
     }
 
     @Test
-    void rejectsNonAdminOnAnalyze() {
-        doThrow(new ApiException("FORBIDDEN", "Admin role required", HttpStatus.FORBIDDEN))
-                .when(currentUserService)
-                .requireAdmin();
+    void mockProviderStillRequiresUserGeminiKey() {
+        when(configProvider.getActiveApiKey("gemini")).thenReturn(null);
 
         ApiException ex = assertThrows(ApiException.class, () -> service.analyze(PROJECT_ID, false));
 
-        assertEquals("FORBIDDEN", ex.getCode());
+        assertEquals("AI_KEY_MISSING", ex.getCode());
+        verify(modelClient, times(0)).analyze(any());
+    }
+
+    @Test
+    void aiIsDisabledIfNoApiKeyForGemini() {
+        properties.setProvider("gemini"); // Set provider to gemini for this test
+        when(configProvider.getActiveApiKey("gemini")).thenReturn(null);
+        ApiException ex = assertThrows(ApiException.class, () -> service.analyze(PROJECT_ID, false));
+        assertEquals("AI_KEY_MISSING", ex.getCode());
+        assertEquals(HttpStatus.FORBIDDEN, ex.getStatus());
+        verify(modelClient, times(0)).analyze(any());
+    }
+
+    @Test
+    void assertReadyThrowsAiKeyMissingForGeminiWithoutKey() {
+        properties.setProvider("gemini");
+        when(configProvider.getActiveApiKey("gemini")).thenReturn(null);
+
+        ApiException ex = assertThrows(ApiException.class, () -> service.assertReady());
+
+        assertEquals("AI_KEY_MISSING", ex.getCode());
         assertEquals(HttpStatus.FORBIDDEN, ex.getStatus());
     }
 
     @Test
-    void rejectsNonAdminOnAsk() {
-        doThrow(new ApiException("FORBIDDEN", "Admin role required", HttpStatus.FORBIDDEN))
-                .when(currentUserService)
-                .requireAdmin();
+    void geminiWithoutKeyDoesNotReturnCachedAnalysis() {
+        properties.setProvider("gemini");
+        when(configProvider.getActiveApiKey("gemini")).thenReturn("mock-api-key");
+        service.analyze(PROJECT_ID, false);
 
-        ApiException ex = assertThrows(
-                ApiException.class,
-                () -> service.ask(
-                        PROJECT_ID, new com.cgi.kpi.dashboard.ai.dto.ProjectAiQuestionRequestDto("Status?")));
+        when(configProvider.getActiveApiKey("gemini")).thenReturn(null);
+        ApiException ex = assertThrows(ApiException.class, () -> service.analyze(PROJECT_ID, false));
 
-        assertEquals("FORBIDDEN", ex.getCode());
-        assertEquals(HttpStatus.FORBIDDEN, ex.getStatus());
+        assertEquals("AI_KEY_MISSING", ex.getCode());
+        verify(modelClient, times(1)).analyze(any());
     }
 
     @Test
     void disabledFeatureReturnsAiDisabled() {
         properties.setEnabled(false);
+        when(configProvider.isEnabled(anyString())).thenReturn(false);
 
         ApiException ex = assertThrows(ApiException.class, () -> service.analyze(PROJECT_ID, false));
 
@@ -118,6 +143,7 @@ class ProjectAiAnalysisServiceTest {
         ApiException ex = assertThrows(ApiException.class, () -> service.analyze(PROJECT_ID, true));
 
         assertEquals("AI_PROVIDER_ERROR", ex.getCode());
+        assertEquals(HttpStatus.SERVICE_UNAVAILABLE, ex.getStatus());
     }
 
     @Test
@@ -127,6 +153,7 @@ class ProjectAiAnalysisServiceTest {
         ApiException ex = assertThrows(ApiException.class, () -> service.analyze(PROJECT_ID, true));
 
         assertEquals("AI_PROVIDER_ERROR", ex.getCode());
+        assertEquals(HttpStatus.SERVICE_UNAVAILABLE, ex.getStatus());
     }
 
     @Test

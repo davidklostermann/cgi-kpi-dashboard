@@ -3,9 +3,15 @@ package com.cgi.kpi.dashboard.ai.service;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
+import com.cgi.kpi.dashboard.ai.cache.PortfolioAiAnalysisCache;
+import com.cgi.kpi.dashboard.ai.config.AiActiveConfigProvider;
+import com.cgi.kpi.dashboard.ai.config.AiProviderConfigVersionProvider;
 
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -45,6 +51,58 @@ class PortfolioAiAnalysisServiceTest {
     private static final UUID PROJECT_B = UUID.fromString("a0000000-0000-4000-8000-000000000002");
     private static final UUID PROJECT_UNKNOWN = UUID.fromString("a0000000-0000-4000-8000-000000000099");
 
+    private static final UUID TEST_USER_ID = UUID.fromString("40000000-0000-4000-8000-000000000004");
+    private static final UUID TEST_WORKSPACE_ID = UUID.fromString("10000000-0000-4000-8000-000000000001");
+
+    @Test
+    void rejectsWithoutUserGeminiKey() {
+        PortfolioAiAnalysisService service = serviceWithConfig(mockConfigProviderWithoutGeminiKey(), adminUserService());
+
+        ApiException ex = assertThrows(
+                ApiException.class, () -> service.analyzeTrend(PortfolioFilterCriteria.empty()));
+
+        assertEquals("AI_KEY_MISSING", ex.getCode());
+        assertEquals(HttpStatus.FORBIDDEN, ex.getStatus());
+    }
+
+    @Test
+    void cachesAnalysisPerUserAndFilterCriteria() {
+        AiActiveConfigProvider configProvider = mockConfigProviderWithGeminiKey();
+        PortfolioAiAnalysisCache cache = new PortfolioAiAnalysisCache();
+        PortfolioAiAnalysisService service = serviceWithConfig(configProvider, adminUserService(), cache);
+
+        PortfolioTrendAnalysisResponseDto first = service.analyzeTrend(PortfolioFilterCriteria.empty());
+        PortfolioTrendAnalysisResponseDto second = service.analyzeTrend(PortfolioFilterCriteria.empty());
+
+        assertEquals(first.generatedAt(), second.generatedAt());
+    }
+
+    @Test
+    void differentUsersDoNotShareCachedAnalysis() {
+        AiActiveConfigProvider configProvider = mockConfigProviderWithGeminiKey();
+        PortfolioAiAnalysisCache cache = new PortfolioAiAnalysisCache();
+        CurrentUserService userService = mock(CurrentUserService.class);
+        doNothing().when(userService).requireAdmin();
+        when(userService.requireUserId()).thenReturn(TEST_USER_ID);
+        when(userService.requireWorkspaceId()).thenReturn(TEST_WORKSPACE_ID);
+
+        PortfolioAiAnalysisService service = serviceWithConfig(configProvider, userService, cache);
+        service.analyzeTrend(PortfolioFilterCriteria.empty());
+
+        UUID otherUserId = UUID.fromString("50000000-0000-4000-8000-000000000005");
+        when(userService.requireUserId()).thenReturn(otherUserId);
+
+        service.analyzeTrend(PortfolioFilterCriteria.empty());
+
+        String userKey = PortfolioAiAnalysisCache.buildKey(
+                TEST_USER_ID, TEST_WORKSPACE_ID, PortfolioFilterCriteria.empty(), 0L);
+        String otherUserKey = PortfolioAiAnalysisCache.buildKey(
+                otherUserId, TEST_WORKSPACE_ID, PortfolioFilterCriteria.empty(), 0L);
+        assertEquals(true, cache.get(userKey) != null);
+        assertEquals(true, cache.get(otherUserKey) != null);
+        assertEquals(false, cache.get(userKey).generatedAt().equals(cache.get(otherUserKey).generatedAt()));
+    }
+
     @Test
     void rejectsNonAdminPrincipal() {
         CurrentUserService userService = mock(CurrentUserService.class);
@@ -52,15 +110,7 @@ class PortfolioAiAnalysisServiceTest {
                 .when(userService)
                 .requireAdmin();
 
-        PortfolioAiAnalysisService service = new PortfolioAiAnalysisService(
-                summaryReader(),
-                tableReader(PROJECT_A, PROJECT_B),
-                trendsFor(PROJECT_A, PROJECT_B),
-                new ApprovedPortfolioContextAssembler(),
-                new PortfolioPatternDetector(),
-                emptyModelClient(List.of()),
-                enabledProperties(),
-                userService);
+        PortfolioAiAnalysisService service = serviceWithConfig(mockConfigProviderWithGeminiKey(), userService);
 
         ApiException ex = assertThrows(
                 ApiException.class, () -> service.analyzeTrend(PortfolioFilterCriteria.empty()));
@@ -75,15 +125,8 @@ class PortfolioAiAnalysisServiceTest {
                 singleProjectInsight(),
                 validInsightFromModel()));
 
-        PortfolioAiAnalysisService service = new PortfolioAiAnalysisService(
-                summaryReader(),
-                tableReader(PROJECT_A, PROJECT_B),
-                trendsFor(PROJECT_A, PROJECT_B),
-                new ApprovedPortfolioContextAssembler(),
-                new PortfolioPatternDetector(),
-                client,
-                enabledProperties(),
-                adminUserService());
+        PortfolioAiAnalysisService service = serviceWithConfig(
+                mockConfigProviderWithGeminiKey(), adminUserService(), client);
 
         PortfolioTrendAnalysisResponseDto dto = service.analyzeTrend(PortfolioFilterCriteria.empty());
         assertTrue(dto.insights().stream().noneMatch(i -> i.affectedProjectIds().size() < 2));
@@ -107,15 +150,13 @@ class PortfolioAiAnalysisServiceTest {
                 "COMPLETE",
                 Instant.now())));
 
-        PortfolioAiAnalysisService service = new PortfolioAiAnalysisService(
+        PortfolioAiAnalysisService service = serviceWithConfig(
+                mockConfigProviderWithGeminiKey(),
+                adminUserService(),
+                client,
                 summaryReader(),
                 tableReader(PROJECT_A, PROJECT_B),
-                ids -> List.of(),
-                new ApprovedPortfolioContextAssembler(),
-                new PortfolioPatternDetector(),
-                client,
-                enabledProperties(),
-                adminUserService());
+                ids -> List.of());
 
         PortfolioTrendAnalysisResponseDto dto = service.analyzeTrend(PortfolioFilterCriteria.empty());
         assertTrue(dto.insights().stream().noneMatch(i -> "no-evidence".equals(i.id())));
@@ -123,17 +164,8 @@ class PortfolioAiAnalysisServiceTest {
 
     @Test
     void usesCanonicalProjectNamesFromBackend() {
-        AiModelClient client = emptyModelClient(List.of());
-
-        PortfolioAiAnalysisService service = new PortfolioAiAnalysisService(
-                summaryReader(),
-                tableReader(PROJECT_A, PROJECT_B),
-                trendsFor(PROJECT_A, PROJECT_B),
-                new ApprovedPortfolioContextAssembler(),
-                new PortfolioPatternDetector(),
-                client,
-                enabledProperties(),
-                adminUserService());
+        PortfolioAiAnalysisService service = serviceWithConfig(
+                mockConfigProviderWithGeminiKey(), adminUserService(), emptyModelClient(List.of()));
 
         PortfolioTrendAnalysisResponseDto dto = service.analyzeTrend(PortfolioFilterCriteria.empty());
         assertTrue(dto.insights().size() >= 1);
@@ -187,15 +219,8 @@ class PortfolioAiAnalysisServiceTest {
                         Instant.now())));
 
         // Trends produce DETERIORATING + REPORTING; LLM may refine DETERIORATING wording only.
-        PortfolioAiAnalysisService service = new PortfolioAiAnalysisService(
-                summaryReader(),
-                tableReader(PROJECT_A, PROJECT_B),
-                trendsFor(PROJECT_A, PROJECT_B),
-                new ApprovedPortfolioContextAssembler(),
-                new PortfolioPatternDetector(),
-                client,
-                enabledProperties(),
-                adminUserService());
+        PortfolioAiAnalysisService service = serviceWithConfig(
+                mockConfigProviderWithGeminiKey(), adminUserService(), client);
 
         PortfolioTrendAnalysisResponseDto dto = service.analyzeTrend(PortfolioFilterCriteria.empty());
         PortfolioInsightDto deteriorating = dto.insights().stream()
@@ -228,19 +253,100 @@ class PortfolioAiAnalysisServiceTest {
             }
         };
 
-        PortfolioAiAnalysisService service = new PortfolioAiAnalysisService(
-                summaryReader(),
-                tableReader(PROJECT_A, PROJECT_B),
-                trendsFor(PROJECT_A, PROJECT_B),
-                new ApprovedPortfolioContextAssembler(),
-                new PortfolioPatternDetector(),
-                client,
-                enabledProperties(),
-                adminUserService());
+        PortfolioAiAnalysisService service = serviceWithConfig(
+                mockConfigProviderWithGeminiKey(), adminUserService(), client);
 
         PortfolioTrendAnalysisResponseDto dto = service.analyzeTrend(PortfolioFilterCriteria.empty());
         assertTrue(dto.insights().size() >= 1);
         assertTrue(!dto.aiGenerated());
+    }
+
+    private static PortfolioAiAnalysisService serviceWithConfig(
+            AiActiveConfigProvider configProvider, CurrentUserService userService) {
+        return serviceWithConfig(
+                configProvider,
+                userService,
+                emptyModelClient(List.of()),
+                summaryReader(),
+                tableReader(PROJECT_A, PROJECT_B),
+                trendsFor(PROJECT_A, PROJECT_B));
+    }
+
+    private static PortfolioAiAnalysisService serviceWithConfig(
+            AiActiveConfigProvider configProvider,
+            CurrentUserService userService,
+            AiModelClient client) {
+        return serviceWithConfig(
+                configProvider,
+                userService,
+                client,
+                summaryReader(),
+                tableReader(PROJECT_A, PROJECT_B),
+                trendsFor(PROJECT_A, PROJECT_B));
+    }
+
+    private static PortfolioAiAnalysisService serviceWithConfig(
+            AiActiveConfigProvider configProvider,
+            CurrentUserService userService,
+            PortfolioAiAnalysisCache cache) {
+        return serviceWithConfig(
+                configProvider,
+                userService,
+                emptyModelClient(List.of()),
+                summaryReader(),
+                tableReader(PROJECT_A, PROJECT_B),
+                trendsFor(PROJECT_A, PROJECT_B),
+                cache);
+    }
+
+    private static PortfolioAiAnalysisService serviceWithConfig(
+            AiActiveConfigProvider configProvider,
+            CurrentUserService userService,
+            AiModelClient client,
+            PortfolioKpiReader kpiReader,
+            PortfolioTableReader tableReader,
+            PortfolioReportTrendReader trendReader) {
+        return serviceWithConfig(
+                configProvider, userService, client, kpiReader, tableReader, trendReader, new PortfolioAiAnalysisCache());
+    }
+
+    private static PortfolioAiAnalysisService serviceWithConfig(
+            AiActiveConfigProvider configProvider,
+            CurrentUserService userService,
+            AiModelClient client,
+            PortfolioKpiReader kpiReader,
+            PortfolioTableReader tableReader,
+            PortfolioReportTrendReader trendReader,
+            PortfolioAiAnalysisCache cache) {
+        when(userService.requireUserId()).thenReturn(TEST_USER_ID);
+        when(userService.requireWorkspaceId()).thenReturn(TEST_WORKSPACE_ID);
+        AiProviderConfigVersionProvider versionProvider = new AiProviderConfigVersionProvider(configProvider);
+        return new PortfolioAiAnalysisService(
+                kpiReader,
+                tableReader,
+                trendReader,
+                new ApprovedPortfolioContextAssembler(),
+                new PortfolioPatternDetector(),
+                client,
+                enabledProperties(),
+                userService,
+                cache,
+                versionProvider,
+                configProvider);
+    }
+
+    private static AiActiveConfigProvider mockConfigProviderWithGeminiKey() {
+        AiActiveConfigProvider configProvider = mock(AiActiveConfigProvider.class);
+        when(configProvider.getActiveApiKey("gemini")).thenReturn("mock-api-key");
+        when(configProvider.isEnabled(anyString())).thenReturn(true);
+        when(configProvider.getCurrentVersion()).thenReturn(0L);
+        return configProvider;
+    }
+
+    private static AiActiveConfigProvider mockConfigProviderWithoutGeminiKey() {
+        AiActiveConfigProvider configProvider = mock(AiActiveConfigProvider.class);
+        when(configProvider.getActiveApiKey("gemini")).thenReturn(null);
+        return configProvider;
     }
 
     private static PortfolioInsightDto singleProjectInsight() {
@@ -308,6 +414,8 @@ class PortfolioAiAnalysisServiceTest {
     private static CurrentUserService adminUserService() {
         CurrentUserService currentUserService = mock(CurrentUserService.class);
         doNothing().when(currentUserService).requireAdmin();
+        when(currentUserService.requireUserId()).thenReturn(TEST_USER_ID);
+        when(currentUserService.requireWorkspaceId()).thenReturn(TEST_WORKSPACE_ID);
         return currentUserService;
     }
 

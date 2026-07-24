@@ -1,8 +1,10 @@
 import { Component, effect, inject, input, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { RouterLink } from '@angular/router';
 import { take } from 'rxjs';
 
 import { ProjectAiApiService } from '../../core/api/project-ai-api.service';
+import { AuthService } from '../../core/auth/auth.service';
 import { resolveAiPanelError } from '../../shared/utils/ai-error.util';
 import {
   ProjectAiAnalysis,
@@ -13,7 +15,7 @@ import {
 } from '../../shared/models/project-ai.model';
 
 type PanelTab = 'overview' | 'actions' | 'questions';
-type LoadStatus = 'idle' | 'loading' | 'success' | 'error' | 'disabled';
+type LoadStatus = 'idle' | 'loading' | 'success' | 'error' | 'disabled' | 'key_missing';
 
 interface ChatMessage {
   role: 'user' | 'assistant';
@@ -37,14 +39,18 @@ const FACT_ANCHORS: Record<string, string> = {
   'report.statusChange': 'fact-report-comparison',
 };
 
+export const AI_KEY_MISSING_MESSAGE =
+  'Für Ihren Benutzer ist noch kein KI-API-Key hinterlegt. Bitte hinterlegen Sie den API-Key unter KI-Einstellungen.';
+
 @Component({
   selector: 'app-project-ai-panel',
-  imports: [FormsModule],
+  imports: [FormsModule, RouterLink],
   templateUrl: './project-ai-panel.component.html',
   styleUrl: './project-ai-panel.component.scss',
 })
 export class ProjectAiPanelComponent {
   private readonly projectAiApi = inject(ProjectAiApiService);
+  readonly authService = inject(AuthService);
 
   readonly projectId = input.required<string>();
 
@@ -59,6 +65,8 @@ export class ProjectAiPanelComponent {
   readonly chatStatus = signal<'idle' | 'sending' | 'error' | 'disabled'>('idle');
   readonly chatError = signal<string | null>(null);
 
+  readonly keyMissingMessage = AI_KEY_MISSING_MESSAGE;
+
   private analysisGeneration = 0;
   private chatGeneration = 0;
 
@@ -71,23 +79,23 @@ export class ProjectAiPanelComponent {
   constructor() {
     effect(() => {
       this.projectId();
-      this.analysisGeneration++;
-      this.chatGeneration++;
-      this.chatMessages.set([]);
-      this.chatStatus.set('idle');
-      this.chatError.set(null);
-      this.draft.set(null);
-      this.loadAnalysis(false);
+      this.authService.currentUser();
+      this.resetAiState();
+      this.initializePanel();
     });
   }
 
   selectTab(tab: PanelTab): void {
+    if (this.status() === 'key_missing') {
+      return;
+    }
     this.activeTab.set(tab);
   }
 
   chatInputDisabled(): boolean {
-    const status = this.chatStatus();
-    return status === 'sending' || status === 'disabled';
+    const status = this.status();
+    const chatStatus = this.chatStatus();
+    return status === 'key_missing' || chatStatus === 'sending' || chatStatus === 'disabled';
   }
 
   /** Insights without at least two readable evidence items are not shown. */
@@ -148,6 +156,9 @@ export class ProjectAiPanelComponent {
   }
 
   onTabKeydown(event: KeyboardEvent): void {
+    if (this.status() === 'key_missing') {
+      return;
+    }
     const tabs: PanelTab[] = ['overview', 'actions', 'questions'];
     const index = tabs.indexOf(this.activeTab());
     if (event.key === 'ArrowRight' || event.key === 'ArrowLeft') {
@@ -166,11 +177,68 @@ export class ProjectAiPanelComponent {
     }
   }
 
+  private initializePanel(): void {
+    const projectId = this.projectId();
+    const generation = ++this.analysisGeneration;
+    this.status.set('loading');
+
+    this.projectAiApi
+      .checkReadiness()
+      .pipe(take(1))
+      .subscribe({
+        next: (response) => {
+          if (generation !== this.analysisGeneration || projectId !== this.projectId()) {
+            return;
+          }
+          if (response.ready !== true) {
+            this.applyKeyMissingState();
+            return;
+          }
+          this.fetchAnalysis(projectId, false, generation);
+        },
+        error: (error: unknown) => {
+          if (generation !== this.analysisGeneration || projectId !== this.projectId()) {
+            return;
+          }
+          this.applyResolvedError(error, 'Die Analyse konnte nicht geladen werden.');
+        },
+      });
+  }
+
   loadAnalysis(refresh: boolean): void {
+    if (this.status() === 'key_missing') {
+      return;
+    }
+
     const projectId = this.projectId();
     const generation = ++this.analysisGeneration;
     this.status.set('loading');
     this.errorMessage.set(null);
+
+    this.projectAiApi
+      .checkReadiness()
+      .pipe(take(1))
+      .subscribe({
+        next: (response) => {
+          if (generation !== this.analysisGeneration || projectId !== this.projectId()) {
+            return;
+          }
+          if (response.ready !== true) {
+            this.applyKeyMissingState();
+            return;
+          }
+          this.fetchAnalysis(projectId, refresh, generation);
+        },
+        error: (error: unknown) => {
+          if (generation !== this.analysisGeneration || projectId !== this.projectId()) {
+            return;
+          }
+          this.applyResolvedError(error, 'Die Analyse konnte nicht geladen werden.');
+        },
+      });
+  }
+
+  private fetchAnalysis(projectId: string, refresh: boolean, generation: number): void {
     this.projectAiApi
       .getAnalysis(projectId, refresh)
       .pipe(take(1))
@@ -186,12 +254,46 @@ export class ProjectAiPanelComponent {
           if (generation !== this.analysisGeneration || projectId !== this.projectId()) {
             return;
           }
-          this.analysis.set(null);
-          const resolved = resolveAiPanelError(error, 'Die Analyse konnte nicht geladen werden.');
-          this.status.set(resolved.status);
-          this.errorMessage.set(resolved.message);
+          this.applyResolvedError(error, 'Die Analyse konnte nicht geladen werden.');
         },
       });
+  }
+
+  private applyResolvedError(error: unknown, fallback: string): void {
+    const resolved = resolveAiPanelError(error, fallback);
+    if (resolved.status === 'key_missing') {
+      this.applyKeyMissingState(resolved.message);
+      return;
+    }
+
+    this.analysis.set(null);
+    this.status.set(resolved.status);
+    this.errorMessage.set(resolved.message);
+  }
+
+  private applyKeyMissingState(message = AI_KEY_MISSING_MESSAGE): void {
+    this.clearDisplayedAiContent();
+    this.status.set('key_missing');
+    this.errorMessage.set(message);
+    this.chatStatus.set('disabled');
+    this.chatError.set(null);
+  }
+
+  private resetAiState(): void {
+    this.analysisGeneration++;
+    this.chatGeneration++;
+    this.clearDisplayedAiContent();
+    this.activeTab.set('overview');
+    this.status.set('loading');
+    this.errorMessage.set(null);
+    this.chatStatus.set('idle');
+    this.chatError.set(null);
+  }
+
+  private clearDisplayedAiContent(): void {
+    this.analysis.set(null);
+    this.chatMessages.set([]);
+    this.draft.set(null);
   }
 
   jumpToFact(factId: string): void {
@@ -237,45 +339,70 @@ export class ProjectAiPanelComponent {
     if (!text) {
       return;
     }
+
+    const projectId = this.projectId();
+    const generation = ++this.chatGeneration;
     this.chatMessages.update((messages) => [...messages, { role: 'user', text }]);
     this.chatInput.set('');
     this.chatStatus.set('sending');
     this.chatError.set(null);
 
-    const projectId = this.projectId();
-    const generation = ++this.chatGeneration;
     this.projectAiApi
-      .askQuestion(projectId, text)
+      .checkReadiness()
       .pipe(take(1))
       .subscribe({
-        next: (response: ProjectAiQuestionResponse) => {
+        next: () => {
           if (generation !== this.chatGeneration || projectId !== this.projectId()) {
             return;
           }
-          this.chatMessages.update((messages) => [
-            ...messages,
-            {
-              role: 'assistant',
-              text: response.answer,
-              evidenceFactIds: response.evidenceFactIds,
-              insufficientEvidence: response.insufficientEvidence,
-            },
-          ]);
-          this.chatStatus.set('idle');
+          this.projectAiApi
+            .askQuestion(projectId, text)
+            .pipe(take(1))
+            .subscribe({
+              next: (response: ProjectAiQuestionResponse) => {
+                if (generation !== this.chatGeneration || projectId !== this.projectId()) {
+                  return;
+                }
+                this.chatMessages.update((messages) => [
+                  ...messages,
+                  {
+                    role: 'assistant',
+                    text: response.answer,
+                    evidenceFactIds: response.evidenceFactIds,
+                    insufficientEvidence: response.insufficientEvidence,
+                  },
+                ]);
+                this.chatStatus.set('idle');
+              },
+              error: (error: unknown) => {
+                if (generation !== this.chatGeneration || projectId !== this.projectId()) {
+                  return;
+                }
+                this.handleQuestionError(error);
+              },
+            });
         },
         error: (error: unknown) => {
           if (generation !== this.chatGeneration || projectId !== this.projectId()) {
             return;
           }
-          const resolved = resolveAiPanelError(error, 'Die Frage konnte nicht beantwortet werden.');
-          this.chatStatus.set(resolved.status === 'disabled' ? 'disabled' : 'error');
-          this.chatError.set(resolved.message);
+          this.handleQuestionError(error);
         },
       });
   }
 
+  private handleQuestionError(error: unknown): void {
+    const resolved = resolveAiPanelError(error, 'Die Frage konnte nicht beantwortet werden.');
+    if (resolved.status === 'key_missing') {
+      this.applyKeyMissingState(resolved.message);
+      return;
+    }
+    this.chatStatus.set(resolved.status === 'disabled' ? 'disabled' : 'error');
+    this.chatError.set(resolved.message);
+  }
+
   retryLastQuestion(): void {
-    if (this.chatStatus() === 'disabled') {
+    if (this.chatStatus() === 'disabled' || this.status() === 'key_missing') {
       return;
     }
     const lastUser = [...this.chatMessages()].reverse().find((message) => message.role === 'user');

@@ -1,6 +1,6 @@
 import { HttpErrorResponse } from '@angular/common/http';
 
-export type AiPanelStatus = 'error' | 'disabled';
+export type AiPanelStatus = 'error' | 'disabled' | 'key_missing';
 
 export interface AiPanelErrorView {
   status: AiPanelStatus;
@@ -31,6 +31,16 @@ export function resolveAiPanelError(error: unknown, fallback: string): AiPanelEr
 
   if (code === 'AI_DISABLED') {
     return { status: 'disabled', message: body?.message?.trim() || message, code };
+  }
+
+  if (code === 'AI_KEY_MISSING') {
+    return {
+      status: 'key_missing',
+      message:
+        body?.message?.trim() ||
+        'Für Ihren Benutzer ist noch kein KI-API-Key hinterlegt. Bitte hinterlegen Sie den API-Key unter KI-Einstellungen.',
+      code,
+    };
   }
 
   if (code === 'AI_PROVIDER_ERROR' || code === 'AI_UNAVAILABLE') {

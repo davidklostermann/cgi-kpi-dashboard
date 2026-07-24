@@ -1,20 +1,21 @@
-import { Component, computed, effect, inject, input, signal } from '@angular/core';
+import { Component, computed, effect, inject, input, signal, viewChild, ElementRef, HostListener } from '@angular/core';
+import { CdkTrapFocus } from '@angular/cdk/a11y';
+import { DOCUMENT } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import { RouterLink } from '@angular/router';
 import { take } from 'rxjs';
 
 import { ProjectApiService } from '../../core/api/project-api.service';
 import { AuthService } from '../../core/auth/auth.service';
-import { FactsAiLayoutComponent } from '../../core/layout/facts-ai-layout.component';
 import { BreadcrumbsComponent } from '../../core/navigation/breadcrumbs.component';
 import { StatusBadgeComponent } from '../../shared/components/status-badge.component';
 import { ProjectMasterData } from '../../shared/models/project-detail.model';
-import { ProjectAiPanelComponent } from './project-ai-panel.component';
 import { ProjectIssuesActionsSectionComponent } from './project-issues-actions-section.component';
 import { ProjectKpiSectionComponent } from './project-kpi-section.component';
 import { ProjectPhasesSectionComponent } from './project-phases-section.component';
 import { ProjectReportComparisonComponent } from './project-report-comparison.component';
 import { ProjectTeamCapacitySectionComponent } from './project-team-capacity-section.component';
+import { ProjectAiPanelComponent } from './project-ai-panel.component';
 
 type LoadStatus = 'loading' | 'success' | 'error';
 
@@ -23,13 +24,13 @@ type LoadStatus = 'loading' | 'success' | 'error';
   imports: [
     RouterLink,
     BreadcrumbsComponent,
-    FactsAiLayoutComponent,
     StatusBadgeComponent,
     ProjectKpiSectionComponent,
     ProjectIssuesActionsSectionComponent,
     ProjectTeamCapacitySectionComponent,
     ProjectPhasesSectionComponent,
     ProjectReportComparisonComponent,
+    CdkTrapFocus,
     ProjectAiPanelComponent,
   ],
   templateUrl: './project-detail-page.component.html',
@@ -37,7 +38,7 @@ type LoadStatus = 'loading' | 'success' | 'error';
 })
 export class ProjectDetailPageComponent {
   private readonly projectApi = inject(ProjectApiService);
-  private readonly authService = inject(AuthService);
+  readonly authService = inject(AuthService);
 
   readonly id = input.required<string>();
 
@@ -45,7 +46,32 @@ export class ProjectDetailPageComponent {
   readonly masterDataStatus = signal<LoadStatus>('loading');
   readonly masterDataError = signal<string | null>(null);
 
-  readonly isAdmin = this.authService.isAdmin;
+  private readonly document = inject(DOCUMENT);
+  private readonly launcher = viewChild<ElementRef<HTMLButtonElement>>('aiLauncher');
+
+  readonly projectAiOpen = signal(false);
+  private previousBodyOverflow = '';
+
+  openProjectAi(): void {
+    this.previousBodyOverflow = this.document.body.style.overflow;
+    this.document.body.style.overflow = 'hidden';
+    this.projectAiOpen.set(true);
+  }
+
+  closeProjectAi(): void {
+    if (!this.projectAiOpen()) {
+      return;
+    }
+
+    this.projectAiOpen.set(false);
+    this.document.body.style.overflow = this.previousBodyOverflow;
+    this.launcher()?.nativeElement.focus();
+  }
+
+  @HostListener('document:keydown.escape')
+  onEscape(): void {
+    this.closeProjectAi();
+  }
 
   readonly projectName = computed(() => this.masterData()?.name ?? `Projekt ${this.id()}`);
 

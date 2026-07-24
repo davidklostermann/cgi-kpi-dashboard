@@ -7,7 +7,7 @@ import { FactsAiLayoutComponent } from './facts-ai-layout.component';
   selector: 'app-test-host',
   imports: [FactsAiLayoutComponent],
   template: `
-    <app-facts-ai-layout [hasAiContent]="true">
+    <app-facts-ai-layout>
       <section factsMain>Main facts</section>
       <div factsAi>KI panel</div>
     </app-facts-ai-layout>
@@ -30,16 +30,6 @@ describe('FactsAiLayoutComponent', () => {
     expect(layout).toBeTruthy();
     expect(fixture.nativeElement.textContent).toContain('Main facts');
     expect(fixture.nativeElement.textContent).toContain('KI panel');
-  });
-
-  it('should show KI disclaimer and ki-surface styling (Story 2.4)', () => {
-    const fixture = TestBed.createComponent(TestHostComponent);
-    fixture.detectChanges();
-
-    const aiColumn = fixture.nativeElement.querySelector('.facts-ai-layout__ai') as HTMLElement;
-    expect(aiColumn).toBeTruthy();
-    expect(aiColumn.textContent).toContain('KI-generierte Einschätzungen');
-    expect(getComputedStyle(aiColumn).backgroundColor).toBeTruthy();
   });
 
   it('should use two-column grid on desktop viewport (Story 2.4)', () => {

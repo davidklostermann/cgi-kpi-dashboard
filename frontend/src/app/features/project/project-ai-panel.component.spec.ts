@@ -1,14 +1,27 @@
 import { TestBed } from '@angular/core/testing';
+import { provideRouter } from '@angular/router';
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
+import { computed, signal, WritableSignal } from '@angular/core';
 
-import { ProjectAiPanelComponent } from './project-ai-panel.component';
+import {
+  AI_KEY_MISSING_MESSAGE,
+  ProjectAiPanelComponent,
+} from './project-ai-panel.component';
+import { AuthService } from '../../core/auth/auth.service';
 
 describe('ProjectAiPanelComponent', () => {
   let httpMock: HttpTestingController;
+  let isAdminSignal: WritableSignal<boolean>;
+
+  const projectId = 'a0000000-0000-4000-8000-000000000001';
+  const analysisUrl = `/api/projects/${projectId}/ai/analysis?refresh=false`;
+  const analysisRefreshUrl = `/api/projects/${projectId}/ai/analysis?refresh=true`;
+  const questionsUrl = `/api/projects/${projectId}/ai/questions`;
+  const readinessUrl = '/api/me/ai/readiness';
 
   const analysis = {
-    projectId: 'a0000000-0000-4000-8000-000000000001',
+    projectId,
     factsAsOf: '2026-07-01T08:00:00Z',
     generatedAt: '2026-07-16T12:00:00Z',
     status: 'SUCCESS',
@@ -76,23 +89,53 @@ describe('ProjectAiPanelComponent', () => {
   };
 
   beforeEach(async () => {
+    isAdminSignal = signal(true);
+    const authServiceMock = {
+      currentUser: signal({ id: 'user-a', roles: ['ROLE_ADMIN'] }),
+      isAdmin: computed(() => isAdminSignal()),
+    };
+
     await TestBed.configureTestingModule({
       imports: [ProjectAiPanelComponent],
-      providers: [provideHttpClient(), provideHttpClientTesting()],
+      providers: [
+        provideRouter([]),
+        provideHttpClient(),
+        provideHttpClientTesting(),
+        { provide: AuthService, useValue: authServiceMock },
+      ],
     }).compileComponents();
     httpMock = TestBed.inject(HttpTestingController);
   });
 
   afterEach(() => httpMock.verify());
 
-  it('should require evidence for AI insights and hide technical field names by default', () => {
+  function createPanel(): ReturnType<typeof TestBed.createComponent<ProjectAiPanelComponent>> {
     const fixture = TestBed.createComponent(ProjectAiPanelComponent);
-    fixture.componentRef.setInput('projectId', 'a0000000-0000-4000-8000-000000000001');
+    fixture.componentRef.setInput('projectId', projectId);
     fixture.detectChanges();
+    return fixture;
+  }
 
+  function flushReadiness(): void {
+    httpMock.expectOne(readinessUrl).flush({ ready: true });
+  }
+
+  function flushKeyMissing(): void {
     httpMock
-      .expectOne('/api/projects/a0000000-0000-4000-8000-000000000001/ai/analysis?refresh=false')
-      .flush(analysis);
+      .expectOne(readinessUrl)
+      .flush(
+        {
+          code: 'AI_KEY_MISSING',
+          message: AI_KEY_MISSING_MESSAGE,
+        },
+        { status: 403, statusText: 'Forbidden' },
+      );
+  }
+
+  it('should require evidence for AI insights and hide technical field names by default', () => {
+    const fixture = createPanel();
+    flushReadiness();
+    httpMock.expectOne(analysisUrl).flush(analysis);
     fixture.detectChanges();
 
     const text = fixture.nativeElement.textContent as string;
@@ -105,7 +148,6 @@ describe('ProjectAiPanelComponent', () => {
     expect(text).toContain('Nötige Entscheidung oder Handlung');
     expect(text).toContain('Technische Feldnamen');
     expect(text).not.toContain('Ohne Belege — darf nicht erscheinen');
-    // Technische IDs sind nur im zugeklappten details — nicht prominent im Überblickstext
     const openDetails = fixture.nativeElement.querySelectorAll('details[open]');
     expect(openDetails.length).toBe(0);
     expect(text).toContain('Fehlende Daten');
@@ -113,16 +155,12 @@ describe('ProjectAiPanelComponent', () => {
   });
 
   it('should hide empty and generic AI action cards', () => {
-    const fixture = TestBed.createComponent(ProjectAiPanelComponent);
-    fixture.componentRef.setInput('projectId', 'a0000000-0000-4000-8000-000000000001');
-    fixture.detectChanges();
-    httpMock
-      .expectOne('/api/projects/a0000000-0000-4000-8000-000000000001/ai/analysis?refresh=false')
-      .flush(analysis);
+    const fixture = createPanel();
+    flushReadiness();
+    httpMock.expectOne(analysisUrl).flush(analysis);
     fixture.detectChanges();
 
-    const component = fixture.componentInstance;
-    component.selectTab('actions');
+    fixture.componentInstance.selectTab('actions');
     fixture.detectChanges();
 
     const text = fixture.nativeElement.textContent as string;
@@ -133,36 +171,30 @@ describe('ProjectAiPanelComponent', () => {
   });
 
   it('should prepare editable draft without backend save for concrete actions', () => {
-    const fixture = TestBed.createComponent(ProjectAiPanelComponent);
-    fixture.componentRef.setInput('projectId', 'a0000000-0000-4000-8000-000000000001');
-    fixture.detectChanges();
-    httpMock
-      .expectOne('/api/projects/a0000000-0000-4000-8000-000000000001/ai/analysis?refresh=false')
-      .flush(analysis);
+    const fixture = createPanel();
+    flushReadiness();
+    httpMock.expectOne(analysisUrl).flush(analysis);
     fixture.detectChanges();
 
-    const component = fixture.componentInstance;
-    component.selectTab('actions');
-    component.prepareDraft(analysis.suggestedActions[1]);
+    fixture.componentInstance.selectTab('actions');
+    fixture.componentInstance.prepareDraft(analysis.suggestedActions[1]);
     fixture.detectChanges();
     expect(fixture.nativeElement.textContent).toContain('Entwurf (nur lokal, nicht gespeichert)');
     expect(httpMock.match(() => true).length).toBe(0);
   });
 
   it('should answer chat questions via API', () => {
-    const fixture = TestBed.createComponent(ProjectAiPanelComponent);
-    fixture.componentRef.setInput('projectId', 'a0000000-0000-4000-8000-000000000001');
-    fixture.detectChanges();
-    httpMock
-      .expectOne('/api/projects/a0000000-0000-4000-8000-000000000001/ai/analysis?refresh=false')
-      .flush(analysis);
+    const fixture = createPanel();
+    flushReadiness();
+    httpMock.expectOne(analysisUrl).flush(analysis);
     fixture.detectChanges();
 
     fixture.componentInstance.selectTab('questions');
     fixture.componentInstance.sendQuestion('Wie ist der aktuelle Fortschritt?');
     fixture.detectChanges();
 
-    const req = httpMock.expectOne('/api/projects/a0000000-0000-4000-8000-000000000001/ai/questions');
+    httpMock.expectOne(readinessUrl).flush({ ready: true });
+    const req = httpMock.expectOne(questionsUrl);
     expect(req.request.body).toEqual({ question: 'Wie ist der aktuelle Fortschritt?' });
     req.flush({
       answer: 'Laut freigegebenen Projektdaten: Fortschritt = 62 %.',
@@ -178,12 +210,10 @@ describe('ProjectAiPanelComponent', () => {
   });
 
   it('should show disabled message only for AI_DISABLED', () => {
-    const fixture = TestBed.createComponent(ProjectAiPanelComponent);
-    fixture.componentRef.setInput('projectId', 'a0000000-0000-4000-8000-000000000001');
-    fixture.detectChanges();
-
+    const fixture = createPanel();
+    flushReadiness();
     httpMock
-      .expectOne('/api/projects/a0000000-0000-4000-8000-000000000001/ai/analysis?refresh=false')
+      .expectOne(analysisUrl)
       .flush(
         { code: 'AI_DISABLED', message: 'Projekt-Assistent ist deaktiviert.' },
         { status: 503, statusText: 'Service Unavailable' },
@@ -195,12 +225,10 @@ describe('ProjectAiPanelComponent', () => {
   });
 
   it('should show provider error for AI_PROVIDER_ERROR', () => {
-    const fixture = TestBed.createComponent(ProjectAiPanelComponent);
-    fixture.componentRef.setInput('projectId', 'a0000000-0000-4000-8000-000000000001');
-    fixture.detectChanges();
-
+    const fixture = createPanel();
+    flushReadiness();
     httpMock
-      .expectOne('/api/projects/a0000000-0000-4000-8000-000000000001/ai/analysis?refresh=false')
+      .expectOne(analysisUrl)
       .flush(
         {
           code: 'AI_PROVIDER_ERROR',
@@ -216,20 +244,18 @@ describe('ProjectAiPanelComponent', () => {
   });
 
   it('should show disabled chat message for AI_DISABLED', () => {
-    const fixture = TestBed.createComponent(ProjectAiPanelComponent);
-    fixture.componentRef.setInput('projectId', 'a0000000-0000-4000-8000-000000000001');
-    fixture.detectChanges();
-    httpMock
-      .expectOne('/api/projects/a0000000-0000-4000-8000-000000000001/ai/analysis?refresh=false')
-      .flush(analysis);
+    const fixture = createPanel();
+    flushReadiness();
+    httpMock.expectOne(analysisUrl).flush(analysis);
     fixture.detectChanges();
 
     fixture.componentInstance.selectTab('questions');
     fixture.componentInstance.sendQuestion('Wie ist der Fortschritt?');
     fixture.detectChanges();
 
+    httpMock.expectOne(readinessUrl).flush({ ready: true });
     httpMock
-      .expectOne('/api/projects/a0000000-0000-4000-8000-000000000001/ai/questions')
+      .expectOne(questionsUrl)
       .flush(
         { code: 'AI_DISABLED', message: 'Projekt-Assistent ist deaktiviert.' },
         { status: 503, statusText: 'Service Unavailable' },
@@ -240,16 +266,14 @@ describe('ProjectAiPanelComponent', () => {
     expect(fixture.nativeElement.textContent).toContain('Projekt-Assistent ist deaktiviert.');
     expect(fixture.componentInstance.chatInputDisabled()).toBe(true);
     fixture.componentInstance.sendQuestion('Noch eine Frage');
-    expect(httpMock.match('/api/projects/a0000000-0000-4000-8000-000000000001/ai/questions').length).toBe(0);
+    expect(httpMock.match(questionsUrl).length).toBe(0);
   });
 
-  it('should keep questions tab usable when analysis fails', () => {
-    const fixture = TestBed.createComponent(ProjectAiPanelComponent);
-    fixture.componentRef.setInput('projectId', 'a0000000-0000-4000-8000-000000000001');
-    fixture.detectChanges();
-
+  it('should keep questions tab usable when analysis fails with a generic error', () => {
+    const fixture = createPanel();
+    flushReadiness();
     httpMock
-      .expectOne('/api/projects/a0000000-0000-4000-8000-000000000001/ai/analysis?refresh=false')
+      .expectOne(analysisUrl)
       .flush({ message: 'Analyse ausgefallen' }, { status: 500, statusText: 'Error' });
     fixture.detectChanges();
 
@@ -258,7 +282,8 @@ describe('ProjectAiPanelComponent', () => {
     fixture.componentInstance.sendQuestion('Wie ist der Fortschritt?');
     fixture.detectChanges();
 
-    const req = httpMock.expectOne('/api/projects/a0000000-0000-4000-8000-000000000001/ai/questions');
+    httpMock.expectOne(readinessUrl).flush({ ready: true });
+    const req = httpMock.expectOne(questionsUrl);
     req.flush({
       answer: 'Fortschritt laut Daten 62 %.',
       evidenceFactIds: ['kpi.progressPercent'],
@@ -273,5 +298,112 @@ describe('ProjectAiPanelComponent', () => {
     const text = fixture.nativeElement.textContent as string;
     expect(text).toContain('Fortschritt laut Daten 62 %.');
     expect(text).toContain('reichen für eine belastbare Antwort nicht aus');
+  });
+
+  it('should show only the key-missing notice for ADMIN without API key', () => {
+    isAdminSignal.set(true);
+    const fixture = createPanel();
+    flushKeyMissing();
+    fixture.detectChanges();
+
+    const text = fixture.nativeElement.textContent as string;
+    expect(fixture.componentInstance.status()).toBe('key_missing');
+    expect(text).toContain(AI_KEY_MISSING_MESSAGE);
+    expect(text).toContain('KI-Einstellungen öffnen');
+    expect(fixture.nativeElement.querySelector('.project-ai-panel__tabs')).toBeNull();
+    expect(fixture.nativeElement.textContent).not.toContain('Managementbewertung');
+    expect(fixture.nativeElement.textContent).not.toContain('Verfügbarkeit wird geprüft');
+    httpMock.expectNone(analysisUrl);
+  });
+
+  it('should show key-missing notice without admin link for USER without API key', () => {
+    isAdminSignal.set(false);
+    const fixture = createPanel();
+    flushKeyMissing();
+    fixture.detectChanges();
+
+    const text = fixture.nativeElement.textContent as string;
+    expect(text).toContain(AI_KEY_MISSING_MESSAGE);
+    expect(text).not.toContain('KI-Einstellungen öffnen');
+    expect(fixture.nativeElement.querySelector('a[routerLink="/admin/ai-config"]')).toBeNull();
+    httpMock.expectNone(analysisUrl);
+  });
+
+  it('should not call analysis when readiness returns ready=false', () => {
+    const fixture = createPanel();
+    httpMock.expectOne(readinessUrl).flush({ ready: false });
+    fixture.detectChanges();
+
+    expect(fixture.componentInstance.status()).toBe('key_missing');
+    expect(fixture.componentInstance.analysis()).toBeNull();
+    httpMock.expectNone(analysisUrl);
+  });
+
+  it('should not call analysis endpoint when readiness reports missing key', () => {
+    const fixture = createPanel();
+    flushKeyMissing();
+    fixture.detectChanges();
+
+    fixture.componentInstance.loadAnalysis(true);
+    fixture.detectChanges();
+
+    httpMock.expectNone(analysisRefreshUrl);
+    expect(fixture.componentInstance.analysis()).toBeNull();
+  });
+
+  it('should clear displayed AI content when key is removed after successful analysis', () => {
+    const fixture = createPanel();
+    flushReadiness();
+    httpMock.expectOne(analysisUrl).flush(analysis);
+    fixture.detectChanges();
+    expect(fixture.nativeElement.textContent).toContain('Managementbewertung');
+
+    fixture.componentInstance.loadAnalysis(true);
+    fixture.detectChanges();
+
+    httpMock.expectOne(readinessUrl).flush(
+      { code: 'AI_KEY_MISSING', message: AI_KEY_MISSING_MESSAGE },
+      { status: 403, statusText: 'Forbidden' },
+    );
+    fixture.detectChanges();
+
+    expect(fixture.componentInstance.status()).toBe('key_missing');
+    expect(fixture.componentInstance.analysis()).toBeNull();
+    expect(fixture.nativeElement.textContent).not.toContain('Managementbewertung');
+    httpMock.expectNone(analysisRefreshUrl);
+  });
+
+  it('should clear AI content when the authenticated user changes', () => {
+    const authServiceMock = TestBed.inject(AuthService) as unknown as {
+      currentUser: WritableSignal<{ id: string; roles: string[] } | null>;
+    };
+
+    const fixture = createPanel();
+    flushReadiness();
+    httpMock.expectOne(analysisUrl).flush(analysis);
+    fixture.detectChanges();
+    expect(fixture.nativeElement.textContent).toContain('Managementbewertung');
+
+    authServiceMock.currentUser.set({ id: 'user-b', roles: ['ROLE_ADMIN'] });
+    fixture.detectChanges();
+
+    flushKeyMissing();
+    fixture.detectChanges();
+
+    expect(fixture.componentInstance.analysis()).toBeNull();
+    expect(fixture.componentInstance.status()).toBe('key_missing');
+    expect(fixture.nativeElement.textContent).not.toContain('Managementbewertung');
+    httpMock.expectNone(analysisUrl);
+  });
+
+  it('should work unchanged with a valid own API key', () => {
+    const fixture = createPanel();
+    flushReadiness();
+    httpMock.expectOne(analysisUrl).flush(analysis);
+    fixture.detectChanges();
+
+    expect(fixture.componentInstance.status()).toBe('success');
+    expect(fixture.nativeElement.textContent).toContain('Managementbewertung');
+    expect(fixture.nativeElement.querySelector('.project-ai-panel__tabs')).toBeTruthy();
   });
 });

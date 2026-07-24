@@ -3,13 +3,20 @@ import { By } from '@angular/platform-browser';
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { provideRouter, RouterLink } from '@angular/router';
+import { computed, signal, WritableSignal } from '@angular/core';
 
 import { PortfolioAiPanelComponent } from './portfolio-ai-panel.component';
 import { PortfolioFilterService } from './portfolio-filter.service';
+import { AuthService } from '../../core/auth/auth.service';
+import { AI_KEY_MISSING_MESSAGE } from '../project/project-ai-panel.component';
 
 describe('PortfolioAiPanelComponent', () => {
   let httpMock: HttpTestingController;
   let filterService: PortfolioFilterService;
+  let isAdminSignal: WritableSignal<boolean>;
+
+  const readinessUrl = '/api/me/ai/readiness';
+  const trendUrl = '/api/portfolio/ai/trend-analysis';
 
   const insightPayload = {
     insights: [
@@ -66,9 +73,20 @@ describe('PortfolioAiPanelComponent', () => {
   };
 
   beforeEach(async () => {
+    isAdminSignal = signal(true);
+    const authServiceMock = {
+      currentUser: signal({ id: 'user-a', roles: ['ROLE_ADMIN'] }),
+      isAdmin: computed(() => isAdminSignal()),
+    };
+
     await TestBed.configureTestingModule({
       imports: [PortfolioAiPanelComponent],
-      providers: [provideRouter([]), provideHttpClient(), provideHttpClientTesting()],
+      providers: [
+        provideRouter([]),
+        provideHttpClient(),
+        provideHttpClientTesting(),
+        { provide: AuthService, useValue: authServiceMock },
+      ],
     }).compileComponents();
     httpMock = TestBed.inject(HttpTestingController);
     filterService = TestBed.inject(PortfolioFilterService);
@@ -77,11 +95,27 @@ describe('PortfolioAiPanelComponent', () => {
 
   afterEach(() => httpMock.verify());
 
-  it('should render portfolio pattern cards and hide single-project insights', () => {
+  function createPanel(): ReturnType<typeof TestBed.createComponent<PortfolioAiPanelComponent>> {
     const fixture = TestBed.createComponent(PortfolioAiPanelComponent);
     fixture.detectChanges();
+    return fixture;
+  }
 
-    httpMock.expectOne('/api/portfolio/ai/trend-analysis').flush(insightPayload);
+  function flushReadiness(): void {
+    httpMock.expectOne(readinessUrl).flush({ ready: true });
+  }
+
+  function flushKeyMissing(): void {
+    httpMock.expectOne(readinessUrl).flush(
+      { code: 'AI_KEY_MISSING', message: AI_KEY_MISSING_MESSAGE },
+      { status: 403, statusText: 'Forbidden' },
+    );
+  }
+
+  it('should render portfolio pattern cards and hide single-project insights', () => {
+    const fixture = createPanel();
+    flushReadiness();
+    httpMock.expectOne(trendUrl).flush(insightPayload);
     fixture.detectChanges();
 
     const text = fixture.nativeElement.textContent as string;
@@ -98,10 +132,9 @@ describe('PortfolioAiPanelComponent', () => {
   });
 
   it('should link affected projects to detail routes', () => {
-    const fixture = TestBed.createComponent(PortfolioAiPanelComponent);
-    fixture.detectChanges();
-
-    httpMock.expectOne('/api/portfolio/ai/trend-analysis').flush(insightPayload);
+    const fixture = createPanel();
+    flushReadiness();
+    httpMock.expectOne(trendUrl).flush(insightPayload);
     fixture.detectChanges();
 
     const links = fixture.debugElement.queryAll(By.directive(RouterLink));
@@ -111,10 +144,9 @@ describe('PortfolioAiPanelComponent', () => {
   });
 
   it('should show defined empty state when no insights exist', () => {
-    const fixture = TestBed.createComponent(PortfolioAiPanelComponent);
-    fixture.detectChanges();
-
-    httpMock.expectOne('/api/portfolio/ai/trend-analysis').flush({
+    const fixture = createPanel();
+    flushReadiness();
+    httpMock.expectOne(trendUrl).flush({
       insights: [],
       aiGenerated: false,
       disclaimer: 'Disclaimer',
@@ -130,10 +162,9 @@ describe('PortfolioAiPanelComponent', () => {
   });
 
   it('should distinguish filtered empty state when raw insights exist but none are displayable', () => {
-    const fixture = TestBed.createComponent(PortfolioAiPanelComponent);
-    fixture.detectChanges();
-
-    httpMock.expectOne('/api/portfolio/ai/trend-analysis').flush({
+    const fixture = createPanel();
+    flushReadiness();
+    httpMock.expectOne(trendUrl).flush({
       insights: [
         {
           id: 'inactive-type',
@@ -167,10 +198,9 @@ describe('PortfolioAiPanelComponent', () => {
   });
 
   it('should not render project links for drifted id/name arrays', () => {
-    const fixture = TestBed.createComponent(PortfolioAiPanelComponent);
-    fixture.detectChanges();
-
-    httpMock.expectOne('/api/portfolio/ai/trend-analysis').flush({
+    const fixture = createPanel();
+    flushReadiness();
+    httpMock.expectOne(trendUrl).flush({
       insights: [
         {
           id: 'drift-1',
@@ -202,10 +232,9 @@ describe('PortfolioAiPanelComponent', () => {
   });
 
   it('should show non-blocking error message and never Failed to fetch', () => {
-    const fixture = TestBed.createComponent(PortfolioAiPanelComponent);
-    fixture.detectChanges();
-
-    httpMock.expectOne('/api/portfolio/ai/trend-analysis').flush(
+    const fixture = createPanel();
+    flushReadiness();
+    httpMock.expectOne(trendUrl).flush(
       { message: 'KI nicht erreichbar' },
       { status: 500, statusText: 'Error' },
     );
@@ -219,10 +248,9 @@ describe('PortfolioAiPanelComponent', () => {
   });
 
   it('should hide provider raw text for AI_PROVIDER_ERROR', () => {
-    const fixture = TestBed.createComponent(PortfolioAiPanelComponent);
-    fixture.detectChanges();
-
-    httpMock.expectOne('/api/portfolio/ai/trend-analysis').flush(
+    const fixture = createPanel();
+    flushReadiness();
+    httpMock.expectOne(trendUrl).flush(
       {
         code: 'AI_PROVIDER_ERROR',
         message: 'Gemini-Authentifizierung fehlgeschlagen. API-Key und Berechtigungen prüfen.',
@@ -240,10 +268,9 @@ describe('PortfolioAiPanelComponent', () => {
   });
 
   it('should show disabled only for AI_DISABLED without retry', () => {
-    const fixture = TestBed.createComponent(PortfolioAiPanelComponent);
-    fixture.detectChanges();
-
-    httpMock.expectOne('/api/portfolio/ai/trend-analysis').flush(
+    const fixture = createPanel();
+    flushReadiness();
+    httpMock.expectOne(trendUrl).flush(
       { code: 'AI_DISABLED', message: 'Portfolio-Assistent ist deaktiviert.' },
       { status: 503, statusText: 'Service Unavailable' },
     );
@@ -255,10 +282,9 @@ describe('PortfolioAiPanelComponent', () => {
   });
 
   it('should treat null HTTP body as error', () => {
-    const fixture = TestBed.createComponent(PortfolioAiPanelComponent);
-    fixture.detectChanges();
-
-    httpMock.expectOne('/api/portfolio/ai/trend-analysis').flush(null);
+    const fixture = createPanel();
+    flushReadiness();
+    httpMock.expectOne(trendUrl).flush(null);
     fixture.detectChanges();
 
     expect(fixture.componentInstance.status()).toBe('error');
@@ -268,10 +294,9 @@ describe('PortfolioAiPanelComponent', () => {
   });
 
   it('should pass active portfolio filters to the API and reload on filter change', () => {
-    const fixture = TestBed.createComponent(PortfolioAiPanelComponent);
-    fixture.detectChanges();
-
-    httpMock.expectOne('/api/portfolio/ai/trend-analysis').flush({
+    const fixture = createPanel();
+    flushReadiness();
+    httpMock.expectOne(trendUrl).flush({
       insights: [],
       aiGenerated: true,
       disclaimer: 'Disclaimer',
@@ -282,10 +307,10 @@ describe('PortfolioAiPanelComponent', () => {
     filterService.update({ customer: 'Acme GmbH' });
     fixture.detectChanges();
 
+    flushReadiness();
     const req = httpMock.expectOne(
       (request) =>
-        request.url === '/api/portfolio/ai/trend-analysis' &&
-        request.params.get('customer') === 'Acme GmbH',
+        request.url === trendUrl && request.params.get('customer') === 'Acme GmbH',
     );
     req.flush({
       insights: [],
@@ -298,5 +323,86 @@ describe('PortfolioAiPanelComponent', () => {
     expect(fixture.nativeElement.textContent).toContain(
       'Für den gewählten Berichtsstand wurden keine belastbaren projektübergreifenden Muster erkannt.',
     );
+  });
+
+  it('should show only the key-missing notice for ADMIN without API key', () => {
+    isAdminSignal.set(true);
+    const fixture = createPanel();
+    flushKeyMissing();
+    fixture.detectChanges();
+
+    expect(fixture.componentInstance.status()).toBe('key_missing');
+    expect(fixture.componentInstance.analysis()).toBeNull();
+    expect(fixture.nativeElement.textContent).toContain(AI_KEY_MISSING_MESSAGE);
+    expect(fixture.nativeElement.textContent).toContain('KI-Einstellungen öffnen');
+    expect(fixture.nativeElement.textContent).not.toContain('Mehrere Projekte verschlechtern sich');
+    httpMock.expectNone(trendUrl);
+  });
+
+  it('should not call trend analysis when readiness returns ready=false', () => {
+    const fixture = createPanel();
+    httpMock.expectOne(readinessUrl).flush({ ready: false });
+    fixture.detectChanges();
+
+    expect(fixture.componentInstance.status()).toBe('key_missing');
+    expect(fixture.componentInstance.analysis()).toBeNull();
+    httpMock.expectNone(trendUrl);
+  });
+
+  it('should not call trend analysis endpoint when readiness reports missing key', () => {
+    const fixture = createPanel();
+    flushKeyMissing();
+    fixture.detectChanges();
+
+    fixture.componentInstance.load();
+    fixture.detectChanges();
+
+    httpMock.expectNone(trendUrl);
+    expect(fixture.componentInstance.analysis()).toBeNull();
+  });
+
+  it('should clear displayed AI content when key is removed after successful analysis', () => {
+    const fixture = createPanel();
+    flushReadiness();
+    httpMock.expectOne(trendUrl).flush(insightPayload);
+    fixture.detectChanges();
+    expect(fixture.nativeElement.textContent).toContain('Mehrere Projekte verschlechtern sich');
+
+    fixture.componentInstance.load();
+    fixture.detectChanges();
+
+    httpMock.expectOne(readinessUrl).flush(
+      { code: 'AI_KEY_MISSING', message: AI_KEY_MISSING_MESSAGE },
+      { status: 403, statusText: 'Forbidden' },
+    );
+    fixture.detectChanges();
+
+    expect(fixture.componentInstance.status()).toBe('key_missing');
+    expect(fixture.componentInstance.analysis()).toBeNull();
+    expect(fixture.nativeElement.textContent).not.toContain('Mehrere Projekte verschlechtern sich');
+    httpMock.expectNone(trendUrl);
+  });
+
+  it('should clear AI content when the authenticated user changes', () => {
+    const authServiceMock = TestBed.inject(AuthService) as unknown as {
+      currentUser: WritableSignal<{ id: string; roles: string[] } | null>;
+    };
+
+    const fixture = createPanel();
+    flushReadiness();
+    httpMock.expectOne(trendUrl).flush(insightPayload);
+    fixture.detectChanges();
+    expect(fixture.nativeElement.textContent).toContain('Mehrere Projekte verschlechtern sich');
+
+    authServiceMock.currentUser.set({ id: 'user-b', roles: ['ROLE_ADMIN'] });
+    fixture.detectChanges();
+
+    flushKeyMissing();
+    fixture.detectChanges();
+
+    expect(fixture.componentInstance.analysis()).toBeNull();
+    expect(fixture.componentInstance.status()).toBe('key_missing');
+    expect(fixture.nativeElement.textContent).not.toContain('Mehrere Projekte verschlechtern sich');
+    httpMock.expectNone(trendUrl);
   });
 });

@@ -5,6 +5,8 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Table;
 import jakarta.persistence.Version;
+import jakarta.persistence.UniqueConstraint;
+import java.util.UUID;
 
 import java.time.Instant;
 
@@ -12,11 +14,16 @@ import java.time.Instant;
  * Entity for storing AI provider configuration, including the encrypted API key.
  */
 @Entity
-@Table(name = "ai_provider_config")
+@Table(name = "ai_provider_config", uniqueConstraints = {
+    @UniqueConstraint(columnNames = {"user_id", "provider"})
+})
 public class AiProviderConfig extends UuidEntity {
 
     @Column(nullable = false, length = 50)
     private String provider;
+
+    @Column(name = "user_id", nullable = false)
+    private UUID userId;
 
     @Column(nullable = false, length = 100)
     private String model;
@@ -43,6 +50,14 @@ public class AiProviderConfig extends UuidEntity {
 
     public void setProvider(String provider) {
         this.provider = provider;
+    }
+
+    public UUID getUserId() {
+        return userId;
+    }
+
+    public void setUserId(UUID userId) {
+        this.userId = userId;
     }
 
     public String getModel() {

@@ -54,20 +54,47 @@
     }
   </header>
 
-  <app-facts-ai-layout [hasAiContent]="isAdmin()">
-    <section factsMain class="page__facts">
-      <h2 class="visually-hidden">Projektfakten</h2>
-      <div id="fact-kpis-wrap"><app-project-kpi-section [projectId]="id()" /></div>
-      <div id="fact-issues-actions"><app-project-issues-actions-section [projectId]="id()" /></div>
-      <div id="fact-report-comparison"><app-project-report-comparison [projectId]="id()" /></div>
-      <div id="fact-team-capacity"><app-project-team-capacity-section [projectId]="id()" /></div>
-      <div id="fact-phases"><app-project-phases-section [projectId]="id()" /></div>
-    </section>
+  <main class="project-main">
+    <h2 class="visually-hidden">Projektfakten</h2>
+    <div id="fact-kpis-wrap"><app-project-kpi-section [projectId]="id()" /></div>
+    <div id="fact-issues-actions"><app-project-issues-actions-section [projectId]="id()" /></div>
+    <div id="fact-report-comparison"><app-project-report-comparison [projectId]="id()" /></div>
+    <div id="fact-team-capacity"><app-project-team-capacity-section [projectId]="id()" /></div>
+    <div id="fact-phases"><app-project-phases-section [projectId]="id()" /></div>
+  </main>
 
-    <ng-container factsAi>
-      @if (isAdmin()) {
-        <app-project-ai-panel [projectId]="id()" />
-      }
-    </ng-container>
-  </app-facts-ai-layout>
+  @if (authService.isAdmin()) {
+    <button #aiLauncher class="portfolio-ai-launcher" type="button" (click)="openProjectAi()">
+      KI-Assistent
+    </button>
+  }
+
+  @if (projectAiOpen() && authService.isAdmin()) {
+    <div class="portfolio-ai-drawer-backdrop" (click)="closeProjectAi()">
+      <aside
+        class="portfolio-ai-drawer"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="portfolio-ai-drawer-title"
+        cdkTrapFocus
+        [cdkTrapFocusAutoCapture]="true"
+        (click)="$event.stopPropagation()"
+      >
+        <header class="portfolio-ai-drawer__header">
+          <div>
+            <span class="portfolio-ai-drawer__badge">Projekt-KI</span>
+            <h2 id="portfolio-ai-drawer-title">KI-Assistent</h2>
+          </div>
+          <button class="portfolio-ai-drawer__close" type="button" (click)="closeProjectAi()">
+            <span class="visually-hidden">KI-Assistent schließen</span>
+            <span aria-hidden="true">×</span>
+          </button>
+        </header>
+
+        <div class="portfolio-ai-drawer__content">
+          <app-project-ai-panel [projectId]="id()" />
+        </div>
+      </aside>
+    </div>
+  }
 </section>

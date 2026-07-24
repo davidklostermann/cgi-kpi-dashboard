@@ -4,6 +4,7 @@ import org.springframework.http.HttpStatus;
 
 import com.cgi.kpi.dashboard.ai.client.GeminiTransportException;
 import com.cgi.kpi.dashboard.api.error.ApiException;
+import com.cgi.kpi.dashboard.ai.config.AiProperties;
 
 /**
  * Maps Gemini transport failures to stable API error codes for the frontend.
@@ -50,5 +51,15 @@ public final class AiProviderExceptionMapper {
 
     public static ApiException toApiException(IllegalStateException exception, String unavailableMessage) {
         return new ApiException("AI_UNAVAILABLE", unavailableMessage, HttpStatus.SERVICE_UNAVAILABLE);
+    }
+
+    public static ApiException toApiException(ApiException exception) {
+        if ("AI_KEY_MISSING".equals(exception.getCode())) {
+            return new ApiException(
+                    "AI_KEY_MISSING",
+                    "Für Ihren Benutzer ist noch kein KI-API-Key hinterlegt. Bitte hinterlegen Sie den API-Key unter KI-Einstellungen.",
+                    HttpStatus.FORBIDDEN);
+        }
+        return exception;
     }
 }

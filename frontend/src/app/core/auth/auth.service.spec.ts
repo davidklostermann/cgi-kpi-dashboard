@@ -72,4 +72,47 @@ describe('AuthService', () => {
       expect(service.primaryRoleLabel()).toBe('Administrator');
     });
   });
+
+  it('isAdmin is true only for ROLE_ADMIN after session init', async () => {
+    vi.spyOn(authApi, 'me').mockReturnValue(
+      of({
+        userId: 'u1',
+        workspaceId: 'w1',
+        username: 'admin',
+        roles: ['ROLE_ADMIN'],
+        mustChangePassword: false,
+      }),
+    );
+
+    await service.initializeSession();
+
+    expect(service.isAdmin()).toBe(true);
+  });
+
+  it('isAdmin is false for ROLE_USER', async () => {
+    vi.spyOn(authApi, 'me').mockReturnValue(
+      of({
+        userId: 'u2',
+        workspaceId: 'w1',
+        username: 'user',
+        roles: ['ROLE_USER'],
+        mustChangePassword: false,
+      }),
+    );
+
+    await service.initializeSession();
+
+    expect(service.isAdmin()).toBe(false);
+  });
+
+  it('isAdmin is false before session init and after me() failure', async () => {
+    expect(service.isAdmin()).toBe(false);
+
+    vi.spyOn(authApi, 'me').mockReturnValue(throwError(() => new Error('401')));
+
+    await service.initializeSession();
+
+    expect(service.isAdmin()).toBe(false);
+    expect(service.isAuthenticated()).toBe(false);
+  });
 });

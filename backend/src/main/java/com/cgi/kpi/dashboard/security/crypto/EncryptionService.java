@@ -25,7 +25,7 @@ public class EncryptionService {
     private static final int IV_LENGTH_BYTE = 12;
     private static final int AES_KEY_BIT = 256;
 
-    @Value("${app.ai.master-key:}")
+    @Value("${app.ai.master-key}")
     private String masterKey;
 
     private SecretKeySpec secretKey;
