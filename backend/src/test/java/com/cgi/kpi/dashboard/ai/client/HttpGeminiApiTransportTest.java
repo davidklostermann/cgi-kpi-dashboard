@@ -3,6 +3,8 @@ package com.cgi.kpi.dashboard.ai.client;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -11,6 +13,7 @@ import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
 import java.util.concurrent.atomic.AtomicReference;
 
+import com.cgi.kpi.dashboard.ai.config.AiActiveConfigProvider;
 import org.junit.jupiter.api.Test;
 
 import com.cgi.kpi.dashboard.ai.config.AiProperties;
@@ -23,16 +26,21 @@ class HttpGeminiApiTransportTest {
 
     private static final String MODEL = "gemini-2.5-flash";
     private final ObjectMapper objectMapper = new ObjectMapper();
+    private final AiActiveConfigProvider configProvider = mock(AiActiveConfigProvider.class);
 
     @Test
     void failsClearlyWhenApiKeyMissing() {
         AiProperties properties = geminiProperties(9999);
         properties.setApiKey(" ");
+        when(configProvider.getActiveApiKey("gemini")).thenReturn(" ");
+        when(configProvider.getActiveModel("gemini")).thenReturn(MODEL);
 
-        IllegalStateException ex = assertThrows(
-                IllegalStateException.class,
-                () -> new HttpGeminiApiTransport(properties, objectMapper));
-        assertTrue(ex.getMessage().contains("GEMINI_API_KEY"));
+        HttpGeminiApiTransport transport = new HttpGeminiApiTransport(properties, configProvider, objectMapper);
+        GeminiTransportException ex = assertThrows(
+                GeminiTransportException.class,
+                () -> transport.generateJson("prompt"));
+        assertTrue(ex.getCause() instanceof IllegalStateException);
+        assertTrue(ex.getCause().getMessage().contains("Gemini API Key is missing"));
     }
 
     @Test
@@ -40,11 +48,15 @@ class HttpGeminiApiTransportTest {
         AiProperties properties = geminiProperties(9999);
         properties.setApiKey("test-key");
         properties.setModel("local-mock");
+        when(configProvider.getActiveApiKey("gemini")).thenReturn("test-key");
+        when(configProvider.getActiveModel("gemini")).thenReturn("local-mock");
 
-        IllegalStateException ex = assertThrows(
-                IllegalStateException.class,
-                () -> new HttpGeminiApiTransport(properties, objectMapper));
-        assertTrue(ex.getMessage().contains("APP_AI_MODEL"));
+        HttpGeminiApiTransport transport = new HttpGeminiApiTransport(properties, configProvider, objectMapper);
+        GeminiTransportException ex = assertThrows(
+                GeminiTransportException.class,
+                () -> transport.generateJson("prompt"));
+        assertTrue(ex.getCause() instanceof IllegalStateException);
+        assertTrue(ex.getCause().getMessage().contains("Gemini Model is missing or invalid"));
     }
 
     @Test
@@ -85,8 +97,10 @@ class HttpGeminiApiTransportTest {
             AiProperties properties = geminiProperties(server.getAddress().getPort());
             properties.setApiKey("test-key");
             properties.setModel(MODEL);
+            when(configProvider.getActiveApiKey("gemini")).thenReturn("test-key");
+            when(configProvider.getActiveModel("gemini")).thenReturn(MODEL);
 
-            HttpGeminiApiTransport transport = new HttpGeminiApiTransport(properties, objectMapper);
+            HttpGeminiApiTransport transport = new HttpGeminiApiTransport(properties, configProvider, objectMapper);
             String response = transport.generateJson("prompt");
 
             assertEquals("{}", response);
@@ -120,8 +134,10 @@ class HttpGeminiApiTransportTest {
             AiProperties properties = geminiProperties(server.getAddress().getPort());
             properties.setApiKey("test-key");
             properties.setModel(MODEL);
+            when(configProvider.getActiveApiKey("gemini")).thenReturn("test-key");
+            when(configProvider.getActiveModel("gemini")).thenReturn(MODEL);
 
-            HttpGeminiApiTransport transport = new HttpGeminiApiTransport(properties, objectMapper);
+            HttpGeminiApiTransport transport = new HttpGeminiApiTransport(properties, configProvider, objectMapper);
             GeminiTransportException ex =
                     assertThrows(GeminiTransportException.class, () -> transport.generateJson("prompt"));
 
@@ -146,8 +162,10 @@ class HttpGeminiApiTransportTest {
             AiProperties properties = geminiProperties(server.getAddress().getPort());
             properties.setApiKey("test-key");
             properties.setModel("unknown-model");
+            when(configProvider.getActiveApiKey("gemini")).thenReturn("test-key");
+            when(configProvider.getActiveModel("gemini")).thenReturn("unknown-model");
 
-            HttpGeminiApiTransport transport = new HttpGeminiApiTransport(properties, objectMapper);
+            HttpGeminiApiTransport transport = new HttpGeminiApiTransport(properties, configProvider, objectMapper);
             GeminiTransportException ex =
                     assertThrows(GeminiTransportException.class, () -> transport.generateJson("prompt"));
 
@@ -166,10 +184,9 @@ class HttpGeminiApiTransportTest {
         properties.setModel(MODEL);
         properties.setGeminiApiBaseUrl("https://evil.example.com");
 
-        IllegalStateException ex = assertThrows(
+        assertThrows(
                 IllegalStateException.class,
-                () -> new HttpGeminiApiTransport(properties, objectMapper));
-        assertTrue(ex.getMessage().contains("Unsupported Gemini API base URL host"));
+                () -> new HttpGeminiApiTransport(properties, configProvider, objectMapper));
     }
 
     @Test

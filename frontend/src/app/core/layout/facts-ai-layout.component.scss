@@ -2,6 +2,10 @@
   display: grid;
   gap: 1.5rem;
   align-items: start;
+
+  & .facts-ai-layout__ai:not([data-has-ai-content]) {
+    display: none;
+  }
 }
 
 .facts-ai-layout__main {
@@ -25,11 +29,11 @@
 
 @media (min-width: 1200px) {
   .facts-ai-layout {
-    grid-template-columns: 9fr 3fr;
-  }
+    grid-template-columns: 1fr;
 
-  .facts-ai-layout__ai {
-    align-self: start;
+    & .facts-ai-layout__ai[data-has-ai-content] {
+      grid-template-columns: 9fr 3fr;
+    }
   }
 }
 

@@ -7,7 +7,7 @@ import { FactsAiLayoutComponent } from './facts-ai-layout.component';
   selector: 'app-test-host',
   imports: [FactsAiLayoutComponent],
   template: `
-    <app-facts-ai-layout>
+    <app-facts-ai-layout [hasAiContent]="true">
       <section factsMain>Main facts</section>
       <div factsAi>KI panel</div>
     </app-facts-ai-layout>

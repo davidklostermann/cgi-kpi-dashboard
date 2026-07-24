@@ -16,6 +16,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
+import com.cgi.kpi.dashboard.ai.config.AiActiveConfigProvider;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpStatus;
@@ -45,6 +46,7 @@ class ProjectAiAnalysisServiceTest {
     private CurrentUserService currentUserService;
     private ProjectAiAnalysisCache cache;
     private AiProviderConfigVersionProvider configVersionProvider;
+    private AiActiveConfigProvider configProvider;
     private ProjectAiAnalysisService service;
 
     @BeforeEach
@@ -57,7 +59,9 @@ class ProjectAiAnalysisServiceTest {
         doNothing().when(currentUserService).requireAdmin();
         when(currentUserService.requireWorkspaceId()).thenReturn(WORKSPACE_A);
         cache = new ProjectAiAnalysisCache();
-        configVersionProvider = new AiProviderConfigVersionProvider(properties);
+        configProvider = mock(AiActiveConfigProvider.class);
+        when(configProvider.getCurrentVersion()).thenReturn(0L);
+        configVersionProvider = new AiProviderConfigVersionProvider(configProvider);
         service = new ProjectAiAnalysisService(
                 reader,
                 modelClient,
@@ -168,7 +172,7 @@ class ProjectAiAnalysisServiceTest {
     void configVersionChangeBypassesStaleCache() {
         service.analyze(PROJECT_ID, false);
 
-        properties.setProviderConfigVersion(1L);
+        when(configProvider.getCurrentVersion()).thenReturn(1L);
         service.analyze(PROJECT_ID, false);
 
         verify(modelClient, times(2)).analyze(any());

@@ -10,6 +10,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 
+import com.cgi.kpi.dashboard.ai.config.AiActiveConfigProvider;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -36,57 +37,70 @@ public class HttpGeminiApiTransport implements GeminiApiTransport {
             "127.0.0.1");
 
     private final AiProperties aiProperties;
+    private final AiActiveConfigProvider configProvider;
     private final ObjectMapper objectMapper;
     private final HttpClient httpClient;
 
     @Autowired
-    public HttpGeminiApiTransport(AiProperties aiProperties, ObjectMapper objectMapper) {
-        this(aiProperties, objectMapper, createHttpClient(aiProperties));
+    public HttpGeminiApiTransport(
+            AiProperties aiProperties,
+            AiActiveConfigProvider configProvider,
+            ObjectMapper objectMapper) {
+        this(aiProperties, configProvider, objectMapper, createHttpClient(aiProperties));
     }
 
-    HttpGeminiApiTransport(AiProperties aiProperties, ObjectMapper objectMapper, HttpClient httpClient) {
+    HttpGeminiApiTransport(
+            AiProperties aiProperties,
+            AiActiveConfigProvider configProvider,
+            ObjectMapper objectMapper,
+            HttpClient httpClient) {
         this.aiProperties = aiProperties;
+        this.configProvider = configProvider;
         this.objectMapper = objectMapper;
         this.httpClient = httpClient;
-        if (!aiProperties.hasApiKey()) {
-            throw new IllegalStateException(
-                    "GEMINI_API_KEY is required when APP_AI_PROVIDER=gemini (or app.ai.provider=gemini).");
-        }
-        aiProperties.requireGeminiModel();
+        
+        // Validation moved to generateJson because it's now dynamic
         validateGeminiBaseUrl(aiProperties.getGeminiApiBaseUrl());
     }
 
     @Override
     public String generateJson(String prompt) {
         try {
-            String model = aiProperties.requireGeminiModel();
+            String model = configProvider.getActiveModel("gemini");
+            String apiKey = configProvider.getActiveApiKey("gemini");
+            
+            if (apiKey == null || apiKey.isBlank()) {
+                throw new IllegalStateException("Gemini API Key is missing. Please configure it in Administration or via environment.");
+            }
+            if (model == null || model.isBlank() || "local-mock".equals(model)) {
+                 throw new IllegalStateException("Gemini Model is missing or invalid. Current: " + model);
+            }
+
             URI uri = buildGenerateContentUri(model);
             String json = objectMapper.writeValueAsString(buildRequestBody(prompt));
 
             HttpRequest request = HttpRequest.newBuilder(uri)
                     .timeout(Duration.ofMillis(Math.max(1000, aiProperties.getTimeoutMs())))
                     .header("Content-Type", "application/json")
-                    .header("x-goog-api-key", aiProperties.getApiKey())
+                    .header("x-goog-api-key", apiKey)
                     .POST(HttpRequest.BodyPublishers.ofString(json))
                     .build();
 
             log.info(
-                    "Gemini request: method=POST, url={}, model={}, contentType=application/json, apiKeyHeaderPresent={}",
+                    "Gemini request: method=POST, url={}, model={}, contentType=application/json, apiKeyHeaderPresent=true",
                     uri,
-                    model,
-                    aiProperties.hasApiKey());
+                    model);
 
             HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
             if (response.statusCode() < 200 || response.statusCode() >= 300) {
                 ProviderError providerError = parseProviderError(response.body());
                 log.warn(
-                        "Gemini request failed: httpStatus={}, errorCode={}, errorStatus={}, errorMessage={}, providerReason={}, model={}",
+                        "Gemini request failed: httpStatus={}, errorCode={}, errorStatus={}, errorMessage={}, providerReason={}",
                         response.statusCode(),
                         providerError.code() == null ? "unknown" : providerError.code(),
                         providerError.status() == null ? "unknown" : providerError.status(),
                         providerError.message() == null ? "unknown" : providerError.message(),
-                        providerError.reason() == null ? "unknown" : providerError.reason(),
-                        model);
+                        providerError.reason() == null ? "unknown" : providerError.reason());
                 throw new GeminiTransportException(
                         describeHttpFailure(response.statusCode(), providerError),
                         response.statusCode(),

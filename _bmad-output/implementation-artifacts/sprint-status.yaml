@@ -1,5 +1,5 @@
 # generated: 2026-07-21
-# last_updated: 2026-07-23
+# last_updated: 2026-07-24
 # project: cgi-kpi-dashboard
 # project_key: NOKEY
 # tracking_system: file-system
@@ -47,7 +47,7 @@
 # - done: 11-2-bootstrap-administrator-env (review patches 2026-07-21)
 # - done: 11-1-datenmodell-workspace-user-flyway (review patches applied 2026-07-21)
 
-last_updated: 2026-07-23
+last_updated: 2026-07-24
 project: cgi-kpi-dashboard
 project_key: NOKEY
 tracking_system: file-system
@@ -158,8 +158,8 @@ development_status:
   epic-13: in-progress
   13-1-benutzerverwaltung-api: done
   13-2-benutzerverwaltung-ui: done
-  13-3-ai-config-encryption: review
-  13-4-admin-ai-test-rotation: backlog
+  13-3-ai-config-encryption: done
+  13-4-admin-ai-test-rotation: done
   epic-13-retrospective: optional
 
   epic-14: backlog

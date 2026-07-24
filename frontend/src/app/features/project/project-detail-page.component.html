@@ -54,7 +54,7 @@
     }
   </header>
 
-  <app-facts-ai-layout>
+  <app-facts-ai-layout [hasAiContent]="isAdmin()">
     <section factsMain class="page__facts">
       <h2 class="visually-hidden">Projektfakten</h2>
       <div id="fact-kpis-wrap"><app-project-kpi-section [projectId]="id()" /></div>
@@ -64,6 +64,10 @@
       <div id="fact-phases"><app-project-phases-section [projectId]="id()" /></div>
     </section>
 
-    <app-project-ai-panel factsAi [projectId]="id()" />
+    <ng-container factsAi>
+      @if (isAdmin()) {
+        <app-project-ai-panel [projectId]="id()" />
+      }
+    </ng-container>
   </app-facts-ai-layout>
 </section>

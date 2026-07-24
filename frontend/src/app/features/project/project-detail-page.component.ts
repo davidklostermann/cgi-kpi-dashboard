@@ -4,6 +4,7 @@ import { RouterLink } from '@angular/router';
 import { take } from 'rxjs';
 
 import { ProjectApiService } from '../../core/api/project-api.service';
+import { AuthService } from '../../core/auth/auth.service';
 import { FactsAiLayoutComponent } from '../../core/layout/facts-ai-layout.component';
 import { BreadcrumbsComponent } from '../../core/navigation/breadcrumbs.component';
 import { StatusBadgeComponent } from '../../shared/components/status-badge.component';
@@ -36,12 +37,15 @@ type LoadStatus = 'loading' | 'success' | 'error';
 })
 export class ProjectDetailPageComponent {
   private readonly projectApi = inject(ProjectApiService);
+  private readonly authService = inject(AuthService);
 
   readonly id = input.required<string>();
 
   readonly masterData = signal<ProjectMasterData | null>(null);
   readonly masterDataStatus = signal<LoadStatus>('loading');
   readonly masterDataError = signal<string | null>(null);
+
+  readonly isAdmin = this.authService.isAdmin;
 
   readonly projectName = computed(() => this.masterData()?.name ?? `Projekt ${this.id()}`);
 

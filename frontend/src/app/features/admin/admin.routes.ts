@@ -9,6 +9,10 @@ export const ADMIN_ROUTES: Routes = [
       {
         path: 'users',
         loadComponent: () => import('./user-management/user-management.component').then(m => m.UserManagementComponent),
+      },
+      {
+        path: 'ai-config',
+        loadComponent: () => import('./ai-config/ai-config.component').then(m => m.AiConfigComponent),
       }
     ],
     canActivate: [adminGuard]

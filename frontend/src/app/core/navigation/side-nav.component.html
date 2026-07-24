@@ -23,9 +23,19 @@
         mat-list-item
         routerLink="/admin/users"
         routerLinkActive="cgi-side-nav__link--active"
+        style="gap: 16px;"
       >
-        <mat-icon matListItemIcon>people</mat-icon>
+        <mat-icon class="nav-icon" matListItemIcon>people</mat-icon>
         Benutzer
+      </a>
+      <a
+        mat-list-item
+        routerLink="/admin/ai-config"
+        routerLinkActive="cgi-side-nav__link--active"
+        style="gap: 16px;"
+      >
+        <mat-icon class="nav-icon" matListItemIcon>psychology</mat-icon>
+        KI-Einstellungen
       </a>
     }
   </mat-nav-list>
