@@ -1,0 +1,141 @@
+<section
+  id="fact-agile-delivery"
+  class="agile-delivery"
+  aria-labelledby="agile-delivery-heading"
+>
+  <header class="agile-delivery__header">
+    <div>
+      <h2 id="agile-delivery-heading">Agile Delivery</h2>
+      <p>Sprint-Übersicht und Fortschritt</p>
+    </div>
+    @if (data(); as payload) {
+      <span class="agile-delivery__source">{{ dataSourceLabel(payload.dataSource) }}</span>
+    }
+  </header>
+
+  @if (status() === 'loading') {
+    <p class="agile-delivery__state" aria-live="polite">
+      Agile Delivery wird geladen …
+    </p>
+  } @else if (status() === 'error') {
+    <div class="agile-delivery__error" role="alert">
+      <p>{{ errorMessage() }}</p>
+      <button type="button" (click)="load()">Erneut laden</button>
+    </div>
+  } @else if (!hasData()) {
+    <p class="agile-delivery__state" role="status">{{ emptyMessage() }}</p>
+  } @else if (data(); as payload) {
+    <div class="agile-delivery__sprint-scroll" role="region" aria-label="Sprint-Karten">
+      <div class="agile-delivery__sprints">
+        @for (sprint of payload.sprints; track sprint.id) {
+          <article
+            class="agile-delivery__sprint"
+            [class.agile-delivery__sprint--current]="sprint.current"
+            [class.agile-delivery__sprint--future]="sprint.future"
+          >
+            <header>
+              <h3>{{ sprint.name }}</h3>
+              <span [class]="healthClass(sprint.health)">
+                {{ sprint.healthLabel }}
+              </span>
+            </header>
+            <div class="agile-delivery__progress">
+              <div
+                class="agile-delivery__progress-track"
+                role="progressbar"
+                [attr.aria-valuenow]="sprint.progressPercent"
+                aria-valuemin="0"
+                aria-valuemax="100"
+                [attr.aria-label]="sprint.name + ': ' + sprint.progressPercent + ' Prozent Fortschritt'"
+              >
+                <div
+                  class="agile-delivery__progress-bar"
+                  [style.width.%]="progressWidth(sprint)"
+                ></div>
+              </div>
+              <span>{{ sprint.progressPercent }} %</span>
+            </div>
+            <dl>
+              <div>
+                <dt>Story Points</dt>
+                <dd>{{ sprint.storyPointsCompleted }} / {{ sprint.storyPointsPlanned }}</dd>
+              </div>
+              <div>
+                <dt>Carry-over</dt>
+                <dd>{{ sprint.carryOverPoints }} SP</dd>
+              </div>
+            </dl>
+          </article>
+        }
+      </div>
+    </div>
+
+    <figure class="agile-delivery__chart" aria-labelledby="sprint-chart-title">
+      <figcaption id="sprint-chart-title">Sprint-Entwicklung</figcaption>
+      <div class="agile-delivery__chart-plot" role="img" aria-label="Geplante und erreichte Story Points sowie Velocity-Trend nach Sprint">
+        <div class="agile-delivery__chart-bars">
+          @for (label of payload.chart.sprintLabels; track label; let index = $index) {
+            <div
+              class="agile-delivery__chart-group"
+              [class.agile-delivery__chart-group--future]="payload.chart.futureFlags[index]"
+            >
+              <div class="agile-delivery__chart-columns">
+                <span
+                  class="agile-delivery__bar agile-delivery__bar--planned"
+                  [style.height.%]="chartBarHeight(payload.chart.plannedStoryPoints[index])"
+                  [attr.aria-label]="label + ': ' + payload.chart.plannedStoryPoints[index] + ' geplante Story Points'"
+                ></span>
+                <span
+                  class="agile-delivery__bar agile-delivery__bar--completed"
+                  [style.height.%]="chartBarHeight(payload.chart.completedStoryPoints[index])"
+                  [attr.aria-label]="label + ': ' + payload.chart.completedStoryPoints[index] + ' erreichte Story Points'"
+                ></span>
+              </div>
+              <span>{{ label }}</span>
+            </div>
+          }
+        </div>
+        <svg class="agile-delivery__velocity" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
+          <polyline [attr.points]="chartLinePoints(payload.chart)" />
+        </svg>
+      </div>
+      <ul class="agile-delivery__legend" aria-label="Legende Sprint-Entwicklung">
+        <li>
+          <i class="agile-delivery__legend-swatch agile-delivery__legend-swatch--planned" aria-hidden="true"></i>
+          Geplante SP
+        </li>
+        <li>
+          <i class="agile-delivery__legend-swatch agile-delivery__legend-swatch--completed" aria-hidden="true"></i>
+          Erreichte SP
+        </li>
+        <li>
+          <i class="agile-delivery__legend-swatch agile-delivery__legend-swatch--velocity" aria-hidden="true"></i>
+          Velocity-Trend
+        </li>
+      </ul>
+    </figure>
+
+    <dl class="agile-delivery__kpis">
+      <div>
+        <dt>Sprint Health</dt>
+        <dd>{{ payload.kpis.sprintHealthLabel ?? '—' }}</dd>
+      </div>
+      <div>
+        <dt>Gesamte Story Points</dt>
+        <dd>{{ payload.kpis.totalStoryPoints }}</dd>
+      </div>
+      <div>
+        <dt>Ø Velocity</dt>
+        <dd>{{ formatVelocity(payload.kpis.averageVelocity) }}</dd>
+      </div>
+      <div>
+        <dt>Carry-over nächster Sprint</dt>
+        <dd>{{ payload.kpis.carryOverNextSprint }} SP</dd>
+      </div>
+      <div>
+        <dt>Blocker gesamt</dt>
+        <dd>{{ payload.kpis.openBlockerCount }}</dd>
+      </div>
+    </dl>
+  }
+</section>

@@ -1,0 +1,19 @@
+# Demo / Docker profile — HTTP cookies (no TLS), AI defaults to mock.
+server:
+  servlet:
+    session:
+      cookie:
+        secure: false
+        http-only: true
+        same-site: lax
+
+app:
+  ai:
+    enabled: ${APP_AI_ENABLED:true}
+    provider: ${APP_AI_PROVIDER:mock}
+    model: ${APP_AI_MODEL:}
+    master-key: ${APP_AI_MASTER_KEY:docker-demo-master-key-not-for-production}
+  bootstrap:
+    admin-username: ${BOOTSTRAP_ADMIN_USERNAME:}
+    admin-password: ${BOOTSTRAP_ADMIN_PASSWORD:}
+    must-change-password: ${BOOTSTRAP_MUST_CHANGE_PASSWORD:false}

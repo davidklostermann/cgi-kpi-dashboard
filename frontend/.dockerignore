@@ -1,0 +1,9 @@
+node_modules
+dist
+.angular
+coverage
+.git
+*.log
+__screenshots__
+.editorconfig
+.vscode

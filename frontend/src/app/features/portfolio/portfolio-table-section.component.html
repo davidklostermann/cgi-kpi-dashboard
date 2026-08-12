@@ -1,0 +1,18 @@
+<section class="portfolio-table-section" aria-live="polite">
+  @if (status() === 'loading') {
+    <p class="portfolio-table-section__loading">Projekttabelle wird geladen …</p>
+  } @else if (status() === 'error') {
+    <div class="portfolio-table-section__error" role="alert">
+      <p>{{ errorMessage() }}</p>
+      <button type="button" class="portfolio-table-section__retry" (click)="load()">
+        Erneut laden
+      </button>
+    </div>
+  } @else if (table(); as data) {
+    @if (data.empty || data.projects.length === 0) {
+      <p class="portfolio-table-section__empty" role="status">Keine Projekte für die Tabelle.</p>
+    } @else {
+      <app-project-table [rows]="data.projects" />
+    }
+  }
+</section>

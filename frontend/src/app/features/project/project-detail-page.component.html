@@ -1,0 +1,109 @@
+<section class="page">
+  <div class="page__nav-row">
+    <app-breadcrumbs [items]="breadcrumbs()" />
+    <a class="page__back" routerLink="/portfolio">Zurück zum Portfolio</a>
+  </div>
+
+  <header class="page__header">
+    @if (masterDataStatus() === 'loading') {
+      <p class="page__loading" aria-live="polite">Projekt-Stammdaten werden geladen …</p>
+    } @else if (masterDataStatus() === 'error') {
+      <div class="page__error" role="alert">
+        <p>{{ masterDataError() }}</p>
+        <button type="button" (click)="loadMasterData()">Erneut laden</button>
+      </div>
+    } @else if (masterData(); as project) {
+      <div id="fact-master" class="page__title-row">
+        <div>
+          <p class="page__eyebrow">Projekt {{ project.id }}</p>
+          <h1>{{ project.name }}</h1>
+        </div>
+        <app-status-badge [status]="project.status" [label]="project.statusLabel" />
+      </div>
+
+      <dl id="fact-master-data" class="page__master-data" aria-label="Projekt-Stammdaten">
+        <div>
+          <dt>Kunde/Geschäftsbereich</dt>
+          <dd>{{ project.customer }}</dd>
+        </div>
+        <div>
+          <dt>Projektleitung</dt>
+          <dd>{{ project.projectLead || 'Nicht gepflegt' }}</dd>
+        </div>
+        <div>
+          <dt>Start</dt>
+          <dd>{{ formatDate(project.startDate) }}</dd>
+        </div>
+        <div>
+          <dt>Plan-Ende</dt>
+          <dd>{{ formatDate(project.plannedEndDate) }}</dd>
+        </div>
+        <div>
+          <dt>Prognose-Ende</dt>
+          <dd>{{ formatDate(project.forecastEndDate) }}</dd>
+        </div>
+        <div>
+          <dt>Aktuelle Phase</dt>
+          <dd>{{ project.currentPhaseName || 'Nicht verfügbar' }}</dd>
+        </div>
+        <div>
+          <dt>Letzte Datenaktualisierung</dt>
+          <dd>{{ formatDate(project.lastDataUpdate) }}</dd>
+        </div>
+      </dl>
+    }
+  </header>
+
+  <main class="project-main">
+    <h2 class="visually-hidden">Projektfakten</h2>
+    <div id="fact-kpis-wrap"><app-project-kpi-section [projectId]="id()" /></div>
+    <div id="fact-issues-actions"><app-project-issues-actions-section [projectId]="id()" /></div>
+    <div id="fact-report-comparison"><app-project-report-comparison [projectId]="id()" /></div>
+    <div id="fact-iso-management-wrap"><app-project-iso-management-section [projectId]="id()" /></div>
+    @if (showsAgileDelivery()) {
+      <div id="fact-agile-delivery-wrap"><app-project-agile-delivery-section [projectId]="id()" /></div>
+    }
+    <div id="fact-team-capacity"><app-project-team-capacity-section [projectId]="id()" /></div>
+    <div id="fact-phases"><app-project-phases-section [projectId]="id()" /></div>
+  </main>
+
+  @if (authService.isAdmin()) {
+    <button #aiLauncher class="portfolio-ai-launcher" type="button" (click)="openProjectAi()">
+      KI-Assistent
+    </button>
+  }
+
+  @if (authService.isAdmin() && projectAiPanelMounted()) {
+    <div
+      class="portfolio-ai-drawer-backdrop"
+      [class.portfolio-ai-drawer-backdrop--open]="projectAiOpen()"
+      (click)="closeProjectAi()"
+    >
+      <aside
+        class="portfolio-ai-drawer"
+        role="dialog"
+        [attr.aria-modal]="projectAiOpen() ? 'true' : null"
+        [attr.aria-hidden]="projectAiOpen() ? null : 'true'"
+        aria-labelledby="portfolio-ai-drawer-title"
+        cdkTrapFocus
+        [cdkTrapFocusAutoCapture]="projectAiOpen()"
+        (click)="$event.stopPropagation()"
+      >
+        <header class="portfolio-ai-drawer__header">
+          <div>
+            <span class="portfolio-ai-drawer__badge">Projekt-KI</span>
+            <h2 id="portfolio-ai-drawer-title">KI-Assistent</h2>
+          </div>
+          <button class="portfolio-ai-drawer__close" type="button" (click)="closeProjectAi()">
+            <span class="visually-hidden">KI-Assistent schließen</span>
+            <span aria-hidden="true">×</span>
+          </button>
+        </header>
+
+        <div class="portfolio-ai-drawer__content">
+          <app-project-ai-panel [projectId]="id()" />
+        </div>
+      </aside>
+    </div>
+  }
+</section>

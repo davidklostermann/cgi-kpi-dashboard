@@ -1,0 +1,47 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: cgi-kpi-dashboard
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/cgi_kpi_dashboard}
+    username: ${SPRING_DATASOURCE_USERNAME:postgres}
+    password: ${SPRING_DATASOURCE_PASSWORD:}
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+    properties:
+      hibernate:
+        jdbc:
+          time_zone: UTC
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+    validate-on-migrate: true
+    clean-disabled: true
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      show-details: when_authorized
+
+app:
+  ai:
+    enabled: ${APP_AI_ENABLED:true}
+    provider: ${APP_AI_PROVIDER:gemini}
+    model: ${APP_AI_MODEL:}
+    timeout-ms: ${APP_AI_TIMEOUT_MS:60000}
+    # Never commit real keys. Bind only from environment (AD-8 / NFR-2).
+    api-key: ${GEMINI_API_KEY:}
+    gemini-api-base-url: ${GEMINI_API_BASE_URL:https://generativelanguage.googleapis.com}
+    master-key: ${APP_AI_MASTER_KEY:}
+  bootstrap:
+    admin-username: ${BOOTSTRAP_ADMIN_USERNAME:}
+    admin-password: ${BOOTSTRAP_ADMIN_PASSWORD:}
+    must-change-password: ${BOOTSTRAP_MUST_CHANGE_PASSWORD:true}

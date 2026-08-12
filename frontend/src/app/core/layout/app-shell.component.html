@@ -1,0 +1,12 @@
+<mat-sidenav-container class="app-shell">
+  <mat-sidenav mode="side" opened class="app-shell__sidenav" role="navigation" aria-label="Seitenleiste">
+    <app-side-nav />
+  </mat-sidenav>
+
+  <mat-sidenav-content class="app-shell__content">
+    <app-top-nav />
+    <main class="app-shell__main">
+      <router-outlet />
+    </main>
+  </mat-sidenav-content>
+</mat-sidenav-container>

@@ -1,0 +1,26 @@
+<mat-toolbar class="cgi-top-nav" role="banner">
+  <a
+    class="cgi-top-nav__brand-wrap"
+    routerLink="/portfolio"
+    aria-label="CGI KPI Dashboard — zur Portfolio-Übersicht"
+  >
+    <span class="cgi-top-nav__brand-mark" aria-hidden="true">CGI</span>
+    <span class="cgi-top-nav__brand-divider" aria-hidden="true"></span>
+    <span class="cgi-top-nav__brand-text">
+      <span class="cgi-top-nav__brand-title">KPI Dashboard</span>
+      <span class="cgi-top-nav__brand-subtitle">Portfolio &amp; Projektsteuerung</span>
+    </span>
+  </a>
+
+  @if (currentUser(); as user) {
+    <div class="cgi-top-nav__session">
+      <span class="cgi-top-nav__user" aria-label="Angemeldeter Benutzer">
+        {{ user.username }}
+        @if (roleLabel(); as role) {
+          <span class="cgi-top-nav__role">({{ role }})</span>
+        }
+      </span>
+      <button mat-stroked-button type="button" (click)="logout()">Abmelden</button>
+    </div>
+  }
+</mat-toolbar>

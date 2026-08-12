@@ -1,0 +1,95 @@
+:host {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  container-type: inline-size;
+}
+
+.portfolio-kpi-section__grid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 0.625rem;
+  min-width: 0;
+}
+
+.portfolio-kpi-section__grid app-kpi-card {
+  min-width: 0;
+}
+
+.portfolio-kpi-section__grid ::ng-deep .kpi-card {
+  min-height: 0;
+  height: 100%;
+  padding: 0.75rem;
+}
+
+.portfolio-kpi-section__grid ::ng-deep .kpi-card__number {
+  font-size: 1.45rem;
+}
+
+.portfolio-kpi-section__loading {
+  margin: 0;
+  color: var(--cgi-gray-3);
+}
+
+.portfolio-kpi-section__error,
+.portfolio-kpi-section__empty {
+  padding: 1rem;
+  border-radius: 0.5rem;
+  background: var(--cgi-surface);
+}
+
+.portfolio-kpi-section__error {
+  border: 1px solid var(--cgi-error);
+}
+
+.portfolio-kpi-section__empty {
+  border: 1px dashed var(--cgi-gray-5);
+  background: var(--cgi-gray-7);
+}
+
+.portfolio-kpi-section__empty p,
+.portfolio-kpi-section__error p {
+  margin: 0 0 0.75rem;
+  color: var(--cgi-gray-2);
+}
+
+.portfolio-kpi-section__retry {
+  min-height: 2.5rem;
+  padding: 0.5rem 0.875rem;
+  border: 1px solid var(--cgi-purple-2);
+  border-radius: 0.25rem;
+  background: var(--cgi-purple-2);
+  color: #fff;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.portfolio-kpi-section__retry:hover {
+  border-color: var(--cgi-purple-1);
+  background: var(--cgi-purple-1);
+}
+
+@container (max-width: 46rem) {
+  .portfolio-kpi-section__grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@container (max-width: 32rem) {
+  .portfolio-kpi-section__grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}

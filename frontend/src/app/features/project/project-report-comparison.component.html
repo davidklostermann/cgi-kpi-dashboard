@@ -1,0 +1,49 @@
+<section class="report-comparison" aria-labelledby="report-comparison-heading">
+  <h2 id="report-comparison-heading">Berichtsstandsvergleich</h2>
+  <p class="report-comparison__hint">Entwicklung seit dem vorherigen Berichtsstand.</p>
+
+  @if (status() === 'loading') {
+    <p aria-live="polite">Vergleich wird geladen …</p>
+  } @else if (status() === 'error') {
+    <div class="report-comparison__error" role="alert">
+      <p>{{ errorMessage() }}</p>
+      <button type="button" (click)="load()">Erneut laden</button>
+    </div>
+  } @else if (trends(); as data) {
+    @if (!data.comparisonAvailable) {
+      <p class="report-comparison__missing" role="status">
+        {{ data.unavailableReason || 'Kein vorheriger Berichtsstand vorhanden — Vergleich nicht möglich.' }}
+      </p>
+    } @else if (comparisonCards(data); as cards) {
+      <p class="report-comparison__period">
+        Berichtsstände {{ formatSnapshotDate(data.previousSnapshotDate) }} →
+        {{ formatSnapshotDate(data.currentSnapshotDate) }}
+      </p>
+      @if (cards.length === 0) {
+        <p class="report-comparison__missing" role="status">
+          Für diese Berichtsstände sind keine vergleichbaren Kennzahlen verfügbar.
+        </p>
+      } @else {
+        <ul class="report-comparison__cards" aria-label="Kennzahl-Vergleich">
+          @for (card of cards; track card.id) {
+            <li
+              class="report-comparison__card"
+              [class.report-comparison__card--improved]="card.tone === 'improved'"
+              [class.report-comparison__card--worsened]="card.tone === 'worsened'"
+              [class.report-comparison__card--unchanged]="card.tone === 'unchanged' || card.tone === 'neutral'"
+            >
+              <p class="report-comparison__metric">{{ card.metric }}</p>
+              <p class="report-comparison__change">
+                <span class="report-comparison__icon" aria-hidden="true">{{ card.icon }}</span>
+                <span>{{ card.change }}</span>
+              </p>
+              <p class="report-comparison__assessment">
+                <span class="visually-hidden">Bewertung: </span>{{ card.assessment }}
+              </p>
+            </li>
+          }
+        </ul>
+      }
+    }
+  }
+</section>

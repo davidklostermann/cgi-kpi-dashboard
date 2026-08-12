@@ -1,0 +1,63 @@
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-cgi_kpi_dashboard}
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    networks:
+      - kpi-net
+
+  backend:
+    build:
+      context: ./backend
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/${POSTGRES_DB:-cgi_kpi_dashboard}
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:-postgres}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      BOOTSTRAP_ADMIN_USERNAME: ${BOOTSTRAP_ADMIN_USERNAME:-admin}
+      BOOTSTRAP_ADMIN_PASSWORD: ${BOOTSTRAP_ADMIN_PASSWORD:-DemoAdmin1!}
+      BOOTSTRAP_MUST_CHANGE_PASSWORD: ${BOOTSTRAP_MUST_CHANGE_PASSWORD:-false}
+      APP_AI_ENABLED: ${APP_AI_ENABLED:-true}
+      APP_AI_PROVIDER: ${APP_AI_PROVIDER:-mock}
+      APP_AI_MODEL: ${APP_AI_MODEL:-}
+      APP_AI_MASTER_KEY: ${APP_AI_MASTER_KEY:-docker-demo-master-key-not-for-production}
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+      GEMINI_API_BASE_URL: ${GEMINI_API_BASE_URL:-https://generativelanguage.googleapis.com}
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:8080/actuator/health"]
+      interval: 10s
+      timeout: 5s
+      start_period: 90s
+      retries: 18
+    networks:
+      - kpi-net
+
+  frontend:
+    build:
+      context: ./frontend
+    depends_on:
+      backend:
+        condition: service_healthy
+    ports:
+      - "${FRONTEND_PORT:-4200}:80"
+    networks:
+      - kpi-net
+
+volumes:
+  pgdata:
+
+networks:
+  kpi-net:
+    driver: bridge

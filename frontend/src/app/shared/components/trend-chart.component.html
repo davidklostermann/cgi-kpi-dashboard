@@ -1,0 +1,223 @@
+<section class="trend-chart" aria-labelledby="trend-chart-heading">
+  <div class="trend-chart__header">
+    <div>
+      <p class="trend-chart__eyebrow">Portfolioentwicklung</p>
+      <h2 id="trend-chart-heading" class="trend-chart__title">
+        Trends &amp; Statusverteilung
+      </h2>
+    </div>
+
+    <div
+      class="trend-chart__horizon"
+      role="group"
+      aria-label="Zeitraum auswählen"
+    >
+      @for (value of horizons; track value) {
+        <button
+          type="button"
+          class="trend-chart__horizon-btn"
+          [class.trend-chart__horizon-btn--active]="horizon() === value"
+          [attr.aria-pressed]="horizon() === value"
+          (click)="setHorizon(value)"
+        >
+          {{ value }}
+        </button>
+      }
+    </div>
+  </div>
+
+  @if (historyNotice(); as notice) {
+    <p class="trend-chart__notice" role="status">{{ notice }}</p>
+  }
+
+  <p class="visually-hidden" id="trend-chart-summary">
+    {{ screenReaderSummary() }}
+  </p>
+
+  <div class="trend-chart__grid" aria-describedby="trend-chart-summary">
+    <article class="trend-chart__panel">
+      <div class="trend-chart__panel-header">
+        <div>
+          <h3 class="trend-chart__panel-title">Portfolio-Fortschritt</h3>
+          <p class="trend-chart__panel-description">
+            Durchschnittlicher Projektfortschritt
+          </p>
+        </div>
+        <div class="trend-chart__headline">
+          <strong>{{ progressHeadline().value }}</strong>
+          @if (progressHeadline().delta; as delta) {
+            <span>{{ delta }}</span>
+          }
+        </div>
+      </div>
+
+      @if (progressChart(); as chart) {
+        <svg
+          class="trend-chart__svg"
+          [attr.viewBox]="'0 0 ' + chart.width + ' ' + chart.height"
+          role="img"
+          aria-label="Portfolio-Fortschritt im Zeitverlauf"
+        >
+          @for (tick of chart.yTicks; track tick.value) {
+            <text class="trend-chart__axis-label" x="4" [attr.y]="tick.y + 4">
+              {{ tick.value }}
+            </text>
+            <line
+              class="trend-chart__grid-line"
+              [attr.x1]="chart.padding.left"
+              [attr.x2]="chart.width - chart.padding.right"
+              [attr.y1]="tick.y"
+              [attr.y2]="tick.y"
+            />
+          }
+          <polyline
+            class="trend-chart__line trend-chart__line--progress"
+            [attr.points]="chart.polyline"
+          />
+          @for (point of chart.chartPoints; track point.period) {
+            <circle
+              class="trend-chart__dot"
+              [attr.cx]="point.x"
+              [attr.cy]="point.y"
+              r="4"
+            >
+              <title>{{ point.periodLabel }}: {{ point.valueLabel }}</title>
+            </circle>
+            @if (point.showAxisLabel) {
+              <text
+                class="trend-chart__x-label"
+                [attr.x]="point.x"
+                [attr.y]="chart.height - 12"
+                text-anchor="middle"
+              >
+                {{ point.periodLabel }}
+              </text>
+            }
+          }
+        </svg>
+      }
+    </article>
+
+    <article class="trend-chart__panel">
+      <div class="trend-chart__panel-header">
+        <div>
+          <h3 class="trend-chart__panel-title">Ist-Kosten des Portfolios</h3>
+          <p class="trend-chart__panel-description">
+            Kumulierte Ist-Kosten der gefilterten Projekte
+          </p>
+        </div>
+        <div class="trend-chart__headline">
+          <strong>{{ budgetHeadline().value }}</strong>
+          @if (budgetHeadline().delta; as delta) {
+            <span>{{ delta }}</span>
+          }
+        </div>
+      </div>
+
+      @if (budgetChart(); as chart) {
+        <svg
+          class="trend-chart__svg"
+          [attr.viewBox]="'0 0 ' + chart.width + ' ' + chart.height"
+          role="img"
+          aria-label="Ist-Kosten des Portfolios im Zeitverlauf"
+        >
+          @for (tick of chart.yTicks; track tick.value) {
+            <text class="trend-chart__axis-label" x="4" [attr.y]="tick.y + 4">
+              {{ tick.value }}
+            </text>
+            <line
+              class="trend-chart__grid-line"
+              [attr.x1]="chart.padding.left"
+              [attr.x2]="chart.width - chart.padding.right"
+              [attr.y1]="tick.y"
+              [attr.y2]="tick.y"
+            />
+          }
+          <polyline
+            class="trend-chart__line trend-chart__line--budget"
+            [attr.points]="chart.polyline"
+          />
+          @for (point of chart.chartPoints; track point.period) {
+            <circle
+              class="trend-chart__dot trend-chart__dot--budget"
+              [attr.cx]="point.x"
+              [attr.cy]="point.y"
+              r="4"
+            >
+              <title>{{ point.periodLabel }}: {{ point.valueLabel }}</title>
+            </circle>
+            @if (point.showAxisLabel) {
+              <text
+                class="trend-chart__x-label"
+                [attr.x]="point.x"
+                [attr.y]="chart.height - 12"
+                text-anchor="middle"
+              >
+                {{ point.periodLabel }}
+              </text>
+            }
+          }
+        </svg>
+      }
+    </article>
+
+    <article class="trend-chart__panel trend-chart__panel--status">
+      <div class="trend-chart__panel-header">
+        <div>
+          <h3 class="trend-chart__panel-title">Projektstatus</h3>
+          <p class="trend-chart__panel-description">
+            Verteilung der {{ totalProjects() }} gefilterten Projekte
+          </p>
+        </div>
+      </div>
+
+      <div class="trend-chart__status-bars">
+        @for (bar of statusBars(); track bar.key) {
+          <div class="trend-chart__status-row">
+            <span
+              class="trend-chart__status-marker"
+              [class.trend-chart__status-marker--on-track]="
+                bar.className === 'on-track'
+              "
+              [class.trend-chart__status-marker--at-risk]="
+                bar.className === 'at-risk'
+              "
+              [class.trend-chart__status-marker--critical]="
+                bar.className === 'critical'
+              "
+              [class.trend-chart__status-marker--completed]="
+                bar.className === 'completed'
+              "
+              aria-hidden="true"
+            ></span>
+            <span class="trend-chart__status-label">{{ bar.label }}</span>
+            <div class="trend-chart__status-track" aria-hidden="true">
+              @if (bar.count > 0) {
+                <div
+                  class="trend-chart__status-bar"
+                  [class.trend-chart__status-bar--on-track]="
+                    bar.className === 'on-track'
+                  "
+                  [class.trend-chart__status-bar--at-risk]="
+                    bar.className === 'at-risk'
+                  "
+                  [class.trend-chart__status-bar--critical]="
+                    bar.className === 'critical'
+                  "
+                  [class.trend-chart__status-bar--completed]="
+                    bar.className === 'completed'
+                  "
+                  [style.width.%]="bar.widthPercent"
+                ></div>
+              }
+            </div>
+            <span class="trend-chart__status-count">{{ bar.count }}</span>
+            <span class="trend-chart__status-percentage">{{
+              bar.percentageLabel
+            }}</span>
+          </div>
+        }
+      </div>
+    </article>
+  </div>
+</section>

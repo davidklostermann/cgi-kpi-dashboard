@@ -1,0 +1,13 @@
+target/
+.mvn/wrapper/maven-wrapper.jar
+*.class
+*.jar
+!**/src/main/**/lib/*.jar
+.env
+local-secrets.ps1
+*.log
+.idea/
+*.iml
+.classpath
+.project
+.settings/

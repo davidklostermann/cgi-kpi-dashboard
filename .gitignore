@@ -1,0 +1,47 @@
+# Environment
+.env
+.env.local
+.env.*.local
+*.pem
+*.p12
+*.jks
+
+# Backend
+backend/target/
+backend/local-secrets.ps1
+backend/.env
+
+# Frontend
+frontend/node_modules/
+frontend/dist/
+frontend/.angular/
+frontend/coverage/
+frontend/__screenshots__/
+
+# IDE / OS
+.idea/
+.vscode/
+*.iml
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# Logs / crash dumps
+*.log
+hs_err_*.log
+replay_*.log
+
+# Docker / local data
+pgdata/
+*.sql.gz
+*.dump
+
+# Temporary / agent / local-only
+.cursor/
+.codex/
+.agents/
+_bmad/
+_bmad-output/
+handoff/
+tmp/
+temp/

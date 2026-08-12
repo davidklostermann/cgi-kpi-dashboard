@@ -1,0 +1,183 @@
+<section
+  id="fact-iso-management"
+  class="mgmt-section"
+  aria-labelledby="mgmt-heading"
+>
+  <header class="mgmt-header">
+    <h2 id="mgmt-heading">Erweiterte Projektsteuerung</h2>
+    @if (factsBadge(); as badge) {
+      <span class="mgmt-badge">{{ badge }}</span>
+    }
+  </header>
+
+  @if (status() === 'loading') {
+    <p class="mgmt-state" aria-live="polite">Steuerungsdaten werden geladen …</p>
+  } @else if (status() === 'error') {
+    <div class="mgmt-error" role="alert">
+      <p>{{ errorMessage() }}</p>
+      <button type="button" (click)="load()">Erneut laden</button>
+    </div>
+  } @else if (!hasData()) {
+    <p class="mgmt-state" role="status">
+      {{ emptyMessage() }}
+    </p>
+  } @else if (data(); as payload) {
+    <div class="mgmt-grid">
+      <!-- 1. NUTZEN -->
+      @if (payload.benefits; as benefits) {
+        <article class="mgmt-tile" aria-labelledby="cat-benefits">
+          <header class="mgmt-tile__head">
+            <span id="cat-benefits" class="mgmt-tile__category">Nutzen</span>
+            <app-status-badge
+              [status]="benefitsBadgeStatus(benefits.status)"
+              [label]="benefits.statusLabel"
+            />
+          </header>
+          <div class="mgmt-tile__hero">
+            <span class="mgmt-tile__number">{{ benefits.realizedPercent }}<small>%</small></span>
+            <span class="mgmt-tile__number-label">Realisierung</span>
+          </div>
+          <div class="mgmt-tile__visual">
+            <div class="mgmt-progress" role="progressbar" [attr.aria-valuenow]="benefits.realizedPercent" aria-valuemin="0" aria-valuemax="100">
+              <div class="mgmt-progress__track">
+                <div class="mgmt-progress__bar" [style.width.%]="clampPercent(benefits.realizedPercent)"></div>
+              </div>
+              <div class="mgmt-progress__scale"><span>0</span><span>Ziel 100%</span></div>
+            </div>
+          </div>
+          <footer class="mgmt-tile__foot" [title]="benefits.expectedBenefit">
+            {{ truncate(benefits.expectedBenefit, 60) }}
+            <span class="mgmt-tile__unit">· {{ benefits.benefitUnit }}</span>
+          </footer>
+        </article>
+      }
+
+      <!-- 2. SCOPE -->
+      @if (payload.scope; as scope) {
+        <article class="mgmt-tile" aria-labelledby="cat-scope">
+          <header class="mgmt-tile__head">
+            <span id="cat-scope" class="mgmt-tile__category">Scope</span>
+            <span class="mgmt-trend" [class.mgmt-trend--down]="scope.trend === 'DETERIORATING'" [class.mgmt-trend--up]="scope.trend === 'IMPROVING'">
+              <span class="material-icons" aria-hidden="true">{{ trendIcon(scope.trend) }}</span>
+              {{ scope.trendLabel }}
+            </span>
+          </header>
+          <div class="mgmt-tile__hero">
+            <span class="mgmt-tile__status-text">{{ truncate(scope.scopeStatus, 24) }}</span>
+          </div>
+          <div class="mgmt-tile__visual">
+            <ul class="mgmt-tile__list">
+              @for (deviation of scope.deviations.slice(0, 2); track deviation) {
+                <li [title]="deviation">
+                  <span class="material-icons" aria-hidden="true">warning_amber</span>
+                  {{ truncate(deviation, 45) }}
+                </li>
+              }
+              @if (scope.deviations.length === 0) {
+                <li class="mgmt-tile__list-empty">Keine Abweichungen</li>
+              }
+            </ul>
+          </div>
+          <footer class="mgmt-tile__foot">Status vs. Baseline</footer>
+        </article>
+      }
+
+      <!-- 3. CHANGES -->
+      @if (payload.changeRequests; as changes) {
+        <article class="mgmt-tile" aria-labelledby="cat-changes">
+          <header class="mgmt-tile__head">
+            <span id="cat-changes" class="mgmt-tile__category">Changes</span>
+            <span class="mgmt-badge-small" [class.mgmt-badge-small--at-risk]="changes.open > 0 || changes.inReview > 0">{{ changes.total }} Gesamt</span>
+          </header>
+          <div class="mgmt-tile__stat-grid">
+            <div class="mgmt-stat">
+              <span class="mgmt-stat__value">{{ changes.open }}</span>
+              <span class="mgmt-stat__label">Offen</span>
+            </div>
+            <div class="mgmt-stat">
+              <span class="mgmt-stat__value">{{ changes.inReview }}</span>
+              <span class="mgmt-stat__label">Prüfung</span>
+            </div>
+            <div class="mgmt-stat">
+              <span class="mgmt-stat__value">{{ changes.approved }}</span>
+              <span class="mgmt-stat__label">Done</span>
+            </div>
+          </div>
+          <div class="mgmt-tile__impact-box">
+            <div class="mgmt-impact-item">
+              <span class="material-icons" [class.material-icons-check]="changes.impactSchedule === 'NONE'" [class.material-icons-warn]="changes.impactSchedule !== 'NONE'" aria-hidden="true">{{ impactIcon(changes.impactSchedule) }}</span>
+              <span>Zeit: <strong>{{ changes.impactScheduleLabel }}</strong></span>
+            </div>
+            <div class="mgmt-impact-item">
+              <span class="material-icons" [class.material-icons-check]="changes.impactCost === 'NONE'" [class.material-icons-warn]="changes.impactCost !== 'NONE'" aria-hidden="true">{{ impactIcon(changes.impactCost) }}</span>
+              <span>Kosten: <strong>{{ changes.impactCostLabel }}</strong></span>
+            </div>
+          </div>
+          <footer class="mgmt-tile__foot">Impact auf Projektziele</footer>
+        </article>
+      }
+
+      <!-- 4. QUALITÄT -->
+      @if (payload.quality; as quality) {
+        <article class="mgmt-tile" aria-labelledby="cat-quality">
+          <header class="mgmt-tile__head">
+            <span id="cat-quality" class="mgmt-tile__category">Qualität</span>
+            <span class="mgmt-badge-small" [class.mgmt-badge-small--critical]="quality.criticalDefects > 0">{{ truncate(quality.qualityStatus, 18) }}</span>
+          </header>
+          <div class="mgmt-tile__hero">
+            <span class="mgmt-tile__number">{{ quality.progressPercent }}<small>%</small></span>
+            <span class="mgmt-tile__number-label">Test-Fortschritt</span>
+          </div>
+          <div class="mgmt-tile__visual">
+            <div class="mgmt-progress mgmt-progress--alt" role="progressbar" [attr.aria-valuenow]="quality.progressPercent" aria-valuemin="0" aria-valuemax="100">
+              <div class="mgmt-progress__track">
+                <div class="mgmt-progress__bar" [style.width.%]="clampPercent(quality.progressPercent)"></div>
+              </div>
+            </div>
+            <div class="mgmt-tile__stat-grid mgmt-tile__stat-grid--compact">
+              <div class="mgmt-stat">
+                <span class="mgmt-stat__value">{{ quality.openDefects }}</span>
+                <span class="mgmt-stat__label">Defects</span>
+              </div>
+              <div class="mgmt-stat">
+                <span class="mgmt-stat__value" [class.mgmt-stat__value--crit]="quality.criticalDefects > 0">
+                  {{ quality.criticalDefects }}
+                </span>
+                <span class="mgmt-stat__label">Kritisch</span>
+              </div>
+            </div>
+          </div>
+          <footer class="mgmt-tile__foot" [title]="quality.testAcceptanceStatus">
+            {{ truncate(quality.testAcceptanceStatus, 60) }}
+          </footer>
+        </article>
+      }
+
+      <!-- 5. STAKEHOLDER -->
+      @if (payload.stakeholders; as stakeholders) {
+        <article class="mgmt-tile" aria-labelledby="cat-stakeholders">
+          <header class="mgmt-tile__head">
+            <span id="cat-stakeholders" class="mgmt-tile__category">Stakeholder</span>
+            <span class="mgmt-badge-small" [class.mgmt-badge-small--critical]="isEscalated(stakeholders.escalationStatus)">{{ truncate(stakeholders.escalationStatus, 18) }}</span>
+          </header>
+          <div class="mgmt-tile__hero">
+            <span class="mgmt-tile__status-text">{{ truncate(stakeholders.sponsorCustomer, 24) }}</span>
+          </div>
+          <div class="mgmt-tile__visual">
+            <div class="mgmt-stakeholder-status">
+              <span class="material-icons" aria-hidden="true">person_outline</span>
+              <span>{{ truncate(stakeholders.stakeholderStatus, 45) }}</span>
+            </div>
+            @if (stakeholders.lastSteeringDate) {
+              <div class="mgmt-tile__steering">
+                <span class="material-icons" aria-hidden="true">event</span>
+                Steering: {{ formatDate(stakeholders.lastSteeringDate) }}
+              </div>
+            }
+          </div>
+          <footer class="mgmt-tile__foot">Letzte Rückmeldung Sponsor</footer>
+        </article>
+      }
+    </div>
+  }
+</section>

@@ -1,0 +1,262 @@
+<section
+  class="gantt-timeline"
+  [class.gantt-timeline--project]="isProjectView()"
+  [attr.aria-labelledby]="isProjectView() ? null : 'gantt-timeline-heading'"
+  [attr.aria-label]="isProjectView() ? 'Projektzeitplan' : null"
+>
+  @if (!isProjectView()) {
+    <div class="gantt-timeline__section-head">
+      <div>
+        <p class="gantt-timeline__eyebrow">Terminlage</p>
+        <h2 id="gantt-timeline-heading" class="gantt-timeline__title">
+          Portfolio-Zeitleiste
+        </h2>
+      </div>
+      <p class="gantt-timeline__hint">
+        Horizontal scrollen, um den gesamten Zeitraum zu sehen.
+      </p>
+    </div>
+  }
+
+  <p class="visually-hidden" id="gantt-timeline-summary">
+    {{ screenReaderSummary() }}
+  </p>
+
+  <div
+    class="gantt-timeline__frame"
+    tabindex="0"
+    role="region"
+    [attr.aria-labelledby]="isProjectView() ? null : 'gantt-timeline-heading'"
+    [attr.aria-label]="isProjectView() ? 'Projektzeitplan' : null"
+    aria-describedby="gantt-timeline-summary"
+  >
+    @if (!isProjectView()) {
+      <div class="gantt-timeline__names" (scroll)="onNamesScroll($event)">
+        <div class="gantt-timeline__names-head">
+          <span>Projekt</span>
+          <small>Status</small>
+        </div>
+        @for (row of rows(); track row.project.id) {
+          <div class="gantt-timeline__name-cell">
+            <span
+              class="gantt-timeline__project-name"
+              [attr.title]="row.project.name"
+              >{{ row.project.name }}</span
+            >
+            <span class="gantt-timeline__project-status">{{
+              row.project.statusLabel
+            }}</span>
+          </div>
+        }
+      </div>
+    }
+
+    <div class="gantt-timeline__scroll" (scroll)="onTimelineScroll($event)">
+      <div
+        class="gantt-timeline__canvas"
+        [style.min-width.rem]="trackWidthRem()"
+        [style.--gantt-month-rem]="monthColRem() + 'rem'"
+      >
+        <div class="gantt-timeline__head">
+          <div class="gantt-timeline__years">
+            @for (year of axisYears(); track year.yearLabel) {
+              <div
+                class="gantt-timeline__year"
+                [style.width.rem]="year.widthRem"
+              >
+                {{ year.yearLabel }}
+              </div>
+            }
+          </div>
+          <div class="gantt-timeline__months">
+            @for (month of axisMonths(); track month.key) {
+              <div
+                class="gantt-timeline__month"
+                [style.width.rem]="monthColRem()"
+                [style.min-width.rem]="monthColRem()"
+                [style.flex]="
+                  '0 0 ' + monthColRem() + 'rem'
+                "
+              >
+                {{ month.monthLabel }}
+              </div>
+            }
+          </div>
+        </div>
+
+        @if (todayVisible()) {
+          <div
+            class="gantt-timeline__today"
+            [style.left.%]="todayPercent()"
+            aria-hidden="true"
+          >
+            <span>Heute</span>
+          </div>
+        }
+
+        @for (row of rows(); track row.project.id) {
+          <div class="gantt-timeline__row">
+            <div class="gantt-timeline__track">
+              <div class="gantt-timeline__month-grid" aria-hidden="true">
+                @for (month of axisMonths(); track month.key) {
+                  <span
+                    class="gantt-timeline__month-slot"
+                    [style.width.rem]="monthColRem()"
+                    [style.min-width.rem]="monthColRem()"
+                    [style.flex]="'0 0 ' + monthColRem() + 'rem'"
+                  ></span>
+                }
+              </div>
+
+              <div
+                class="gantt-timeline__bar"
+                [style.left.%]="row.barLeftPercent"
+                [style.width.%]="row.barWidthPercent"
+                [attr.aria-label]="
+                  row.project.name + ', ' + row.project.statusLabel
+                "
+              >
+                @for (
+                  segment of row.phaseSegments;
+                  track segment.name + segment.leftPercent
+                ) {
+                  <span
+                    class="gantt-timeline__phase"
+                    [class.gantt-timeline__phase--analyse]="
+                      segment.phaseType === 'ANALYSE' ||
+                      segment.phaseType === 'ANALYSIS'
+                    "
+                    [class.gantt-timeline__phase--umsetzung]="
+                      segment.phaseType === 'UMSETZUNG' ||
+                      segment.phaseType === 'IMPLEMENTATION'
+                    "
+                    [class.gantt-timeline__phase--rollout]="
+                      segment.phaseType === 'ROLLOUT'
+                    "
+                    [class.gantt-timeline__phase--current]="segment.current"
+                    [style.left.%]="segment.leftPercent"
+                    [style.width.%]="segment.widthPercent"
+                    [attr.title]="
+                      segment.current
+                        ? segment.name + ' (aktuelle Phase)'
+                        : segment.name
+                    "
+                  ></span>
+                }
+              </div>
+
+              @if (
+                row.overrunWidthPercent != null &&
+                row.overrunLeftPercent != null
+              ) {
+                <div
+                  class="gantt-timeline__overrun"
+                  [style.left.%]="row.overrunLeftPercent"
+                  [style.width.%]="row.overrunWidthPercent"
+                  aria-hidden="true"
+                ></div>
+              }
+
+              @for (
+                marker of row.handoverMarkers;
+                track marker.kind + marker.offsetPercent
+              ) {
+                <div
+                  class="gantt-timeline__handover"
+                  [class.gantt-timeline__handover--plan]="
+                    marker.kind === 'plan'
+                  "
+                  [class.gantt-timeline__handover--forecast]="
+                    marker.kind === 'forecast'
+                  "
+                  [class.gantt-timeline__handover--current]="
+                    marker.kind === 'current'
+                  "
+                  [class.gantt-timeline__handover--delayed]="marker.delayed"
+                  [style.left.%]="marker.offsetPercent"
+                  [attr.title]="marker.tooltip"
+                >
+                  <span
+                    class="gantt-timeline__handover-line"
+                    aria-hidden="true"
+                  ></span>
+                  <span class="gantt-timeline__handover-label">{{
+                    marker.label
+                  }}</span>
+                  @if (marker.detailLabel) {
+                    <span class="gantt-timeline__handover-detail">{{
+                      marker.detailLabel
+                    }}</span>
+                  }
+                  @if (marker.delayLabel) {
+                    <span class="gantt-timeline__handover-delay">{{
+                      marker.delayLabel
+                    }}</span>
+                  }
+                </div>
+              }
+            </div>
+          </div>
+        }
+      </div>
+    </div>
+  </div>
+
+  <div class="gantt-timeline__legend" aria-label="Legende">
+    <span
+      ><span
+        class="gantt-timeline__swatch gantt-timeline__swatch--analyse"
+      ></span
+      >Analyse</span
+    >
+    <span
+      ><span
+        class="gantt-timeline__swatch gantt-timeline__swatch--umsetzung"
+      ></span
+      >Umsetzung</span
+    >
+    <span
+      ><span
+        class="gantt-timeline__swatch gantt-timeline__swatch--rollout"
+      ></span
+      >Rollout</span
+    >
+    <span
+      ><span
+        class="gantt-timeline__swatch gantt-timeline__swatch--current-phase"
+      ></span
+      >Aktuelle Phase</span
+    >
+    <span
+      ><span
+        class="gantt-timeline__swatch gantt-timeline__swatch--overrun"
+      ></span
+      >Verzug</span
+    >
+    <span
+      ><span class="gantt-timeline__swatch gantt-timeline__swatch--today"></span
+      >Heute</span
+    >
+    @if (isProjectView()) {
+      <span
+        ><span
+          class="gantt-timeline__swatch gantt-timeline__swatch--plan"
+        ></span
+        >Planende</span
+      >
+      <span
+        ><span
+          class="gantt-timeline__swatch gantt-timeline__swatch--forecast"
+        ></span
+        >Forecast-Ende</span
+      >
+    } @else {
+      <span
+        ><span
+          class="gantt-timeline__swatch gantt-timeline__swatch--handover"
+        ></span
+        >Kundenübergabe</span
+      >
+    }
+  </div>
+</section>

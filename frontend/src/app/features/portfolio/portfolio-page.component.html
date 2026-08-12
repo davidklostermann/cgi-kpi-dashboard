@@ -1,0 +1,58 @@
+<section class="page">
+  <header class="page__header">
+    <h1>Portfolio</h1>
+    <p>Überblick über Portfolio-Gesundheit und zentrale Kennzahlen.</p>
+  </header>
+
+  <app-portfolio-filter-bar />
+
+  <main class="portfolio-main">
+    <app-portfolio-kpi-section />
+
+    <section class="portfolio-main__visualizations" aria-label="Portfolio-Visualisierungen">
+      <app-portfolio-trends-section />
+      <app-portfolio-gantt-section />
+      <app-portfolio-table-section />
+    </section>
+  </main>
+
+  @if (authService.isAdmin()) {
+    <button #aiLauncher class="portfolio-ai-launcher" type="button" (click)="openPortfolioAi()">
+      KI-Analyse
+    </button>
+  }
+
+  @if (authService.isAdmin() && portfolioAiPanelMounted()) {
+    <div
+      class="portfolio-ai-drawer-backdrop"
+      [class.portfolio-ai-drawer-backdrop--open]="portfolioAiOpen()"
+      (click)="closePortfolioAi()"
+    >
+      <aside
+        class="portfolio-ai-drawer"
+        role="dialog"
+        [attr.aria-modal]="portfolioAiOpen() ? 'true' : null"
+        [attr.aria-hidden]="portfolioAiOpen() ? null : 'true'"
+        aria-labelledby="portfolio-ai-drawer-title"
+        cdkTrapFocus
+        [cdkTrapFocusAutoCapture]="portfolioAiOpen()"
+        (click)="$event.stopPropagation()"
+      >
+        <header class="portfolio-ai-drawer__header">
+          <div>
+            <span class="portfolio-ai-drawer__badge">Musteranalyse</span>
+            <h2 id="portfolio-ai-drawer-title">KI-Analyse</h2>
+          </div>
+          <button class="portfolio-ai-drawer__close" type="button" (click)="closePortfolioAi()">
+            <span class="visually-hidden">KI-Analyse schließen</span>
+            <span aria-hidden="true">×</span>
+          </button>
+        </header>
+
+        <div class="portfolio-ai-drawer__content">
+          <app-portfolio-ai-panel />
+        </div>
+      </aside>
+    </div>
+  }
+</section>
