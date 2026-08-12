@@ -13,7 +13,7 @@ unterstützt bei Interpretation und Zusammenfassung ohne KPIs zu ersetzen.
 
 
 <p align="center">
-  <img src="docs/assets/dashboard-overview.png" alt="CGI KPI Dashboard – Portfolio, Projektdetail, Agile Delivery und KI-Assistent" width="100%">
+  <img src="docs/dashboard-overview.png" alt="CGI KPI Dashboard – Portfolio, Projektdetail, Agile Delivery und KI-Assistent" width="100%">
 </p>
 
 <p align="center"><em>Portfolioübersicht, Projektdetail, Agile Delivery und optionaler KI-Assistent</em></p>
