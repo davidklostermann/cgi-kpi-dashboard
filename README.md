@@ -48,6 +48,15 @@ cp .env.example .env
 docker compose up --build
 ```
 
+Unter Windows (PowerShell):
+
+```powershell
+git clone https://github.com/davidklostermann/cgi-kpi-dashboard.git
+cd cgi-kpi-dashboard
+Copy-Item .env.example .env
+docker compose up --build
+```
+
 Danach im Browser:
 
 **http://localhost:4200**
@@ -60,7 +69,11 @@ Danach im Browser:
 | Passwort | `DemoAdmin1!` |
 
 Beim ersten Start legt das Backend diesen Admin an, wenn noch keine Benutzer
-existieren (`BOOTSTRAP_ADMIN_*` in `.env`).
+existieren (`BOOTSTRAP_ADMIN_USERNAME` / `BOOTSTRAP_ADMIN_PASSWORD` in `.env`,
+Defaults siehe `.env.example` und `docker-compose.yml`).
+
+Wichtig: Nach Änderungen an den Bootstrap-Credentials einen kompletten Reset
+ausführen (`docker compose down -v`), damit die Datenbank neu erzeugt wird.
 
 ### Stop / Reset
 

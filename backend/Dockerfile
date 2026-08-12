@@ -5,7 +5,8 @@ COPY pom.xml .
 COPY .mvn .mvn
 COPY mvnw mvnw
 COPY src ./src
-RUN chmod +x mvnw && ./mvnw -q -DskipTests package
+# Strip CRLF in case the wrapper was checked out on Windows without .gitattributes.
+RUN sed -i 's/\r$//' mvnw && chmod +x mvnw && ./mvnw -q -DskipTests package
 
 FROM eclipse-temurin:21-jre-jammy
 WORKDIR /app

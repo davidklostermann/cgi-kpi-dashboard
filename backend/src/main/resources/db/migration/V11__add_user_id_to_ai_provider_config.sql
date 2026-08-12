@@ -1,11 +1,12 @@
 ALTER TABLE ai_provider_config ADD COLUMN user_id UUID;
 
--- Assign existing global configs to the default bootstrap admin user
--- IMPORTANT: Replace 'admin' with the actual BOOTSTRAP_ADMIN_USERNAME if it's different in your environment.
+-- Assign existing global configs to the bootstrap admin user when present.
+-- Fresh demos have an empty app_user table at this point; bootstrap creates admin1 later.
 UPDATE ai_provider_config
 SET user_id = (
     SELECT id FROM app_user
-    WHERE username = 'admin' -- Default bootstrap admin username
+    WHERE username IN ('admin1', 'admin')
+    ORDER BY CASE WHEN username = 'admin1' THEN 0 ELSE 1 END
     LIMIT 1
 )
 WHERE user_id IS NULL;
