@@ -108,3 +108,7 @@ Die notwendige Konfiguration ist in `.env.example` dokumentiert.
 Das Projekt wurde mit einem strukturierten BMAD-basierten
 Produktentwicklungsprozess geplant und umgesetzt. Die wichtigsten
 Epic- und Story-Dokumente liegen unter [`docs/planning`](docs/planning/README.md).
+
+## License
+
+MIT License © 2026 David Klostermann — siehe [LICENSE](LICENSE).
