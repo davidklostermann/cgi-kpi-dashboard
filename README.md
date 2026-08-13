@@ -109,11 +109,14 @@ Die notwendige Konfiguration ist in `.env.example` dokumentiert.
 
 ## Tech Stack
 
-- Frontend: Angular 22
-- Backend: Spring Boot 3.5 / Java 21
+- Frontend: Angular 22, TypeScript, Angular Material, RxJS
+- Build (Frontend): Node.js 22, npm
+- Backend: Spring Boot 3.5 / Java 21, Maven
 - Datenbank: PostgreSQL 16 + Flyway
 - Auth: Session-Cookie + CSRF
-- Optional: KI-Anbindung (API-Key)
+- Demo-Betrieb: Docker Compose, nginx
+- Tests: Vitest (Frontend), JUnit (Backend)
+- Optional: KI-Anbindung (API-Key, serverseitig)
 
 ## Development Approach
 
