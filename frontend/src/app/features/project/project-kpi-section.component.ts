@@ -1,5 +1,4 @@
 import { Component, effect, inject, input, signal } from '@angular/core';
-import { HttpErrorResponse } from '@angular/common/http';
 import { take } from 'rxjs';
 
 import { ProjectApiService } from '../../core/api/project-api.service';
@@ -85,16 +84,7 @@ export class ProjectKpiSectionComponent {
     return value.toLocaleString('de-DE', { maximumFractionDigits: 1 });
   }
 
-  private resolveErrorMessage(error: unknown): string {
-    if (error instanceof HttpErrorResponse) {
-      const body = error.error as { message?: string } | null;
-      if (body?.message) {
-        return body.message;
-      }
-      if (error.status === 0) {
-        return 'Die Projekt-KPIs konnten nicht geladen werden. Bitte prüfen Sie die Verbindung zum Backend.';
-      }
-    }
+  private resolveErrorMessage(_error: unknown): string {
     return 'Die Projekt-KPIs konnten nicht geladen werden. Bitte versuchen Sie es erneut.';
   }
 }

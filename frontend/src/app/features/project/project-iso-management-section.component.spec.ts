@@ -113,7 +113,10 @@ describe('ProjectIsoManagementSectionComponent', () => {
     );
     fixture.detectChanges();
 
-    expect(fixture.nativeElement.textContent).toContain('Steuerungsdaten nicht verfügbar');
+    expect(fixture.nativeElement.textContent).toContain(
+      'Erweiterte Steuerungsdaten konnten nicht geladen werden.',
+    );
+    expect(fixture.nativeElement.textContent).not.toContain('Steuerungsdaten nicht verfügbar');
 
     fixture.nativeElement.querySelector('button')?.dispatchEvent(new Event('click'));
     fixture.detectChanges();

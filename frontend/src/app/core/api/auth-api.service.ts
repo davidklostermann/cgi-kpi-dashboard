@@ -26,8 +26,8 @@ export class AuthApiService extends ApiClient {
     return this.post<void>('/auth/change-password', body);
   }
 
-  /** Public health call to receive CSRF cookie before login POST. */
+  /** Public bootstrap call that materializes Spring's CSRF cookie before login. */
   bootstrapCsrf() {
-    return this.getAtRoot<{ status: string }>('/actuator/health');
+    return this.get<{ status: string }>('/auth/csrf');
   }
 }

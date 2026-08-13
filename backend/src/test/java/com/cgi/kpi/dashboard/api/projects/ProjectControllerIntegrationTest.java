@@ -182,7 +182,7 @@ class ProjectControllerIntegrationTest {
         mockMvc.perform(get("/api/projects/{id}/issues-actions", KNOWN_PROJECT_ID))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.projectId").value(KNOWN_PROJECT_ID.toString()))
-                .andExpect(jsonPath("$.factsBadge").value("Fakten aus Backend"))
+                .andExpect(jsonPath("$.factsBadge").value("Datenstand 10.07.2026"))
                 .andExpect(jsonPath("$.items", hasSize(greaterThanOrEqualTo(3))))
                 .andExpect(jsonPath("$.items[0].severityLabel").exists())
                 .andExpect(jsonPath("$.items[0].metrics").isArray())

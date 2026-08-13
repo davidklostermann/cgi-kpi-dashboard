@@ -76,7 +76,7 @@ describe('PortfolioAiPanelComponent', () => {
   beforeEach(async () => {
     isAdminSignal = signal(true);
     const authServiceMock = {
-      currentUser: signal({ userId: 'user-a', roles: ['ROLE_ADMIN'] }),
+      currentUser: signal({ userId: 'user-a', workspaceId: 'workspace-a', roles: ['ROLE_ADMIN'] }),
       isAdmin: computed(() => isAdminSignal()),
     };
 
@@ -124,14 +124,14 @@ describe('PortfolioAiPanelComponent', () => {
     expect(text).toContain('Portfolio-Assistent');
     expect(text).toContain('Überblick');
     expect(text).toContain('Fragen');
-    expect(text).toContain('Gemini');
+    expect(text).toContain('KI-gestützte Analyse');
     expect(text).toContain('Mehrere Projekte verschlechtern sich');
     expect(text).toContain('Nexus Analytics Pilot');
     expect(text).toContain('Belege anzeigen');
     expect(text).toContain('Konfidenz Hoch');
     expect(text).toContain('Datenqualität Vollständig');
     expect(text).not.toContain('Einzelprojekt ohne Portfoliobezug');
-    expect(text).not.toContain('KI-Einschätzung');
+    expect(text).toContain('KI-Einschätzung');
     expect(text).not.toContain('Top-3 Handlungsbedarf');
   });
 
@@ -161,7 +161,9 @@ describe('PortfolioAiPanelComponent', () => {
     fixture.detectChanges();
 
     const text = fixture.nativeElement.textContent as string;
-    expect(text).toContain('Regelbasiert');
+    expect(text).toContain('Aus Portfoliodaten abgeleitet');
+    expect(text).toContain('Portfolioanalyse');
+    expect(text).not.toContain('KI-Einschätzung');
     expect(text).toContain(
       'Für den gewählten Berichtsstand wurden keine belastbaren projektübergreifenden Muster erkannt.',
     );
@@ -288,7 +290,7 @@ describe('PortfolioAiPanelComponent', () => {
     fixture.detectChanges();
 
     expect(fixture.componentInstance.status()).toBe('disabled');
-    expect(fixture.nativeElement.textContent).toContain('Portfolio-Assistent ist deaktiviert.');
+    expect(fixture.nativeElement.textContent).toContain('Der KI-Assistent ist derzeit deaktiviert.');
     expect(fixture.nativeElement.textContent).not.toContain('Erneut versuchen');
   });
 
@@ -362,6 +364,43 @@ describe('PortfolioAiPanelComponent', () => {
     expect(fixture.componentInstance.status()).toBe('key_missing');
     expect(fixture.componentInstance.analysis()).toBeNull();
     httpMock.expectNone(trendUrl);
+  });
+
+  it('should not ask a chat question when readiness returns ready=false', () => {
+    const fixture = createPanel();
+    fixture.componentInstance.sendQuestion('Welche Projekte sind kritisch?');
+
+    httpMock.expectOne(readinessUrl).flush({ ready: false });
+    fixture.detectChanges();
+
+    expect(fixture.componentInstance.status()).toBe('key_missing');
+    httpMock.expectNone(questionsUrl);
+  });
+
+  it('retries the first failed portfolio question', () => {
+    const fixture = createPanel();
+    fixture.componentInstance.sendQuestion('Welche Projekte sind kritisch?');
+    flushReadiness();
+    httpMock
+      .expectOne(questionsUrl)
+      .flush({ message: 'internal detail' }, { status: 500, statusText: 'Error' });
+
+    fixture.componentInstance.retryLastQuestion();
+    flushReadiness();
+    const retry = httpMock.expectOne(questionsUrl);
+
+    expect(retry.request.body).toEqual({ question: 'Welche Projekte sind kritisch?' });
+    retry.flush({ answer: 'Zwei Projekte.', evidenceFactIds: [] });
+  });
+
+  it('clears portfolio chat when filters change', () => {
+    const fixture = createPanel();
+    fixture.componentInstance.chatMessages.set([{ role: 'user', text: 'Alte Frage' }]);
+
+    filterService.update({ customer: 'Acme GmbH' });
+    fixture.detectChanges();
+
+    expect(fixture.componentInstance.chatMessages()).toEqual([]);
   });
 
   it('should not call trend analysis endpoint when readiness reports missing key', () => {
@@ -444,7 +483,11 @@ describe('PortfolioAiPanelComponent', () => {
     fixture.detectChanges();
 
     expect(fixture.nativeElement.textContent).toContain('Budgetabweichung = 8 %');
-    expect(fixture.nativeElement.textContent).toContain('Technische Feldnamen');
+    expect(fixture.nativeElement.textContent).toContain('Verknüpfte Portfoliodaten');
+    expect(fixture.nativeElement.textContent).toContain('Budgetabweichung im Portfolio');
+    expect(fixture.nativeElement.textContent).not.toContain(
+      'portfolio.budgetDeviationPercent',
+    );
   });
 
   it('should keep Fragen tab usable when trend analysis fails', () => {

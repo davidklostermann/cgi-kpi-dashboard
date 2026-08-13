@@ -1,10 +1,10 @@
 import { Component, effect, inject, signal } from '@angular/core';
 import { take } from 'rxjs';
-import { HttpErrorResponse } from '@angular/common/http';
 
 import { PortfolioApiService } from '../../core/api/portfolio-api.service';
 import { ProjectTableComponent } from '../../shared/components/project-table.component';
 import { PortfolioTable } from '../../shared/models/portfolio-table.model';
+import { resolveLoadError } from '../../shared/utils/ai-error.util';
 import { PortfolioFilterService } from './portfolio-filter.service';
 
 type LoadStatus = 'loading' | 'success' | 'error';
@@ -51,15 +51,9 @@ export class PortfolioTableSectionComponent {
   }
 
   private resolveErrorMessage(error: unknown): string {
-    if (error instanceof HttpErrorResponse) {
-      const body = error.error as { message?: string } | null;
-      if (body?.message) {
-        return body.message;
-      }
-      if (error.status === 0) {
-        return 'Die Projekttabelle konnte nicht geladen werden. Bitte prüfen Sie die Verbindung zum Backend.';
-      }
-    }
-    return 'Die Projekttabelle konnte nicht geladen werden. Bitte versuchen Sie es erneut.';
+    return resolveLoadError(
+      error,
+      'Die Projekttabelle konnte nicht geladen werden. Bitte versuchen Sie es erneut.',
+    );
   }
 }

@@ -33,7 +33,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 public class GeminiAiModelClient implements AiModelClient {
 
     private static final String DISCLAIMER =
-            "KI-generierte Einschätzung auf Basis freigegebener Backend-Daten. Ersetzt keine Fachentscheidung.";
+            "KI-generierte Einschätzung auf Basis der verfügbaren Daten. Ersetzt keine Fachentscheidung.";
 
     private final GeminiApiTransport transport;
     private final ObjectMapper objectMapper;

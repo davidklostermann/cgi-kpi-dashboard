@@ -132,7 +132,7 @@ describe('ProjectAiPanelComponent', () => {
       );
   }
 
-  it('should require evidence for AI insights and hide technical field names by default', () => {
+  it('should require evidence and show readable project-data references', () => {
     const fixture = createPanel();
     fixture.componentInstance.loadAnalysis(false);
     flushReadiness();
@@ -147,7 +147,10 @@ describe('ProjectAiPanelComponent', () => {
     expect(text).toContain('Fortschritt: 62 %');
     expect(text).toContain('Wichtigste Auswirkung');
     expect(text).toContain('Nötige Entscheidung oder Handlung');
-    expect(text).toContain('Technische Feldnamen');
+    expect(text).toContain('Verknüpfte Projektdaten');
+    expect(text).toContain('Terminabweichung');
+    expect(text).toContain('Projektfortschritt');
+    expect(text).not.toContain('kpi.scheduleDeviationDays');
     expect(text).not.toContain('Ohne Belege — darf nicht erscheinen');
     const openDetails = fixture.nativeElement.querySelectorAll('details[open]');
     expect(openDetails.length).toBe(0);
@@ -255,10 +258,10 @@ describe('ProjectAiPanelComponent', () => {
     fixture.detectChanges();
 
     expect(fixture.componentInstance.status()).toBe('disabled');
-    expect(fixture.nativeElement.textContent).toContain('Projekt-Assistent ist deaktiviert.');
+    expect(fixture.nativeElement.textContent).toContain('Der KI-Assistent ist derzeit deaktiviert.');
   });
 
-  it('should show provider error for AI_PROVIDER_ERROR', () => {
+  it('should hide provider diagnostics for AI_PROVIDER_ERROR', () => {
     const fixture = createPanel();
     fixture.componentInstance.loadAnalysis(false);
     flushReadiness();
@@ -274,8 +277,9 @@ describe('ProjectAiPanelComponent', () => {
     fixture.detectChanges();
 
     expect(fixture.componentInstance.status()).toBe('error');
-    expect(fixture.nativeElement.textContent).toContain('Gemini-Authentifizierung fehlgeschlagen');
-    expect(fixture.nativeElement.textContent).toContain('AI_PROVIDER_ERROR');
+    expect(fixture.nativeElement.textContent).toContain('Die Analyse konnte nicht geladen werden.');
+    expect(fixture.nativeElement.textContent).not.toContain('Gemini-Authentifizierung fehlgeschlagen');
+    expect(fixture.nativeElement.textContent).not.toContain('AI_PROVIDER_ERROR');
   });
 
   it('should show disabled chat message for AI_DISABLED', () => {
@@ -299,7 +303,7 @@ describe('ProjectAiPanelComponent', () => {
     fixture.detectChanges();
 
     expect(fixture.componentInstance.chatStatus()).toBe('disabled');
-    expect(fixture.nativeElement.textContent).toContain('Projekt-Assistent ist deaktiviert.');
+    expect(fixture.nativeElement.textContent).toContain('Der KI-Assistent ist derzeit deaktiviert.');
     expect(fixture.componentInstance.chatInputDisabled()).toBe(true);
     fixture.componentInstance.sendQuestion('Noch eine Frage');
     expect(httpMock.match(questionsUrl).length).toBe(0);
@@ -377,6 +381,33 @@ describe('ProjectAiPanelComponent', () => {
     expect(fixture.componentInstance.status()).toBe('key_missing');
     expect(fixture.componentInstance.analysis()).toBeNull();
     httpMock.expectNone(analysisUrl);
+  });
+
+  it('should not ask a chat question when readiness returns ready=false', () => {
+    const fixture = createPanel();
+    fixture.componentInstance.sendQuestion('Wie ist der Fortschritt?');
+
+    httpMock.expectOne(readinessUrl).flush({ ready: false });
+    fixture.detectChanges();
+
+    expect(fixture.componentInstance.status()).toBe('key_missing');
+    httpMock.expectNone(questionsUrl);
+  });
+
+  it('retries the first failed chat question', () => {
+    const fixture = createPanel();
+    fixture.componentInstance.sendQuestion('Wie ist der Fortschritt?');
+    flushReadiness();
+    httpMock
+      .expectOne(questionsUrl)
+      .flush({ message: 'internal detail' }, { status: 500, statusText: 'Error' });
+
+    fixture.componentInstance.retryLastQuestion();
+    flushReadiness();
+    const retry = httpMock.expectOne(questionsUrl);
+
+    expect(retry.request.body).toEqual({ question: 'Wie ist der Fortschritt?' });
+    retry.flush({ answer: '62 %', evidenceFactIds: ['kpi.progressPercent'] });
   });
 
   it('should not call analysis endpoint when readiness reports missing key', () => {

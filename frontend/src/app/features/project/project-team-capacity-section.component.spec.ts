@@ -93,7 +93,10 @@ describe('ProjectTeamCapacitySectionComponent', () => {
     );
     fixture.detectChanges();
 
-    expect(fixture.nativeElement.textContent).toContain('Kapazität nicht verfügbar');
+    expect(fixture.nativeElement.textContent).toContain(
+      'Team- und Kapazitätsdaten konnten nicht geladen werden.',
+    );
+    expect(fixture.nativeElement.textContent).not.toContain('Kapazität nicht verfügbar');
   });
 
   it('should show empty state when no role capacity rows exist', () => {

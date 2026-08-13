@@ -1,5 +1,4 @@
 import { Component, effect, inject, input, signal } from '@angular/core';
-import { HttpErrorResponse } from '@angular/common/http';
 import { take } from 'rxjs';
 
 import { ProjectApiService } from '../../core/api/project-api.service';
@@ -81,13 +80,7 @@ export class ProjectTeamCapacitySectionComponent {
     }).format(value);
   }
 
-  private resolveError(error: unknown): string {
-    if (error instanceof HttpErrorResponse) {
-      const body = error.error as { message?: string } | null;
-      if (body?.message) {
-        return body.message;
-      }
-    }
+  private resolveError(_error: unknown): string {
     return 'Team- und Kapazitätsdaten konnten nicht geladen werden.';
   }
 }

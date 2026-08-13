@@ -1,5 +1,4 @@
 import { Component, effect, inject, input, signal } from '@angular/core';
-import { HttpErrorResponse } from '@angular/common/http';
 import { take } from 'rxjs';
 
 import { ProjectApiService } from '../../core/api/project-api.service';
@@ -34,13 +33,9 @@ export class ProjectInsightsSectionComponent {
           this.insights.set(data);
           this.status.set('success');
         },
-        error: (error: unknown) => {
+        error: () => {
           this.insights.set(null);
-          this.errorMessage.set(
-            error instanceof HttpErrorResponse && (error.error as { message?: string })?.message
-              ? (error.error as { message: string }).message
-              : 'Management Insights konnten nicht geladen werden.',
-          );
+          this.errorMessage.set('Management Insights konnten nicht geladen werden.');
           this.status.set('error');
         },
       });

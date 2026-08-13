@@ -1,7 +1,7 @@
 <aside class="portfolio-ai" aria-label="Portfolio-Assistent">
   <header class="portfolio-ai__header">
     <div>
-      <span class="portfolio-ai__badge">Musteranalyse</span>
+      <span class="portfolio-ai__badge">{{ analysisBadge() }}</span>
       <h2 class="portfolio-ai__title">Portfolio-Assistent</h2>
     </div>
   </header>
@@ -146,15 +146,23 @@
                   Hinweis: Die verfügbaren Portfolio-Daten reichen für eine belastbare Antwort nicht aus.
                 </span>
               }
-              @if (message.evidenceFactIds?.length) {
-                <details class="portfolio-ai__tech-detail">
-                  <summary>Technische Feldnamen</summary>
-                  <span class="portfolio-ai__evidence-chips">
-                    @for (factId of message.evidenceFactIds; track factId) {
-                      <span class="portfolio-ai__chip">{{ factId }}</span>
-                    }
-                  </span>
-                </details>
+              @if (factReferences(message.evidenceFactIds); as references) {
+                @if (references.length > 0) {
+                  <details class="portfolio-ai__tech-detail">
+                    <summary>Verknüpfte Portfoliodaten</summary>
+                    <span class="portfolio-ai__evidence-chips">
+                      @for (reference of references; track reference.id) {
+                        <button
+                          type="button"
+                          class="portfolio-ai__chip portfolio-ai__evidence-link"
+                          (click)="jumpToFact(reference.id)"
+                        >
+                          {{ reference.label }}
+                        </button>
+                      }
+                    </span>
+                  </details>
+                }
               }
             </p>
           }

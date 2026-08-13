@@ -14,4 +14,8 @@ export class ActiveProjectNavService {
   setActiveProject(id: string, name: string): void {
     this.activeProjectState.set({ id, name });
   }
+
+  clear(): void {
+    this.activeProjectState.set(null);
+  }
 }

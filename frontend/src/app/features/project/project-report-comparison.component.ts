@@ -1,5 +1,4 @@
 import { Component, effect, inject, input, signal } from '@angular/core';
-import { HttpErrorResponse } from '@angular/common/http';
 import { take } from 'rxjs';
 
 import { ProjectApiService } from '../../core/api/project-api.service';
@@ -49,16 +48,12 @@ export class ProjectReportComparisonComponent {
           this.trends.set(data);
           this.status.set('success');
         },
-        error: (error: unknown) => {
+        error: () => {
           if (generation !== this.loadGeneration || projectId !== this.projectId()) {
             return;
           }
           this.trends.set(null);
-          this.errorMessage.set(
-            error instanceof HttpErrorResponse && (error.error as { message?: string })?.message
-              ? (error.error as { message: string }).message
-              : 'Berichtsstandsvergleich konnte nicht geladen werden.',
-          );
+          this.errorMessage.set('Berichtsstandsvergleich konnte nicht geladen werden.');
           this.status.set('error');
         },
       });

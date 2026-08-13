@@ -35,6 +35,7 @@ describe('App routes (Story 2.2 / 11.5)', () => {
     expect(portfolioRoutes.length).toBeGreaterThan(0);
     expect(projectRoutes.length).toBeGreaterThan(0);
     expect(portfolioRoutes[0].loadComponent).toBeDefined();
+    expect(projectRoutes.find((route) => route.path === '')?.redirectTo).toBe('/portfolio');
     expect(projectRoutes.some((route) => route.path === ':id')).toBe(true);
   });
 

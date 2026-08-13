@@ -107,7 +107,8 @@ describe('ProjectAgileDeliverySectionComponent', () => {
     expect(text).toContain('Agile Delivery');
     expect(text).toContain('Sprint-Übersicht und Fortschritt');
     expect(text).toContain('Sprint-Entwicklung');
-    expect(text).toContain('Datenquelle: Internes System (Mock)');
+    expect(text).toContain('Datenstand 04.08.2026');
+    expect(text).not.toContain('Mock');
     expect(text).toContain('Sprint Health');
     expect(text).toContain('Gesamte Story Points');
     expect(text).toContain('Ø Velocity');
@@ -160,7 +161,8 @@ describe('ProjectAgileDeliverySectionComponent', () => {
     );
     fixture.detectChanges();
 
-    expect(fixture.nativeElement.textContent).toContain('Agile-Daten nicht verfügbar');
+    expect(fixture.nativeElement.textContent).toContain('Agile Delivery konnte nicht geladen werden.');
+    expect(fixture.nativeElement.textContent).not.toContain('Agile-Daten nicht verfügbar');
     fixture.nativeElement.querySelector('button')?.click();
     httpMock.expectOne(`/api/projects/${projectId}/agile-delivery`).flush(payload);
     fixture.detectChanges();

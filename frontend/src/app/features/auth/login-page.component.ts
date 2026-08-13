@@ -50,12 +50,26 @@ export class LoginPageComponent {
         return;
       }
 
-      const returnUrl = this.route.snapshot.queryParamMap.get('returnUrl') ?? '/portfolio';
+      const returnUrl = this.resolveReturnUrl(
+        this.route.snapshot.queryParamMap.get('returnUrl'),
+      );
       await this.router.navigateByUrl(returnUrl);
     } catch (error) {
       this.errorMessage.set(mapLoginError(error));
     } finally {
       this.loading.set(false);
     }
+  }
+
+  private resolveReturnUrl(candidate: string | null): string {
+    if (
+      !this.auth.canRestorePreviousRoute() ||
+      !candidate?.startsWith('/') ||
+      candidate.startsWith('//') ||
+      candidate.startsWith('/login')
+    ) {
+      return '/portfolio';
+    }
+    return candidate;
   }
 }

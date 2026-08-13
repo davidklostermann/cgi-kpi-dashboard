@@ -1,5 +1,6 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import { TestBed } from '@angular/core/testing';
+import { ActivatedRoute } from '@angular/router';
 import { provideRouter, Router } from '@angular/router';
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
@@ -103,6 +104,71 @@ describe('LoginPageComponent', () => {
 
     const fixture = TestBed.createComponent(LoginPageComponent);
     fixture.componentInstance.form.setValue({ username: 'admin', password: 'SecretPass1' });
+    await fixture.componentInstance.submit();
+
+    expect(navigateSpy).toHaveBeenCalledWith('/portfolio');
+  });
+
+  it('should not restore a previous users project route', async () => {
+    const auth = TestBed.inject(AuthService);
+    const router = TestBed.inject(Router);
+    const route = TestBed.inject(ActivatedRoute);
+    vi.spyOn(route.snapshot.queryParamMap, 'get').mockReturnValue('/projects/project-a');
+    vi.spyOn(auth, 'login').mockResolvedValue({
+      userId: 'u2',
+      workspaceId: 'w1',
+      username: 'second',
+      roles: ['ROLE_USER'],
+      mustChangePassword: false,
+    });
+    vi.spyOn(auth, 'canRestorePreviousRoute').mockReturnValue(false);
+    const navigateSpy = vi.spyOn(router, 'navigateByUrl').mockResolvedValue(true);
+
+    const fixture = TestBed.createComponent(LoginPageComponent);
+    fixture.componentInstance.form.setValue({ username: 'second', password: 'SecretPass1' });
+    await fixture.componentInstance.submit();
+
+    expect(navigateSpy).toHaveBeenCalledWith('/portfolio');
+  });
+
+  it('should restore a safe project route for the same user', async () => {
+    const auth = TestBed.inject(AuthService);
+    const router = TestBed.inject(Router);
+    const route = TestBed.inject(ActivatedRoute);
+    vi.spyOn(route.snapshot.queryParamMap, 'get').mockReturnValue('/projects/project-a');
+    vi.spyOn(auth, 'login').mockResolvedValue({
+      userId: 'u1',
+      workspaceId: 'w1',
+      username: 'first',
+      roles: ['ROLE_USER'],
+      mustChangePassword: false,
+    });
+    vi.spyOn(auth, 'canRestorePreviousRoute').mockReturnValue(true);
+    const navigateSpy = vi.spyOn(router, 'navigateByUrl').mockResolvedValue(true);
+
+    const fixture = TestBed.createComponent(LoginPageComponent);
+    fixture.componentInstance.form.setValue({ username: 'first', password: 'SecretPass1' });
+    await fixture.componentInstance.submit();
+
+    expect(navigateSpy).toHaveBeenCalledWith('/projects/project-a');
+  });
+
+  it('should reject external or login return URLs', async () => {
+    const auth = TestBed.inject(AuthService);
+    const router = TestBed.inject(Router);
+    const route = TestBed.inject(ActivatedRoute);
+    vi.spyOn(route.snapshot.queryParamMap, 'get').mockReturnValue('//external.example');
+    vi.spyOn(auth, 'login').mockResolvedValue({
+      userId: 'u1',
+      workspaceId: 'w1',
+      username: 'first',
+      roles: ['ROLE_USER'],
+      mustChangePassword: false,
+    });
+    const navigateSpy = vi.spyOn(router, 'navigateByUrl').mockResolvedValue(true);
+
+    const fixture = TestBed.createComponent(LoginPageComponent);
+    fixture.componentInstance.form.setValue({ username: 'first', password: 'SecretPass1' });
     await fixture.componentInstance.submit();
 
     expect(navigateSpy).toHaveBeenCalledWith('/portfolio');

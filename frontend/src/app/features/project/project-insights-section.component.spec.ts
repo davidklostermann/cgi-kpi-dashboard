@@ -17,7 +17,7 @@ describe('ProjectInsightsSectionComponent', () => {
 
   afterEach(() => httpMock.verify());
 
-  it('should render deterministic insight list in facts area (Story 6.6)', () => {
+  it('should render the management insight without implementation terminology', () => {
     const fixture = TestBed.createComponent(ProjectInsightsSectionComponent);
     fixture.componentRef.setInput('projectId', 'a0000000-0000-4000-8000-000000000001');
     fixture.detectChanges();
@@ -40,7 +40,8 @@ describe('ProjectInsightsSectionComponent', () => {
 
     const text = fixture.nativeElement.textContent as string;
     expect(text).toContain('Management Insights');
-    expect(text).toContain('deterministisch');
+    expect(text).toContain('Aus den aktuellen Projektdaten abgeleitete Auffälligkeiten.');
+    expect(text).not.toContain('deterministisch');
     expect(text).toContain('Fortschritt liegt hinter dem erwarteten Zeitverbrauch.');
   });
 });

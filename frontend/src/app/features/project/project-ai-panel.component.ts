@@ -7,6 +7,10 @@ import { ProjectAiApiService } from '../../core/api/project-ai-api.service';
 import { AuthService } from '../../core/auth/auth.service';
 import { resolveAiPanelError } from '../../shared/utils/ai-error.util';
 import {
+  AiFactReference,
+  resolveAiFactReferences,
+} from '../../shared/utils/ai-error.util';
+import {
   ProjectAiAnalysis,
   ProjectAiDraft,
   ProjectAiPriority,
@@ -69,6 +73,7 @@ export class ProjectAiPanelComponent {
 
   private analysisGeneration = 0;
   private chatGeneration = 0;
+  private lastAttemptedQuestion: string | null = null;
 
   readonly suggestedQuestions = [
     'Wie ist der aktuelle Fortschritt?',
@@ -114,6 +119,10 @@ export class ProjectAiPanelComponent {
 
   formatEvidence(item: { label: string; value: string }): string {
     return `${item.label}: ${item.value}`;
+  }
+
+  factReferences(factIds: string[] | null | undefined): AiFactReference[] {
+    return resolveAiFactReferences(factIds);
   }
 
   formatOptionalField(value: string | null | undefined): string {
@@ -276,6 +285,7 @@ export class ProjectAiPanelComponent {
     this.errorMessage.set(message);
     this.chatStatus.set('disabled');
     this.chatError.set(null);
+    this.lastAttemptedQuestion = null;
   }
 
   private resetAiState(): void {
@@ -287,6 +297,7 @@ export class ProjectAiPanelComponent {
     this.errorMessage.set(null);
     this.chatStatus.set('idle');
     this.chatError.set(null);
+    this.lastAttemptedQuestion = null;
   }
 
   private clearDisplayedAiContent(): void {
@@ -342,6 +353,7 @@ export class ProjectAiPanelComponent {
     const projectId = this.projectId();
     const generation = ++this.chatGeneration;
     const currentInput = text;
+    this.lastAttemptedQuestion = currentInput;
     this.chatInput.set('');
     this.chatStatus.set('sending');
     this.chatError.set(null);
@@ -350,8 +362,12 @@ export class ProjectAiPanelComponent {
       .checkReadiness()
       .pipe(take(1))
       .subscribe({
-        next: () => {
+        next: (response) => {
           if (generation !== this.chatGeneration || projectId !== this.projectId()) {
+            return;
+          }
+          if (response.ready !== true) {
+            this.applyKeyMissingState();
             return;
           }
           this.projectAiApi
@@ -373,6 +389,7 @@ export class ProjectAiPanelComponent {
                   },
                 ]);
                 this.chatStatus.set('idle');
+                this.lastAttemptedQuestion = null;
               },
               error: (error: unknown) => {
                 if (generation !== this.chatGeneration || projectId !== this.projectId()) {
@@ -405,12 +422,12 @@ export class ProjectAiPanelComponent {
     if (this.chatStatus() === 'disabled' || this.status() === 'key_missing') {
       return;
     }
-    const lastUser = [...this.chatMessages()].reverse().find((message) => message.role === 'user');
-    if (!lastUser) {
+    const question = this.lastAttemptedQuestion;
+    if (!question) {
       return;
     }
     this.chatError.set(null);
-    this.sendQuestion(lastUser.text);
+    this.sendQuestion(question);
   }
 
   formatInstant(value: string | null | undefined): string {

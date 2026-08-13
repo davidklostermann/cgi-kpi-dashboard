@@ -1,7 +1,6 @@
 import { Component, computed, effect, inject, input, signal, viewChild, ElementRef, HostListener } from '@angular/core';
 import { CdkTrapFocus } from '@angular/cdk/a11y';
 import { DOCUMENT } from '@angular/common';
-import { HttpErrorResponse } from '@angular/common/http';
 import { RouterLink } from '@angular/router';
 import { take } from 'rxjs';
 
@@ -51,6 +50,7 @@ export class ProjectDetailPageComponent {
   readonly masterData = signal<ProjectMasterData | null>(null);
   readonly masterDataStatus = signal<LoadStatus>('loading');
   readonly masterDataError = signal<string | null>(null);
+  private masterDataGeneration = 0;
 
   private readonly document = inject(DOCUMENT);
   private readonly launcher = viewChild<ElementRef<HTMLButtonElement>>('aiLauncher');
@@ -94,11 +94,22 @@ export class ProjectDetailPageComponent {
 
   constructor() {
     effect(() => {
-      this.loadMasterData(this.id());
+      const projectId = this.id();
+      const identity = this.currentIdentity();
+      if (!identity) {
+        this.masterDataGeneration++;
+        this.masterData.set(null);
+        return;
+      }
+      this.loadMasterData(projectId, identity);
     });
   }
 
-  loadMasterData(projectId = this.id()): void {
+  loadMasterData(projectId = this.id(), expectedIdentity = this.currentIdentity()): void {
+    if (!expectedIdentity) {
+      return;
+    }
+    const generation = ++this.masterDataGeneration;
     this.masterDataStatus.set('loading');
     this.masterDataError.set(null);
 
@@ -107,11 +118,25 @@ export class ProjectDetailPageComponent {
       .pipe(take(1))
       .subscribe({
         next: (masterData) => {
+          if (
+            generation !== this.masterDataGeneration ||
+            projectId !== this.id() ||
+            expectedIdentity !== this.currentIdentity()
+          ) {
+            return;
+          }
           this.masterData.set(masterData);
           this.masterDataStatus.set('success');
           this.activeProjectNav.setActiveProject(masterData.id, masterData.name);
         },
         error: (error: unknown) => {
+          if (
+            generation !== this.masterDataGeneration ||
+            projectId !== this.id() ||
+            expectedIdentity !== this.currentIdentity()
+          ) {
+            return;
+          }
           this.masterData.set(null);
           this.masterDataError.set(this.resolveErrorMessage(error));
           this.masterDataStatus.set('error');
@@ -126,16 +151,12 @@ export class ProjectDetailPageComponent {
     return new Intl.DateTimeFormat('de-DE').format(new Date(value));
   }
 
-  private resolveErrorMessage(error: unknown): string {
-    if (error instanceof HttpErrorResponse) {
-      const body = error.error as { message?: string } | null;
-      if (body?.message) {
-        return body.message;
-      }
-      if (error.status === 0) {
-        return 'Die Projekt-Stammdaten konnten nicht geladen werden. Bitte prüfen Sie die Verbindung zum Backend.';
-      }
-    }
+  private resolveErrorMessage(_error: unknown): string {
     return 'Die Projekt-Stammdaten konnten nicht geladen werden. Bitte versuchen Sie es erneut.';
+  }
+
+  private currentIdentity(): string | null {
+    const user = this.authService.currentUser();
+    return user ? `${user.workspaceId}:${user.userId}` : null;
   }
 }

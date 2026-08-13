@@ -29,7 +29,7 @@ describe('ProjectApiService issues and capacity', () => {
   it('getProjectIssuesActions should call /api/projects/{id}/issues-actions', async () => {
     const mock: ProjectIssuesActions = {
       projectId,
-      factsBadge: 'Fakten aus Backend',
+      factsBadge: 'Datenstand 10.07.2026',
       factsAsOf: '2026-07-01T08:00:00Z',
       items: [],
     };

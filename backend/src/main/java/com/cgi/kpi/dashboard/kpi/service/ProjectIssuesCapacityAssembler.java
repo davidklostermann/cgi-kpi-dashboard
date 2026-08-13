@@ -2,6 +2,8 @@ package com.cgi.kpi.dashboard.kpi.service;
 
 import java.time.Instant;
 import java.time.LocalDate;
+import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -31,7 +33,8 @@ import com.cgi.kpi.dashboard.kpi.dto.ProjectIssuesActionsDto.RequiredDecisionDto
 public class ProjectIssuesCapacityAssembler {
 
     private static final String STATUS_OPEN = "OPEN";
-    private static final String FACTS_BADGE = "Fakten aus Backend";
+    private static final DateTimeFormatter DATA_STAND_FORMATTER =
+            DateTimeFormatter.ofPattern("dd.MM.yyyy").withZone(ZoneOffset.UTC);
     private static final Pattern DECISION_SIGNAL = Pattern.compile(
             "(?i)(entscheidung|freigeben|steering|eskala)");
 
@@ -54,11 +57,9 @@ public class ProjectIssuesCapacityAssembler {
                 .thenComparing(IssueActionItemDto::itemType)
                 .thenComparing(IssueActionItemDto::title, String.CASE_INSENSITIVE_ORDER));
 
-        Instant factsAsOf = project.getLastDataUpdate() != null
-                ? project.getLastDataUpdate()
-                : Instant.parse("2026-07-01T08:00:00Z");
+        Instant factsAsOf = project.getLastDataUpdate();
 
-        return new ProjectIssuesActionsDto(project.getId(), FACTS_BADGE, factsAsOf, List.copyOf(items));
+        return new ProjectIssuesActionsDto(project.getId(), dataStandBadge(factsAsOf), factsAsOf, List.copyOf(items));
     }
 
     public ProjectCapacityDto assembleCapacity(
@@ -67,9 +68,7 @@ public class ProjectIssuesCapacityAssembler {
             ProjectCapacitySummary summary) {
         Instant factsAsOf = summary != null && summary.getFactsAsOf() != null
                 ? summary.getFactsAsOf()
-                : (project.getLastDataUpdate() != null
-                        ? project.getLastDataUpdate()
-                        : Instant.parse("2026-07-01T08:00:00Z"));
+                : project.getLastDataUpdate();
 
         List<RoleCapacityItemDto> roleItems = roles.stream()
                 .sorted(Comparator.comparingInt(ProjectRoleCapacity::getSortOrder))
@@ -92,12 +91,14 @@ public class ProjectIssuesCapacityAssembler {
                     summary.getImpactDetail());
         }
 
-        String badge = "Datenstand "
-                + java.time.format.DateTimeFormatter.ofPattern("dd.MM.yyyy")
-                        .withZone(java.time.ZoneOffset.UTC)
-                        .format(factsAsOf);
+        return new ProjectCapacityDto(
+                project.getId(), factsAsOf, dataStandBadge(factsAsOf), roleItems, summaryDto);
+    }
 
-        return new ProjectCapacityDto(project.getId(), factsAsOf, badge, roleItems, summaryDto);
+    private static String dataStandBadge(Instant factsAsOf) {
+        return factsAsOf == null
+                ? "Datenstand nicht verfügbar"
+                : "Datenstand " + DATA_STAND_FORMATTER.format(factsAsOf);
     }
 
     private static IssueActionItemDto fromProblem(Problem problem) {

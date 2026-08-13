@@ -65,4 +65,14 @@ describe('AuthApiService', () => {
 
     await expect(responsePromise).resolves.toBeNull();
   });
+
+  it('bootstrapCsrf should GET the public CSRF bootstrap endpoint', async () => {
+    const responsePromise = firstValueFrom(service.bootstrapCsrf());
+
+    const req = httpMock.expectOne('/api/auth/csrf');
+    expect(req.request.method).toBe('GET');
+    req.flush({ status: 'ready' });
+
+    await expect(responsePromise).resolves.toEqual({ status: 'ready' });
+  });
 });

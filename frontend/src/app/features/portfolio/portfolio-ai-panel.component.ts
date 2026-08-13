@@ -8,6 +8,11 @@ import { ProjectAiApiService } from '../../core/api/project-ai-api.service';
 import { AuthService } from '../../core/auth/auth.service';
 import { resolveAiPanelError } from '../../shared/utils/ai-error.util';
 import {
+  AiFactReference,
+  resolveAiFactLabel,
+  resolveAiFactReferences,
+} from '../../shared/utils/ai-error.util';
+import {
   PortfolioInsight,
   PortfolioInsightEvidence,
   PortfolioTrendAnalysis,
@@ -87,20 +92,29 @@ export class PortfolioAiPanelComponent {
   private loadGeneration = 0;
   private chatGeneration = 0;
   private analysisStarted = false;
-  private lastUserId: string | null = null;
+  private lastUserIdentity: string | null = null;
+  private lastFilterKey: string | null = null;
+  private lastAttemptedQuestion: string | null = null;
 
   constructor() {
     effect(() => {
       const user = this.authService.currentUser();
-      this.filterService.filters();
-      const userId = user?.userId ?? null;
+      const filters = this.filterService.filters();
+      const userIdentity = user ? `${user.workspaceId}:${user.userId}` : null;
+      const filterKey = JSON.stringify(filters);
 
       untracked(() => {
-        if (userId !== this.lastUserId) {
-          this.lastUserId = userId;
+        if (userIdentity !== this.lastUserIdentity) {
+          this.lastUserIdentity = userIdentity;
+          this.lastFilterKey = filterKey;
           this.analysisStarted = false;
           this.resetAiState();
           return;
+        }
+
+        if (filterKey !== this.lastFilterKey) {
+          this.lastFilterKey = filterKey;
+          this.resetChatState();
         }
 
         if (!this.analysisStarted || this.status() === 'key_missing') {
@@ -224,6 +238,8 @@ export class PortfolioAiPanelComponent {
     }
 
     const generation = ++this.chatGeneration;
+    const queryParams = this.filterService.toQueryParams();
+    this.lastAttemptedQuestion = text;
     this.chatInput.set('');
     this.chatStatus.set('sending');
     this.chatError.set(null);
@@ -232,12 +248,16 @@ export class PortfolioAiPanelComponent {
       .checkReadiness()
       .pipe(take(1))
       .subscribe({
-        next: () => {
+        next: (response) => {
           if (generation !== this.chatGeneration) {
             return;
           }
+          if (response.ready !== true) {
+            this.applyKeyMissingState();
+            return;
+          }
           this.aiApi
-            .askPortfolioQuestion(text, this.filterService.toQueryParams())
+            .askPortfolioQuestion(text, queryParams)
             .pipe(take(1))
             .subscribe({
               next: (response: ProjectAiQuestionResponse) => {
@@ -255,6 +275,7 @@ export class PortfolioAiPanelComponent {
                   },
                 ]);
                 this.chatStatus.set('idle');
+                this.lastAttemptedQuestion = null;
               },
               error: (error: unknown) => {
                 if (generation !== this.chatGeneration) {
@@ -277,12 +298,12 @@ export class PortfolioAiPanelComponent {
     if (this.chatStatus() === 'disabled' || this.status() === 'key_missing') {
       return;
     }
-    const lastUser = [...this.chatMessages()].reverse().find((message) => message.role === 'user');
-    if (!lastUser) {
+    const question = this.lastAttemptedQuestion;
+    if (!question) {
       return;
     }
     this.chatError.set(null);
-    this.sendQuestion(lastUser.text);
+    this.sendQuestion(question);
   }
 
   displayableInsights(insights: PortfolioInsight[] | null | undefined): PortfolioInsight[] {
@@ -324,14 +345,45 @@ export class PortfolioAiPanelComponent {
   }
 
   readableEvidence(insight: PortfolioInsight): PortfolioInsightEvidence[] {
-    return (insight.evidence ?? []).filter(
-      (item): item is PortfolioInsightEvidence =>
-        item != null && !!item.label?.trim() && !!item.value?.trim(),
-    );
+    return (insight.evidence ?? []).flatMap((item) => {
+      if (item == null || !item.label?.trim() || !item.value?.trim()) {
+        return [];
+      }
+      const label = item.label.trim();
+      const technicalLabel = /^[a-z0-9]+(?:\.[a-z0-9]+)+$/i.test(label);
+      const resolvedLabel = technicalLabel
+        ? resolveAiFactLabel(item.sourceField?.trim() || label)
+        : label;
+      return resolvedLabel ? [{ ...item, label: resolvedLabel }] : [];
+    });
   }
 
   providerSublabel(aiGenerated: boolean): string {
-    return aiGenerated ? 'Gemini' : 'Regelbasiert';
+    return aiGenerated ? 'KI-gestützte Analyse' : 'Aus Portfoliodaten abgeleitet';
+  }
+
+  factReferences(factIds: string[] | null | undefined): AiFactReference[] {
+    return resolveAiFactReferences(factIds);
+  }
+
+  analysisBadge(): string {
+    return this.analysis()?.aiGenerated === false ? 'Portfolioanalyse' : 'KI-Einschätzung';
+  }
+
+  jumpToFact(factId: string): void {
+    const anchor = factId.startsWith('snapshot.')
+      ? 'fact-portfolio-trends'
+      : factId.startsWith('portfolio.') || factId.startsWith('budget.') || factId.startsWith('kpi.')
+        ? 'fact-portfolio-kpis'
+        : factId.startsWith('phase.') || factId.startsWith('milestone.')
+          ? 'fact-portfolio-timeline'
+          : 'fact-portfolio-projects';
+    const element = document.getElementById(anchor);
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      element.classList.add('fact-highlight');
+      window.setTimeout(() => element.classList.remove('fact-highlight'), 1600);
+    }
   }
 
   typeLabel(type: string): string {
@@ -394,6 +446,17 @@ export class PortfolioAiPanelComponent {
     this.errorMessage.set(null);
     this.chatStatus.set('idle');
     this.chatError.set(null);
+    this.chatInput.set('');
+    this.lastAttemptedQuestion = null;
+  }
+
+  private resetChatState(): void {
+    this.chatGeneration++;
+    this.chatMessages.set([]);
+    this.chatInput.set('');
+    this.chatStatus.set('idle');
+    this.chatError.set(null);
+    this.lastAttemptedQuestion = null;
   }
 
   private clearDisplayedAiContent(): void {
@@ -408,6 +471,7 @@ export class PortfolioAiPanelComponent {
     this.analysisStarted = false;
     this.chatStatus.set('disabled');
     this.chatError.set(null);
+    this.lastAttemptedQuestion = null;
   }
 
   private applyResolvedError(error: unknown, fallback: string): void {

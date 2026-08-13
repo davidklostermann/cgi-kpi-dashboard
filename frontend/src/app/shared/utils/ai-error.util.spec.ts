@@ -1,6 +1,6 @@
 import { HttpErrorResponse } from '@angular/common/http';
 
-import { resolveAiPanelError } from './ai-error.util';
+import { resolveAiPanelError, resolveAiFactReferences, resolveLoadError } from './ai-error.util';
 
 describe('resolveAiPanelError', () => {
   it('maps AI_DISABLED to disabled status', () => {
@@ -13,11 +13,11 @@ describe('resolveAiPanelError', () => {
     );
 
     expect(result.status).toBe('disabled');
-    expect(result.message).toBe('Projekt-Assistent ist deaktiviert.');
+    expect(result.message).toBe('Der KI-Assistent ist derzeit deaktiviert.');
     expect(result.code).toBe('AI_DISABLED');
   });
 
-  it('maps AI_PROVIDER_ERROR to error status with diagnostic code', () => {
+  it('maps AI_PROVIDER_ERROR to a clean panel message', () => {
     const result = resolveAiPanelError(
       new HttpErrorResponse({
         status: 503,
@@ -30,8 +30,7 @@ describe('resolveAiPanelError', () => {
     );
 
     expect(result.status).toBe('error');
-    expect(result.message).toContain('Gemini-Authentifizierung fehlgeschlagen');
-    expect(result.message).toContain('(AI_PROVIDER_ERROR)');
+    expect(result.message).toBe('Fallback');
     expect(result.code).toBe('AI_PROVIDER_ERROR');
   });
 
@@ -48,7 +47,7 @@ describe('resolveAiPanelError', () => {
     );
 
     expect(result.status).toBe('error');
-    expect(result.message).toContain('(AI_UNAVAILABLE)');
+    expect(result.message).toBe('Fallback');
     expect(result.code).toBe('AI_UNAVAILABLE');
   });
 
@@ -68,5 +67,48 @@ describe('resolveAiPanelError', () => {
     expect(result.status).toBe('key_missing');
     expect(result.message).toContain('KI-API-Key');
     expect(result.code).toBe('AI_KEY_MISSING');
+  });
+
+  it('never exposes backend text for recognized AI states', () => {
+    const result = resolveAiPanelError(
+      new HttpErrorResponse({
+        status: 403,
+        error: { code: 'AI_KEY_MISSING', message: 'SQL column ai_key is null' },
+      }),
+      'Fallback',
+    );
+
+    expect(result.message).toContain('KI-API-Key');
+    expect(result.message).not.toContain('SQL');
+  });
+});
+
+describe('resolveLoadError', () => {
+  it('returns only the approved user-facing fallback', () => {
+    const internalError = { error: { message: 'SQL table project_snapshot missing' } };
+
+    expect(resolveLoadError(internalError, 'Daten konnten nicht geladen werden.')).toBe(
+      'Daten konnten nicht geladen werden.',
+    );
+  });
+});
+
+describe('resolveAiFactReferences', () => {
+  it('maps technical fact ids to unique management labels', () => {
+    expect(
+      resolveAiFactReferences([
+        'kpi.progressPercent',
+        'risk.first.severity',
+        'risk.second.status',
+      ]),
+    ).toEqual([
+      { id: 'kpi.progressPercent', label: 'Projektfortschritt' },
+      { id: 'risk.first.severity', label: 'Risiko 1' },
+      { id: 'risk.second.status', label: 'Risiko 2' },
+    ]);
+  });
+
+  it('hides unknown or empty technical ids', () => {
+    expect(resolveAiFactReferences(['internal.unknownField', '', '   '])).toEqual([]);
   });
 });

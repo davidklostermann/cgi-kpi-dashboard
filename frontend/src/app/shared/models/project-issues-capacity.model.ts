@@ -36,7 +36,7 @@ export interface IssueActionItem {
 export interface ProjectIssuesActions {
   projectId: string;
   factsBadge: string;
-  factsAsOf: string;
+  factsAsOf: string | null;
   items: IssueActionItem[];
 }
 
@@ -59,7 +59,7 @@ export interface CapacitySummary {
 
 export interface ProjectCapacity {
   projectId: string;
-  factsAsOf: string;
+  factsAsOf: string | null;
   factsBadge: string;
   roles: RoleCapacityItem[];
   summary: CapacitySummary | null;

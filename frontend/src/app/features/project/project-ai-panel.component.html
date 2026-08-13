@@ -103,16 +103,20 @@
                         <li>{{ formatEvidence(item) }}</li>
                       }
                     </ul>
-                    <details class="project-ai-panel__tech-detail">
-                      <summary>Technische Feldnamen</summary>
-                      <div class="project-ai-panel__evidence">
-                        @for (factId of priority.evidenceFactIds ?? []; track factId) {
-                          <button type="button" class="project-ai-panel__chip" (click)="jumpToFact(factId)">
-                            {{ factId }}
-                          </button>
-                        }
-                      </div>
-                    </details>
+                    @if (factReferences(priority.evidenceFactIds); as references) {
+                      @if (references.length > 0) {
+                        <details class="project-ai-panel__tech-detail">
+                          <summary>Verknüpfte Projektdaten</summary>
+                          <div class="project-ai-panel__evidence">
+                            @for (reference of references; track reference.id) {
+                              <button type="button" class="project-ai-panel__chip" (click)="jumpToFact(reference.id)">
+                                {{ reference.label }}
+                              </button>
+                            }
+                          </div>
+                        </details>
+                      }
+                    }
                   </li>
                 }
               </ol>
@@ -177,16 +181,20 @@
                         <dd>{{ formatOptionalField(action.expectedEffect) }}</dd>
                       </div>
                     </dl>
-                    <details class="project-ai-panel__tech-detail">
-                      <summary>Technische Feldnamen</summary>
-                      <div class="project-ai-panel__evidence">
-                        @for (factId of action.evidenceFactIds ?? []; track factId) {
-                          <button type="button" class="project-ai-panel__chip" (click)="jumpToFact(factId)">
-                            {{ factId }}
-                          </button>
-                        }
-                      </div>
-                    </details>
+                    @if (factReferences(action.evidenceFactIds); as references) {
+                      @if (references.length > 0) {
+                        <details class="project-ai-panel__tech-detail">
+                          <summary>Verknüpfte Projektdaten</summary>
+                          <div class="project-ai-panel__evidence">
+                            @for (reference of references; track reference.id) {
+                              <button type="button" class="project-ai-panel__chip" (click)="jumpToFact(reference.id)">
+                                {{ reference.label }}
+                              </button>
+                            }
+                          </div>
+                        </details>
+                      }
+                    }
                     <button type="button" (click)="prepareDraft(action)">Als Entwurf vorbereiten</button>
                   </li>
                 }
@@ -245,17 +253,19 @@
                   Hinweis: Die verfügbaren Projektdaten reichen für eine belastbare Antwort nicht aus.
                 </span>
               }
-              @if (message.evidenceFactIds?.length) {
-                <details class="project-ai-panel__tech-detail">
-                  <summary>Technische Feldnamen</summary>
-                  <span class="project-ai-panel__evidence">
-                    @for (factId of message.evidenceFactIds; track factId) {
-                      <button type="button" class="project-ai-panel__chip" (click)="jumpToFact(factId)">
-                        {{ factId }}
-                      </button>
-                    }
-                  </span>
-                </details>
+              @if (factReferences(message.evidenceFactIds); as references) {
+                @if (references.length > 0) {
+                  <details class="project-ai-panel__tech-detail">
+                    <summary>Verknüpfte Projektdaten</summary>
+                    <span class="project-ai-panel__evidence">
+                      @for (reference of references; track reference.id) {
+                        <button type="button" class="project-ai-panel__chip" (click)="jumpToFact(reference.id)">
+                          {{ reference.label }}
+                        </button>
+                      }
+                    </span>
+                  </details>
+                }
               }
             </p>
           }

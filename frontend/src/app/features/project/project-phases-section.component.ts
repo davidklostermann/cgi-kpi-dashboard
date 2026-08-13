@@ -1,5 +1,4 @@
 import { Component, computed, effect, inject, input, signal } from '@angular/core';
-import { HttpErrorResponse } from '@angular/common/http';
 import { take } from 'rxjs';
 
 import { ProjectApiService } from '../../core/api/project-api.service';
@@ -114,13 +113,7 @@ export class ProjectPhasesSectionComponent {
     return milestone.overdue && !this.isDone(milestone.status);
   }
 
-  private resolveErrorMessage(error: unknown): string {
-    if (error instanceof HttpErrorResponse) {
-      const body = error.error as { message?: string } | null;
-      if (body?.message) {
-        return body.message;
-      }
-    }
+  private resolveErrorMessage(_error: unknown): string {
     return 'Phasen und Meilensteine konnten nicht geladen werden. Bitte versuchen Sie es erneut.';
   }
 }

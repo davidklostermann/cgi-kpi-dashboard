@@ -1,6 +1,6 @@
 <section class="insight-list" aria-labelledby="insight-list-heading">
   <h2 id="insight-list-heading">Management Insights</h2>
-  <p class="insight-list__hint">Deterministische Auffälligkeiten aus Faktenregeln — nicht KI-generiert.</p>
+  <p class="insight-list__hint">Aus den aktuellen Projektdaten abgeleitete Auffälligkeiten.</p>
 
   @if (status() === 'loading') {
     <p aria-live="polite">Insights werden geladen …</p>
@@ -11,7 +11,7 @@
     </div>
   } @else if (insights(); as data) {
     @if (data.insights.length === 0) {
-      <p role="status">Keine deterministischen Auffälligkeiten für dieses Projekt.</p>
+      <p role="status">Keine besonderen Auffälligkeiten für dieses Projekt.</p>
     } @else {
       <ul>
         @for (insight of data.insights; track insight.code) {
@@ -33,10 +33,6 @@
               <div>
                 <dt>Begründung</dt>
                 <dd>{{ insight.rationale }}</dd>
-              </div>
-              <div>
-                <dt>Typ</dt>
-                <dd>{{ insight.type }}</dd>
               </div>
             </dl>
           </li>

@@ -2,6 +2,7 @@ package com.cgi.kpi.dashboard.kpi.service;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.math.BigDecimal;
@@ -37,7 +38,7 @@ class ProjectIssuesCapacityAssemblerTest {
         assertEquals(2, dto.items().size());
         assertEquals("CRITICAL", dto.items().get(0).severity());
         assertEquals("HIGH", dto.items().get(1).severity());
-        assertEquals("Fakten aus Backend", dto.factsBadge());
+        assertEquals("Datenstand 01.07.2026", dto.factsBadge());
         assertEquals("Laufende Maßnahme", dto.items().get(0).actionLabel());
         assertTrue(dto.items().get(0).metrics().size() >= 1);
         assertEquals("Beschreibung", dto.items().get(0).cause());
@@ -89,6 +90,20 @@ class ProjectIssuesCapacityAssemblerTest {
         assertEquals(new BigDecimal("2.00"), dto.summary().missingFte());
         assertEquals(LocalDate.of(2026, 8, 5), dto.summary().nextAvailabilityDate());
         assertTrue(dto.factsBadge().contains("10.07.2026"));
+    }
+
+    @Test
+    void missingDataTimestampRemainsExplicitlyUnavailable() {
+        Project project = project();
+        project.setLastDataUpdate(null);
+
+        ProjectIssuesActionsDto issues = assembler.assembleIssuesActions(project, List.of(), List.of());
+        ProjectCapacityDto capacity = assembler.assembleCapacity(project, List.of(), null);
+
+        assertNull(issues.factsAsOf());
+        assertEquals("Datenstand nicht verfügbar", issues.factsBadge());
+        assertNull(capacity.factsAsOf());
+        assertEquals("Datenstand nicht verfügbar", capacity.factsBadge());
     }
 
     private static Project project() {

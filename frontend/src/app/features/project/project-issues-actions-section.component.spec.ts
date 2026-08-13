@@ -21,7 +21,7 @@ describe('ProjectIssuesActionsSectionComponent', () => {
   function flushItems(items: unknown[]): void {
     httpMock.expectOne(`/api/projects/${projectId}/issues-actions`).flush({
       projectId,
-      factsBadge: 'Fakten aus Backend',
+      factsBadge: 'Datenstand 10.07.2026',
       factsAsOf: '2026-07-01T08:00:00Z',
       items,
     });
@@ -70,7 +70,8 @@ describe('ProjectIssuesActionsSectionComponent', () => {
 
     const text = fixture.nativeElement.textContent as string;
     expect(text).toContain('Probleme, Risiken & Maßnahmen');
-    expect(text).toContain('Fakten aus Backend');
+    expect(text).toContain('Datenstand 10.07.2026');
+    expect(text).not.toContain('Backend');
     expect(text).toContain('Cloud-Engineering-Kapazität unterdeckt');
     expect(text).toContain('Kritisch');
     expect(text).toContain('Überfällig seit 7 Tagen');
@@ -181,7 +182,10 @@ describe('ProjectIssuesActionsSectionComponent', () => {
     );
     fixture.detectChanges();
 
-    expect(fixture.nativeElement.textContent).toContain('Backend nicht erreichbar');
+    expect(fixture.nativeElement.textContent).toContain(
+      'Probleme, Risiken und Maßnahmen konnten nicht geladen werden.',
+    );
+    expect(fixture.nativeElement.textContent).not.toContain('Backend nicht erreichbar');
   });
 
   it('should show empty state when no open items exist', () => {

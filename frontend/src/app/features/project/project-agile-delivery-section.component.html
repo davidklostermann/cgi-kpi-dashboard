@@ -9,7 +9,7 @@
       <p>Sprint-Übersicht und Fortschritt</p>
     </div>
     @if (data(); as payload) {
-      <span class="agile-delivery__source">{{ dataSourceLabel(payload.dataSource) }}</span>
+      <span class="agile-delivery__source">{{ dataStandLabel(payload.factsAsOf) }}</span>
     }
   </header>
 

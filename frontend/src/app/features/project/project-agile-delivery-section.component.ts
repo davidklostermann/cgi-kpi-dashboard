@@ -1,4 +1,3 @@
-import { HttpErrorResponse } from '@angular/common/http';
 import { Component, computed, effect, inject, input, signal } from '@angular/core';
 import { take } from 'rxjs';
 
@@ -114,19 +113,18 @@ export class ProjectAgileDeliverySectionComponent {
     return value === null ? '—' : value.toLocaleString('de-DE', { maximumFractionDigits: 1 });
   }
 
-  dataSourceLabel(source: string): string {
-    return source === 'INTERNAL_MOCK'
-      ? 'Datenquelle: Internes System (Mock)'
-      : 'Datenquelle: Internes System';
+  dataStandLabel(value: string | null): string {
+    if (!value) {
+      return 'Datenstand nicht verfügbar';
+    }
+    return `Datenstand ${new Intl.DateTimeFormat('de-DE', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+    }).format(new Date(value))}`;
   }
 
-  private resolveError(error: unknown): string {
-    if (error instanceof HttpErrorResponse) {
-      const body = error.error as { message?: string } | null;
-      if (body?.message) {
-        return body.message;
-      }
-    }
+  private resolveError(_error: unknown): string {
     return 'Agile Delivery konnte nicht geladen werden.';
   }
 }

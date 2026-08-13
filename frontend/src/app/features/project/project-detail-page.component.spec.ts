@@ -7,10 +7,13 @@ import { WritableSignal, computed, signal } from '@angular/core';
 import { ProjectDetailPageComponent } from './project-detail-page.component';
 import { ProjectAiPanelComponent } from './project-ai-panel.component';
 import { AuthService } from '../../core/auth/auth.service';
+import { ActiveProjectNavService } from '../../core/navigation/active-project-nav.service';
+import { AuthUser } from '../../shared/models/auth.model';
 
 describe('ProjectDetailPageComponent', () => {
   let httpMock: HttpTestingController;
   let isAdminSignal: WritableSignal<boolean>;
+  let currentUserSignal: WritableSignal<AuthUser | null>;
   const projectId = 'a0000000-0000-4000-8000-000000000001';
 
   function flushIsoManagement(targetProjectId = projectId): void {
@@ -93,7 +96,7 @@ describe('ProjectDetailPageComponent', () => {
     });
     httpMock.expectOne(`/api/projects/${targetProjectId}/issues-actions`).flush({
       projectId: targetProjectId,
-      factsBadge: 'Fakten aus Backend',
+      factsBadge: 'Datenstand 10.07.2026',
       factsAsOf: '2026-07-01T08:00:00Z',
       items: [],
     });
@@ -109,8 +112,15 @@ describe('ProjectDetailPageComponent', () => {
 
   beforeEach(async () => {
     isAdminSignal = signal(false);
+    currentUserSignal = signal({
+      userId: 'user-a',
+      workspaceId: 'workspace-a',
+      username: 'admin',
+      roles: ['ROLE_ADMIN'],
+      mustChangePassword: false,
+    });
     const authServiceMock = {
-      currentUser: signal<{ id: string; roles: string[] } | null>(null),
+      currentUser: currentUserSignal,
       isAdmin: computed(() => isAdminSignal()),
     };
 
@@ -217,7 +227,7 @@ describe('ProjectDetailPageComponent', () => {
 
     httpMock.expectOne('/api/projects/a0000000-0000-4000-8000-000000000001/issues-actions').flush({
       projectId: 'a0000000-0000-4000-8000-000000000001',
-      factsBadge: 'Fakten aus Backend',
+      factsBadge: 'Datenstand 10.07.2026',
       factsAsOf: '2026-07-01T08:00:00Z',
       items: [],
     });
@@ -247,6 +257,37 @@ describe('ProjectDetailPageComponent', () => {
     );
     expect(fixture.nativeElement.querySelector('.portfolio-ai-launcher')).toBeTruthy();
     expect(fixture.nativeElement.querySelector('.portfolio-ai-drawer')).toBeNull();
+  });
+
+  it('ignores a master-data response that arrives after logout', () => {
+    const fixture = TestBed.createComponent(ProjectDetailPageComponent);
+    fixture.componentRef.setInput('id', projectId);
+    fixture.detectChanges();
+
+    const masterRequest = httpMock.expectOne(`/api/projects/${projectId}/master-data`);
+    for (const request of httpMock.match((candidate) => !candidate.url.endsWith('/master-data'))) {
+      request.flush({ message: 'request closed for test' }, { status: 500, statusText: 'Error' });
+    }
+
+    currentUserSignal.set(null);
+    fixture.detectChanges();
+    masterRequest.flush({
+      id: projectId,
+      name: 'Projekt des vorherigen Kontos',
+      customer: 'Acme',
+      projectLead: 'Mara Neumann',
+      startDate: '2025-03-01',
+      plannedEndDate: '2026-06-30',
+      forecastEndDate: '2026-06-30',
+      currentPhaseName: 'Rollout',
+      status: 'ON_TRACK',
+      statusLabel: 'Auf Kurs',
+      lastDataUpdate: '2026-07-01T08:00:00Z',
+    });
+    fixture.detectChanges();
+
+    expect(fixture.componentInstance.masterData()).toBeNull();
+    expect(TestBed.inject(ActiveProjectNavService).activeProject()).toBeNull();
   });
 
   it('should show the AI launcher for ADMIN users and open/close the drawer', () => {
@@ -316,7 +357,7 @@ describe('ProjectDetailPageComponent', () => {
     httpMock.expectOne('/api/projects/a0000000-0000-4000-8000-000000000001/trends').flush({});
     httpMock.expectOne('/api/projects/a0000000-0000-4000-8000-000000000001/issues-actions').flush({
       projectId: 'a0000000-0000-4000-8000-000000000001',
-      factsBadge: 'Fakten aus Backend',
+      factsBadge: 'Datenstand 10.07.2026',
       factsAsOf: '2026-07-01T08:00:00Z',
       items: [],
     });
@@ -417,7 +458,7 @@ describe('ProjectDetailPageComponent', () => {
     httpMock.expectOne('/api/projects/a0000000-0000-4000-8000-000000000001/trends').flush({});
     httpMock.expectOne('/api/projects/a0000000-0000-4000-8000-000000000001/issues-actions').flush({
       projectId: 'a0000000-0000-4000-8000-000000000001',
-      factsBadge: 'Fakten aus Backend',
+      factsBadge: 'Datenstand 10.07.2026',
       factsAsOf: '2026-07-01T08:00:00Z',
       items: [],
     });
@@ -539,7 +580,7 @@ describe('ProjectDetailPageComponent', () => {
     httpMock.expectOne('/api/projects/a0000000-0000-4000-8000-000000000001/trends').flush({});
     httpMock.expectOne('/api/projects/a0000000-0000-4000-8000-000000000001/issues-actions').flush({
       projectId: 'a0000000-0000-4000-8000-000000000001',
-      factsBadge: 'Fakten aus Backend',
+      factsBadge: 'Datenstand 10.07.2026',
       factsAsOf: '2026-07-01T08:00:00Z',
       items: [],
     });
@@ -626,7 +667,7 @@ describe('ProjectDetailPageComponent', () => {
     httpMock.expectOne('/api/projects/a0000000-0000-4000-8000-000000000001/trends').flush({});
     httpMock.expectOne('/api/projects/a0000000-0000-4000-8000-000000000001/issues-actions').flush({
       projectId: 'a0000000-0000-4000-8000-000000000001',
-      factsBadge: 'Fakten aus Backend',
+      factsBadge: 'Datenstand 10.07.2026',
       factsAsOf: '2026-07-01T08:00:00Z',
       items: [],
     });

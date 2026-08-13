@@ -7,6 +7,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.security.web.csrf.CsrfToken;
 
 import com.cgi.kpi.dashboard.api.auth.dto.AuthMeResponseDto;
 import com.cgi.kpi.dashboard.api.auth.dto.ChangePasswordRequestDto;
@@ -14,6 +15,7 @@ import com.cgi.kpi.dashboard.api.auth.dto.LoginRequestDto;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.Cookie;
 import jakarta.validation.Valid;
 
 @RestController
@@ -32,6 +34,15 @@ public class AuthController {
             HttpServletRequest httpRequest,
             HttpServletResponse httpResponse) {
         return authService.login(request.username(), request.password(), httpRequest, httpResponse);
+    }
+
+    @GetMapping("/csrf")
+    public CsrfBootstrapResponse csrf(CsrfToken csrfToken, HttpServletResponse response) {
+        Cookie cookie = new Cookie("XSRF-TOKEN", csrfToken.getToken());
+        cookie.setHttpOnly(false);
+        cookie.setPath("/");
+        response.addCookie(cookie);
+        return new CsrfBootstrapResponse("ready");
     }
 
     @PostMapping("/logout")
@@ -54,4 +65,6 @@ public class AuthController {
         authService.changePassword(
                 request.currentPassword(), request.newPassword(), httpRequest, httpResponse);
     }
+
+    public record CsrfBootstrapResponse(String status) {}
 }
