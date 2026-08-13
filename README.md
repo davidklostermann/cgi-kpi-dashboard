@@ -30,7 +30,6 @@ nicht für den Betrieb mit produktiven Kundendaten.
 - Projekt-Drill-down mit Stammdaten, Trends und Berichtsstandsvergleich
 - Team- und Kapazitätsinformationen
 - Agile-/Delivery-Informationen (Vorgehensmodell, Sprint-Kennzahlen)
-- ISO-21502-Steuerungsfelder als ergänzende Projektinformationen
 - Authentifizierung mit Rollen für Admin- und Workspace-Nutzer
 - Optionale KI-Analysen (Portfolio-Muster, Projekt-Assistent, Fragen)
 - Demo-Daten über Flyway-Seeds
