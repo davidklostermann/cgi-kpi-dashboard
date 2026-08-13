@@ -10,7 +10,14 @@ Layered Modular Monolith:
 | Application / Domain | Use Cases, Domänenmodell |
 | Infrastructure | JPA, Flyway, externe Adapter |
 | `kpi.*` | Deterministische KPI-Berechnung und Reader |
-| `ai.*` | KI-Use-Cases auf Basis freigegebener KPI-/Projektdaten |
+| `ai.*` | Interpretation auf Basis bereits berechneter KPI-/Projektdaten |
+
+## Frontend
+
+Angular 22 (TypeScript, Angular Material, RxJS), gebaut mit Node.js 22 und npm.
+Im Demo-Betrieb liefert nginx die SPA und proxied `/api` sowie `/actuator`
+an das Backend. Dadurch teilen sich Frontend und Backend denselben Origin
+(Session-Cookie + CSRF).
 
 ## Deployables (Demo)
 
@@ -23,22 +30,25 @@ Browser → frontend (nginx :4200)
 
 - `docker compose up --build` startet PostgreSQL, Backend und Frontend
 - Flyway legt Schema an und lädt Seed-/Demo-Daten
-- Frontend und Backend teilen sich denselben Origin über nginx (Session + CSRF)
+- Backend: Spring Boot 3.5 / Java 21, Maven
 
-## Wichtige Invarianten
+## KPI und KI
 
-1. **Ein Backend-Deployable** — kein separater AI-Microservice
-2. **KPI/AI-Grenze** — `ai.*` liest nur über `kpi.*`-Reader, nie direkt aus Persistence
-3. **KPIs sind Backend-Fakten** — Frontend rendert, rechnet nicht nach
-4. **Gemini ist Interpretation** — keine DB-Writes und keine erfundenen KPI-Werte
-5. **Secrets serverseitig** — keine API-Keys im Frontend
+Kennzahlen entstehen nur im Backend (`kpi.*`). Das Frontend zeigt sie an,
+rechnet sie nicht nach. Die KI-Schicht (`ai.*`) liest ausschließlich über
+diese Reader — nicht direkt aus der Persistenz.
 
-## Auth / Security (Kurz)
+Ohne API-Key bleibt die KI deaktiviert. Portfolio, Projektliste und KPIs
+funktionieren davon unabhängig. Die KI schreibt keine Kennzahlen in die
+Datenbank und ersetzt keine fachlichen Werte.
 
-- Session-Cookie-Authentifizierung
-- CSRF-Token (Cookie + Header)
+## Auth / Security
+
+- Session-Cookie-Authentifizierung, CSRF-Token (Cookie + Header)
+- Rollen: Admin (Benutzerverwaltung, API-Key) und Workspace-Nutzer
+- Workspace-Isolation: Zugriff nur auf Projekte des eigenen Workspace
 - Bootstrap-Admin über Environment Variables beim ersten Start
-- AI-Keys verschlüsselbar über `APP_AI_MASTER_KEY`
+- API-Keys und Secrets nur serverseitig; optional verschlüsselt über `APP_AI_MASTER_KEY`
 
 ## Daten
 

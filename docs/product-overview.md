@@ -39,6 +39,17 @@ Interpretation und Zusammenfassung ohne KPIs zu ersetzen:
 Ohne API Key bleiben die KI-Funktionen deaktiviert. Portfolio und
 Projekt-KPIs sind davon unabhängig nutzbar.
 
+## Authentifizierung und Rollen
+
+Zugang erfolgt über Login mit Session-Cookie und CSRF-Schutz.
+Es gibt zwei Rollen:
+
+- **Admin** — Benutzerverwaltung und API-Key-Konfiguration
+- **Workspace-Nutzer** — Zugriff auf die Projekte des eigenen Workspace
+
+Daten sind workspace-getrennt. Nutzer sehen nur die Projekte ihres
+Workspace; ein fremdes Projekt liefert keinen Zugriff.
+
 ## Abgrenzung
 
 - Kennzahlen entstehen im Backend, nicht im Frontend und nicht durch die KI
