@@ -1,32 +1,36 @@
-# Requirements (kompakt)
+# Requirements
 
-Zusammengefasst aus den finalen Produktanforderungen des Pilots.
+Die wichtigsten Anforderungen für den aktuellen Pilotstand.
 
-## Funktionale Schwerpunkte
+## Funktionale Anforderungen
 
-1. **Portfolioübersicht** mit Statusverteilung und Kennzahlenkarten
-2. **Filterbare Projektliste** (u. a. Kunde, Leitung, Status, Phase, Vorgehensmodell)
-3. **Projekt-Detail** mit Stammdaten, KPIs, Trends, Risiken/Problemen
-4. **Berichtsstandsvergleich** über Zeit
-5. **Kapazität / Team** Informationen
-6. **Agile Delivery** für agile/hybride Projekte (Sprints, Delivery-Kennzahlen)
-7. **ISO-Steuerungsfelder** als ergänzende Managementdaten
-8. **KI-Schicht**
-   - Portfolio-Musteranalyse
-   - Projekt-Assistent (Zusammenfassung / Fragen)
-   - klare Kennzeichnung als KI-Einschätzung
-9. **Authentifizierung** mit Rollen (Admin/Workspace) und Session-Sicherheit
+1. **Portfolioübersicht** mit Projektstatus und zentralen Kennzahlen
+2. **Projektliste mit Filtern**, z. B. nach Kunde, Projektleitung, Status, Phase und Vorgehensmodell
+3. **Projekt-Detailansicht** mit Stammdaten, KPIs, Trends, Risiken und Problemen
+4. **Vergleich verschiedener Berichtsstände** zur Darstellung von Veränderungen im Zeitverlauf
+5. **Team- und Kapazitätsinformationen** auf Projektebene
+6. **Agile Delivery** für agile und hybride Projekte mit Sprints und relevanten Delivery-Kennzahlen
+7. **ISO-21502-Steuerungsfelder** als zusätzliche Informationen zur Projektsteuerung
+8. **KI-Unterstützung**
+   - Analyse von Auffälligkeiten und Mustern im Portfolio
+   - Zusammenfassung und Fragen zu einzelnen Projekten
+   - eindeutige Kennzeichnung von KI-generierten Einschätzungen
+9. **Authentifizierung und Rollenmodell** für Admin- und Workspace-Nutzer
 
-## Nichtfunktionale Leitplanken
+## Technische Anforderungen
 
-- KPIs bleiben bei KI-Ausfall nutzbar
-- Secrets nur serverseitig / über Environment Variables
-- API-Fehler als strukturierte Responses (`code`, `message`)
-- Desktop-first UI
-- Mock-/Demo-Daten für den Pilot und die öffentliche Demo
+- Die KPI-Berechnung funktioniert unabhängig von der KI-Komponente.
+- Zugangsdaten und API-Keys werden ausschließlich serverseitig bzw. über Environment Variables verwaltet.
+- API-Fehler werden strukturiert mit `code` und `message` zurückgegeben.
+- Die Oberfläche ist zunächst für Desktop-Nutzung ausgelegt.
+- Für Pilot und öffentliche Demo werden ausschließlich Mock- bzw. Demo-Daten verwendet.
 
-## Explizite Nicht-Ziele
+## Abgrenzung
 
-- Kein Ersatz für vollständige PM-Tools
-- Keine automatischen Entscheidungen durch KI
-- Keine produktiven Kundendaten in der öffentlichen Demo
+Das Dashboard soll bestehende Projektmanagement-Systeme nicht ersetzen, sondern eine kompakte Steuerungs- und Auswertungsebene darüber bereitstellen.
+
+Nicht Bestandteil des Piloten sind:
+
+- vollständige Projektplanung und Aufgabenverwaltung
+- automatische Entscheidungen oder Maßnahmen durch die KI
+- produktive Kundendaten in der öffentlichen Demo
