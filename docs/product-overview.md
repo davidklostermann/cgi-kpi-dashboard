@@ -44,8 +44,8 @@ Projekt-KPIs sind davon unabhängig nutzbar.
 Zugang erfolgt über Login mit Session-Cookie und CSRF-Schutz.
 Es gibt zwei Rollen:
 
-- **Admin** — Benutzerverwaltung und API-Key-Konfiguration
-- **Workspace-Nutzer** — Zugriff auf die Projekte des eigenen Workspace
+- **Admin** : Benutzerverwaltung und API-Key-Konfiguration
+- **Workspace-Nutzer** : Zugriff auf die Projekte des eigenen Workspace
 
 Daten sind workspace-getrennt. Nutzer sehen nur die Projekte ihres
 Workspace; ein fremdes Projekt liefert keinen Zugriff.
