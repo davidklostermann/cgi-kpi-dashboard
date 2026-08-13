@@ -2,7 +2,7 @@
 
 ## Zweck
 
-**CGI KPI Dashboard** ist ein Management-Dashboard zur Steuerung und Analyse
+**CGI KPI Dashboard** ist ein Management Dashboard zur Steuerung und Analyse
 paralleler Kundenprojekte. Es bündelt Status, Fortschritt, Budget, Termine und
 Risiken in einer Portfolio- und Projektansicht.
 
