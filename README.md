@@ -12,9 +12,10 @@ orientieren sich an den Projektmanagement-Prinzipien und -Praktiken der
 ISO 21502:2020. Eine optionale KI-Schicht unterstützt bei Interpretation und
 Zusammenfassung ohne KPIs zu ersetzen.
 
-Es handelt sich um ein **Praktikumsprojekt** (Greenfield) mit
-**Simulations-/Mock-Daten**. Die Demo ist für lokale Evaluierung und
-Präsentationen gedacht, nicht für den Betrieb mit produktiven Kundendaten.
+Das Projekt entstand im Verlauf eines Praktikums. Es handelt sich um ein
+**Greenfield-Projekt** mit **Simulations-/Mock-Daten**. Die Demo ist für
+lokale Evaluierung und Präsentationen gedacht, nicht für den Betrieb mit
+produktiven Kundendaten.
 
 <p align="center">
   <img src="docs/dashboard-overview.png" alt="CGI KPI Dashboard – Portfolio, Projektdetail, Agile Delivery und KI-Assistent" width="100%">
