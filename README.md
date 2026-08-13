@@ -10,8 +10,8 @@ Das Dashboard gibt Führungskräften und Projektleitern einen zentralen Überbli
 Risiken werden deterministisch im Backend berechnet. Eine optionale KI-Schicht
 unterstützt bei Interpretation und Zusammenfassung ohne KPIs zu ersetzen.
 
-Es handelt sich um ein **Greenfield-Projekt** mit **Simulations-/Mock-Daten**
-(Flyway-Seeds). Die Demo ist für lokale Evaluierung und Präsentationen gedacht,
+Es handelt sich um ein **Greenfield-Projekt** mit **Simulations-/Mock-Daten**.
+Die Demo ist für lokale Evaluierung und Präsentationen gedacht,
 nicht für den Betrieb mit produktiven Kundendaten.
 
 <p align="center">
