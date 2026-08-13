@@ -7,8 +7,10 @@ Risikoüberwachung und optionalen KI-gestützten Auswertungen.
 
 Das Dashboard gibt Führungskräften und Projektleitern einen zentralen Überblick
 über parallele Kundenprojekte. Kennzahlen zu Fortschritt, Budget, Terminen und
-Risiken werden deterministisch im Backend berechnet. Eine optionale KI-Schicht
-unterstützt bei Interpretation und Zusammenfassung ohne KPIs zu ersetzen.
+Risiken werden deterministisch im Backend berechnet. Die Projekt-KPIs
+orientieren sich an den Projektmanagement-Prinzipien und -Praktiken der
+ISO 21502:2020. Eine optionale KI-Schicht unterstützt bei Interpretation und
+Zusammenfassung ohne KPIs zu ersetzen.
 
 Es handelt sich um ein **Greenfield-Projekt** mit **Simulations-/Mock-Daten**.
 Die Demo ist für lokale Evaluierung und Präsentationen gedacht,
