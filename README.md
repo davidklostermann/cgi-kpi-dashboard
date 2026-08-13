@@ -124,7 +124,7 @@ Die notwendige Konfiguration ist in `.env.example` dokumentiert.
 
 ## Development Approach
 
-Das Projekt wurde mit einem strukturierten BMAD-basierten
+Das Projekt wurde mit einem strukturierten BMAD basierten
 Produktentwicklungsprozess geplant und umgesetzt. Die wichtigsten
 Epic und Story-Dokumente liegen unter [`docs/planning`](docs/planning/README.md).
 
