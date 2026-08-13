@@ -29,21 +29,21 @@ eines einzelnen Projekts:
 ## KI-Unterstützung
 
 Die optionale KI-Schicht ergänzt die deterministischen Kennzahlen um
-Interpretation und Zusammenfassung – ohne KPIs zu ersetzen:
+Interpretation und Zusammenfassung ohne KPIs zu ersetzen:
 
 - Analyse von Auffälligkeiten und Mustern auf Portfolioebene
 - Zusammenfassung und gezielte Fragen zu einzelnen Projekten
 - Arbeit ausschließlich auf freigegebenen Projektdaten
 - klare Kennzeichnung von KI-generierten Einschätzungen
 
-Ohne API-Key bleiben die KI-Funktionen deaktiviert; Portfolio und
+Ohne API Key bleiben die KI-Funktionen deaktiviert. Portfolio und
 Projekt-KPIs sind davon unabhängig nutzbar.
 
 ## Abgrenzung
 
 - Kennzahlen entstehen im Backend, nicht im Frontend und nicht durch die KI
 - Die KI interpretiert freigegebene Daten; sie ersetzt keine Entscheidungen
-- Die öffentliche Demo nutzt Mock-/Seed-Daten, keine produktiven Kundendaten
+- Die öffentliche Demo nutzt Mock/Seed Daten, keine produktiven Kundendaten
 
 ## Zielgruppen
 
