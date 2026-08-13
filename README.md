@@ -28,7 +28,6 @@ nicht für den Betrieb mit produktiven Kundendaten.
 - Projekt-Drill-down mit Stammdaten, Trends und Berichtsstandsvergleich
 - Kapazitätsinformationen
 - Agile-/Delivery-Informationen (Vorgehensmodell, Sprint-Kennzahlen)
-- ISO-Steuerungsfelder (ergänzende Managementdaten)
 - Optionale KI-Analysen (Portfolio-Muster, Projekt-Assistent, Fragen)
 - Demo-Daten über Flyway-Seeds
 
